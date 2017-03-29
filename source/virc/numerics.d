@@ -1,0 +1,954 @@
+module virc.numerics;
+import std.array : array;
+import std.datetime : SysTime, UTC;
+import std.typecons : Nullable, Tuple;
+import std.range : popFront, front, empty, lockstep;
+import std.conv : parse, to;
+import std.meta : AliasSeq;
+import std.algorithm : splitter, findSplit, findSplitAfter, startsWith, map, among, filter;
+import std.string : toLower;
+import std.utf : byCodeUnit;
+
+import virc.casemapping;
+import virc.common;
+import virc.modes;
+import virc.usermask;
+
+enum Numeric {
+	//RFC1459 Command responses: https://tools.ietf.org/html/rfc1459#section-6.2
+	RPL_TRACELINK = "200",
+	RPL_TRACECONNECTING = "201",
+	RPL_TRACEHANDSHAKE = "202",
+	RPL_TRACEUNKNOWN = "203",
+	RPL_TRACEOPERATOR = "204",
+	RPL_TRACEUSER = "205",
+	RPL_TRACESERVER = "206",
+	RPL_TRACENEWTYPE = "208",
+	RPL_STATSLINKINFO = "211",
+	RPL_STATSCOMMANDS = "212",
+	RPL_STATSCLINE = "213",
+	RPL_STATSNLINE = "214",
+	RPL_STATSILINE = "215",
+	RPL_STATSKLINE = "216",
+	RPL_STATSYLINE = "218",
+	RPL_ENDOFSTATS = "219",
+	RPL_STATSLLINE = "241",
+	RPL_STATSUPTIME = "242",
+	RPL_STATSOLINE = "243",
+	RPL_STATSHLINE = "244",
+	RPL_UMODEIS = "221",
+	RPL_LUSERCLIENT = "251",
+	RPL_LUSEROP = "252",
+	RPL_LUSERUNKNOWN = "253",
+	RPL_LUSERCHANNELS = "254",
+	RPL_LUSERME = "255",
+	RPL_ADMINME = "256",
+	RPL_ADMINLOC1 = "257",
+	RPL_ADMINLOC2 = "258",
+	RPL_ADMINEMAIL = "259",
+	RPL_TRACELOG = "261",
+	RPL_NONE = "300",
+	RPL_AWAY = "301",
+	RPL_USERHOST = "302",
+	RPL_ISON = "303",
+	RPL_UNAWAY = "305",
+	RPL_NOWAWAY = "306",
+	RPL_WHOISUSER = "311",
+	RPL_WHOISSERVER = "312",
+	RPL_WHOISOPERATOR = "313",
+	RPL_WHOWASUSER = "314",
+	RPL_ENDOFWHO = "315",
+	RPL_WHOISIDLE = "317",
+	RPL_ENDOFWHOIS = "318",
+	RPL_WHOISCHANNELS = "319",
+	RPL_LISTSTART = "321",
+	RPL_LIST = "322",
+	RPL_LISTEND = "323",
+	RPL_CHANNELMODEIS = "324",
+	RPL_NOTOPIC = "331",
+	RPL_TOPIC = "332",
+	RPL_INVITING = "341",
+	RPL_SUMMONING = "342",
+	RPL_VERSION = "351",
+	RPL_WHOREPLY = "352",
+	RPL_NAMREPLY = "353",
+	RPL_LINKS = "364",
+	RPL_ENDOFLINKS = "365",
+	RPL_ENDOFNAMES = "366",
+	RPL_BANLIST = "367",
+	RPL_ENDOFBANLIST = "368",
+	RPL_ENDOFWHOWAS = "369",
+	RPL_INFO = "371",
+	RPL_MOTD = "372",
+	RPL_ENDOFINFO = "374",
+	RPL_MOTDSTART = "375",
+	RPL_ENDOFMOTD = "376",
+	RPL_YOUREOPER = "381",
+	RPL_REHASHING = "382",
+	RPL_TIME = "391",
+	RPL_USERSSTART = "392",
+	RPL_USERS = "393",
+	RPL_ENDOFUSERS = "394",
+	RPL_NOUSERS = "395",
+	//RFC1459 Errors: https://tools.ietf.org/html/rfc1459#section-6.1
+	ERR_NOSUCHNICK = "401",
+	ERR_NOSUCHSERVER = "402",
+	ERR_NOSUCHCHANNEL = "403",
+	ERR_CANNOTSENDTOCHAN = "404",
+	ERR_TOOMANYCHANNELS = "405",
+	ERR_WASNOSUCHNICK = "406",
+	ERR_TOOMANYTARGETS = "407",
+	ERR_NOORIGIN = "409",
+	ERR_NORECIPIENT = "411",
+	ERR_NOTEXTTOSEND = "412",
+	ERR_NOTOPLEVEL = "413",
+	ERR_WILDTOPLEVEL = "414",
+	ERR_UNKNOWNCOMMAND = "421",
+	ERR_NOMOTD = "422",
+	ERR_NOADMININFO = "423",
+	ERR_FILEERROR = "424",
+	ERR_NONICKNAMEGIVEN = "431",
+	ERR_ERRONEUSNICKNAME = "432",
+	ERR_NICKNAMEINUSE = "433",
+	ERR_NICKCOLLISION = "436",
+	ERR_USERNOTINCHANNEL = "441",
+	ERR_NOTONCHANNEL = "442",
+	ERR_USERONCHANNEL = "443",
+	ERR_NOLOGIN = "444",
+	ERR_SUMMONDISABLED = "445",
+	ERR_USERSDISABLED = "446",
+	ERR_NOTREGISTERED = "451",
+	ERR_NEEDMOREPARAMS = "461",
+	ERR_ALREADYREGISTRED = "462",
+	ERR_NOPERMFORHOST = "463",
+	ERR_PASSWDMISMATCH = "464",
+	ERR_YOUREBANNEDCREEP = "465",
+	ERR_KEYSET = "467",
+	ERR_CHANNELISFULL = "471",
+	ERR_UNKNOWNMODE = "472",
+	ERR_INVITEONLYCHAN = "473",
+	ERR_BANNEDFROMCHAN = "474",
+	ERR_BADCHANNELKEY = "475",
+	ERR_NOPRIVILEGES = "481",
+	ERR_CHANOPRIVSNEEDED = "482",
+	ERR_CANTKILLSERVER = "483",
+	ERR_NOOPERHOST = "491",
+	ERR_UMODEUNKNOWNFLAG = "501",
+	ERR_USERSDONTMATCH = "502",
+	//RFC1459 Reserved: https://tools.ietf.org/html/rfc1459#section-6.3
+	//Obsolete or reserved for "future use"
+	RPL_STATSQLINE = "217",
+	RPL_SERVICEINFO = "231",
+	RPL_ENDOFSERVICES = "232",
+	RPL_SERVICE = "233",
+	RPL_WHOISCHANOP = "316",
+	RPL_KILLDONE = "361",
+	RPL_CLOSING = "362",
+	RPL_CLOSEEND = "363",
+	RPL_INFOSTART = "373",
+	RPL_MYPORTIS = "384",
+	ERR_NOSERVICEHOST = "492",
+	//RFC2812 Command responses: https://tools.ietf.org/html/rfc2812#section-5.1
+	RPL_WELCOME = "001",
+	RPL_YOURHOST = "002",
+	RPL_CREATED = "003",
+	RPL_MYINFO = "004",
+	RPL_BOUNCE = "005",
+	RPL_TRACESERVICE = "207",
+	RPL_TRACECLASS = "209",
+	RPL_SERVLIST = "234",
+	RPL_SERVLISTEND = "235",
+	RPL_TRACEEND = "262",
+	RPL_TRYAGAIN = "263",
+	RPL_UNIQOPIS = "325",
+	RPL_INVITELIST = "346",
+	RPL_ENDOFINVITELIST = "347",
+	RPL_EXCEPTLIST = "348",
+	RPL_ENDOFEXCEPTLIST = "349",
+	//RFC2812 Errors: https://tools.ietf.org/html/rfc2812#section-5.2
+	ERR_NOSUCHSERVICE = "408",
+	ERR_BADMASK = "415",
+	ERR_TOOMANYMATCHES = "416", //Errata
+	ERR_UNAVAILRESOURCE = "437",
+	ERR_YOUWILLBEBANNED = "466",
+	ERR_BADCHANMASK = "476",
+	ERR_NOCHANMODES = "477",
+	ERR_BANLISTFULL = "478",
+	ERR_RESTRICTED = "484",
+	ERR_UNIQOPPRIVSNEEDED = "485",
+	//RFC2812 Reserved: https://tools.ietf.org/html/rfc2812#section-5.3
+	RPL_STATSVLINE = "240",
+	RPL_STATSSLINE = "245", //244 in original doc, 245 in errata
+	RPL_STATSPING = "246",
+	RPL_STATSBLINE = "247",
+	RPL_STATSDLINE = "250",
+	//Monitor: http://ircv3.net/specs/core/monitor-3.2.html
+	RPL_MONONLINE = "730",
+	RPL_MONOFFLINE = "731",
+	RPL_MONLIST = "732",
+	RPL_ENDOFMONLIST = "733",
+	ERR_MONLISTFULL = "734",
+	//Metadata: http://ircv3.net/specs/core/metadata-3.2.html
+	RPL_WHOISKEYVALUE = "760",
+	RPL_KEYVALUE = "761",
+	RPL_METADATAEND = "762",
+	ERR_METADATALIMIT = "764",
+	ERR_TARGETINVALID = "765",
+	ERR_NOMATCHINGKEY = "766",
+	ERR_KEYINVALID = "767",
+	ERR_KEYNOTSET = "768",
+	ERR_KEYNOPERMISSION = "769",
+	//SASL: http://ircv3.net/specs/extensions/sasl-3.1.html
+	RPL_LOGGEDIN = "900",
+	RPL_LOGGEDOUT = "901",
+	ERR_NICKLOCKED = "902",
+	RPL_SASLSUCCESS = "903",
+	ERR_SASLFAIL = "904",
+	ERR_SASLTOOLONG = "905",
+	ERR_SASLABORTED = "906",
+	ERR_SASLALREADY = "907",
+	RPL_SASLMECHS = "908",
+	//STARTTLS: http://ircv3.net/specs/extensions/tls-3.1.html
+	RPL_STARTTLS = "670",
+	ERR_STARTTLS = "691",
+	//IRCX: http://tools.ietf.org/id/draft-pfenning-irc-extensions-04.txt
+	//Pretty uncommon, but included for completeness
+	IRCRPL_IRCX = "800",
+	IRCRPL_ACCESSADD = "801",
+	IRCRPL_ACCESSDELETE = "802",
+	IRCRPL_ACCESSSTART = "803",
+	IRCRPL_ACCESSLIST = "804",
+	IRCRPL_ACCESSEND = "805",
+	IRCRPL_EVENTADD = "806",
+	IRCRPL_EVENTDEL = "807",
+	IRCRPL_EVENTSTART = "808",
+	IRCRPL_EVENTLIST = "809",
+	IRCRPL_EVENTEND = "810",
+	IRCRPL_LISTXSTART = "811",
+	IRCRPL_LISTXLIST = "812",
+	IRCRPL_LISTXPICS = "813",
+	IRCRPL_LISTXTRUNC = "816",
+	IRCRPL_LISTXEND = "817",
+	IRCRPL_PROPLIST = "818",
+	IRCRPL_PROPEND = "819",
+	IRCERR_BADCOMMAND = "900",
+	IRCERR_TOOMANYARGUMENTS = "901",
+	IRCERR_BADFUNCTION = "902",
+	IRCERR_BADLEVEL = "903",
+	IRCERR_BADTAG = "904",
+	IRCERR_BADPROPERTY = "905",
+	IRCERR_BADVALUE = "906",
+	IRCERR_RESOURCE = "907",
+	IRCERR_SECURITY = "908",
+	IRCERR_ALREADYAUTHENTICATED = "909",
+	IRCERR_AUTHENTICATIONFAILED = "910",
+	IRCERR_AUTHENTICATIONSUSPENDED = "911",
+	IRCERR_UNKNOWNPACKAGE = "912",
+	IRCERR_NOACCESS = "913",
+	IRCERR_DUPACCESS = "914",
+	IRCERR_MISACCESS = "915",
+	IRCERR_TOOMANYACCESSES = "916",
+	IRCERR_EVENTDUP = "918",
+	IRCERR_EVENTMIS = "919",
+	IRCERR_NOSUCHEVENT = "920",
+	IRCERR_TOOMANYEVENTS = "921",
+	IRCERR_NOWHISPER = "923",
+	IRCERR_NOSUCHOBJECT = "924",
+	IRCERR_NOTSUPPORTED = "925",
+	IRCERR_CHANNELEXIST = "926",
+	IRCERR_ALREADYONCHANNEL = "927",
+	IRCERR_UNKNOWNERROR = "999",
+	//WATCH: https://github.com/grawity/irc-docs/blob/master/client/draft-meglio-irc-watch-00.txt
+	RPL_GONEAWAY = "598",
+	RPL_NOTAWAY = "599",
+	RPL_LOGON = "600",
+	RPL_LOGOFF = "601",
+	RPL_WATCHOFF = "602",
+	RPL_WATCHSTAT = "603",
+	RPL_NOWON = "604",
+	RPL_NOWOFF = "605",
+	RPL_WATCHLIST = "606",
+	RPL_ENDOFWATCHLIST = "607",
+	RPL_CLEARWATCH = "608",
+	RPL_NOWISAWAY = "609",
+	//Misc
+	RPL_TEXT = "304",
+	//Unknown origin, but in use
+	RPL_YOURID = "042",
+	RPL_LOCALUSERS = "265",
+	RPL_GLOBALUSERS = "266",
+	RPL_TOPICWHOTIME = "333",
+	RPL_HOSTHIDDEN = "396",
+	//ISUPPORT: http://www.irc.org/tech_docs/draft-brocklesby-irc-isupport-03.txt
+	RPL_ISUPPORT = "005"
+}
+alias noInformationNumerics = AliasSeq!(
+	Numeric.RPL_WELCOME,
+	Numeric.RPL_YOURHOST,
+	Numeric.RPL_CREATED,
+
+	Numeric.RPL_YOURID,
+	Numeric.RPL_LOCALUSERS,
+	Numeric.RPL_GLOBALUSERS,
+	Numeric.RPL_HOSTHIDDEN,
+
+	listEndNumerics,
+	listStartNumerics
+);
+alias listStartNumerics =AliasSeq!(
+	Numeric.RPL_LISTSTART
+);
+alias listEndNumerics =AliasSeq!(
+	Numeric.RPL_LISTEND,
+	Numeric.RPL_ENDOFNAMES,
+	Numeric.RPL_ENDOFMONLIST
+);
+struct MyInfo {
+	string name;
+	string version_;
+	string userModes;
+	string userModesWithParams;
+	string channelModes;
+	string channelModesWithParams;
+	string serverModes;
+	string serverModesWithParams;
+}
+enum ISupportToken {
+	accept = "ACCEPT",
+	awayLen = "AWAYLEN",
+	callerID = "CALLERID",
+	caseMapping = "CASEMAPPING",
+	chanLimit = "CHANLIMIT",
+	chanModes = "CHANMODES",
+	channelLen = "CHANNELLEN",
+	chanTypes = "CHANTYPES",
+	charSet = "CHARSET",
+	chIdLen = "CHIDLEN",
+	cNotice = "CNOTICE",
+	cPrivmsg = "CPRIVMSG",
+	deaf = "DEAF",
+	eList = "ELIST",
+	eSilence = "ESILENCE",
+	excepts = "EXCEPTS",
+	extBan = "EXTBAN",
+	fnc = "FNC",
+	idChan = "IDCHAN",
+	invEx = "INVEX",
+	kickLen = "KICKLEN",
+	knock = "KNOCK",
+	language = "LANGUAGE",
+	lineLen = "LINELEN",
+	map = "MAP",
+	maxBans = "MAXBANS",
+	maxChannels = "MAXCHANNELS",
+	maxList = "MAXLIST",
+	maxPara = "MAXPARA",
+	maxTargets = "MAXTARGETS",
+	metadata = "METADATA",
+	modes = "MODES",
+	monitor = "MONITOR",
+	namesX = "NAMESX",
+	network = "NETWORK",
+	nickLen = "NICKLEN",
+	noQuit = "NOQUIT",
+	operLog = "OPERLOG",
+	override_ = "OVERRIDE",
+	penalty = "PENALTY",
+	prefix = "PREFIX",
+	remove = "REMOVE",
+	rfc2812 = "RFC2812",
+	safeList = "SAFELIST",
+	secureList = "SECURELIST",
+	silence = "SILENCE",
+	ssl = "SSL",
+	startTLS = "STARTTLS",
+	statusMsg = "STATUSMSG",
+	std = "STD",
+	targMax = "TARGMAX",
+	topicLen = "TOPICLEN",
+	uhNames = "UHNAMES",
+	userIP = "USERIP",
+	userLen = "USERLEN",
+	vBanList = "VBANLIST",
+	vChans = "VCHANS",
+	wallChOps = "WALLCHOPS",
+	wallVoices = "WALLVOICES",
+	watch = "WATCH",
+	whoX = "WHOX"
+}
+struct ISupport {
+	char[char] prefixes;
+	string channelTypes = "#&!+"; //RFC2811 specifies four channel types.
+	ModeType[char] channelModeTypes;
+	ulong maxModesPerCommand;
+	ulong[char] chanLimits;
+	ulong nickLength = 9;
+	ulong[char] maxList;
+	string network;
+	Nullable!char banExceptions;
+	Nullable!char inviteExceptions;
+	bool wAllChannelOps;
+	bool wAllChannelVoices;
+	string statusMessage;
+	CaseMapping caseMapping;
+	string extendedList;
+	ulong topicLength = 390;
+	ulong kickLength;
+	ulong userLength;
+	ulong channelLength = 200;
+	ulong[char] channelIDLengths;
+	Nullable!string standard;
+	bool silence;
+	bool extendedSilence;
+	bool rfc2812;
+	bool penalty;
+	bool forcedNickChanges;
+	bool safeList;
+	ulong awayLength;
+	bool noQuit;
+	bool userIP;
+	bool cPrivmsg;
+	bool cNotice;
+	ulong maxTargets;
+	bool knock;
+	bool virtualChannels;
+	ulong maximumWatches;
+	bool whoX;
+	Nullable!char callerID;
+	string[] languages;
+	ulong maxLanguages;
+	bool startTLS; //DANGEROUS!
+	string banExtensions;
+	bool logsOperCommands;
+	string sslServer;
+	bool userhostsInNames;
+	bool namesExtended;
+	bool secureList;
+	bool supportsRemove;
+	bool allowsOperOverride;
+	bool variableBanList;
+	bool supportsMap;
+	ulong maximumParameters = 12;
+	ulong lineLength = 512;
+	Nullable!char deaf;
+	ulong metadata = 0;
+	ulong monitorTargetLimit = 0;
+	ulong[string] targetMaxByCommand;
+	string charSet;
+	void insertToken(string token, string value) {
+		final switch (cast(ISupportToken)token) {
+			case ISupportToken.chanModes:
+				auto splitModes = value.splitter(",");
+				foreach (modeType; AliasSeq!(ModeType.a, ModeType.b, ModeType.c, ModeType.d)) {
+					foreach (modeChar; splitModes.front) {
+						channelModeTypes[modeChar] = modeType;
+					}
+					splitModes.popFront();
+				}
+				break;
+			case ISupportToken.prefix:
+				auto split = value.findSplit(")");
+				split[0].popFront();
+				foreach (modeChar, prefix; lockstep(split[0].byCodeUnit, split[2].byCodeUnit)) {
+					prefixes[modeChar] = prefix;
+					if (modeChar !in channelModeTypes) {
+						channelModeTypes[modeChar] = ModeType.d;
+					}
+				}
+				break;
+			case ISupportToken.chanTypes:
+				channelTypes = value;
+				break;
+			case ISupportToken.wallChOps:
+				wAllChannelOps = true;
+				break;
+			case ISupportToken.wallVoices:
+				wAllChannelVoices = true;
+				break;
+			case ISupportToken.statusMsg:
+				statusMessage = value;
+				break;
+			case ISupportToken.extBan:
+				banExtensions = value;
+				break;
+			case ISupportToken.fnc:
+				forcedNickChanges = true;
+				break;
+			case ISupportToken.userIP:
+				userIP = true;
+				break;
+			case ISupportToken.cPrivmsg:
+				cPrivmsg = true;
+				break;
+			case ISupportToken.cNotice:
+				cNotice = true;
+				break;
+			case ISupportToken.knock:
+				knock = true;
+				break;
+			case ISupportToken.vChans:
+				virtualChannels = true;
+				break;
+			case ISupportToken.whoX:
+				whoX = true;
+				break;
+			case ISupportToken.awayLen:
+				awayLength = parse!ulong(value);
+				break;
+			case ISupportToken.nickLen:
+				nickLength = parse!ulong(value);
+				break;
+			case ISupportToken.lineLen:
+				lineLength = parse!ulong(value);
+				break;
+			case ISupportToken.channelLen:
+				channelLength = parse!ulong(value);
+				break;
+			case ISupportToken.kickLen:
+				kickLength = parse!ulong(value);
+				break;
+			case ISupportToken.userLen:
+				if (value == value.init) {
+					userLength = ulong.max;
+				} else {
+					userLength = parse!ulong(value);
+				}
+				break;
+			case ISupportToken.topicLen:
+				if (value == "") {
+					topicLength = ulong.max;
+				} else {
+					topicLength = parse!ulong(value);
+				}
+				break;
+			case ISupportToken.maxBans:
+				maxList['b'] = parse!ulong(value);
+				break;
+			case ISupportToken.modes:
+				maxModesPerCommand = parse!ulong(value);
+				break;
+			case ISupportToken.watch:
+				maximumWatches = parse!ulong(value);
+				break;
+			case ISupportToken.metadata:
+				if (value == value.init) {
+					metadata = ulong.max;
+				} else {
+					metadata = parse!ulong(value);
+				}
+				break;
+			case ISupportToken.monitor:
+				if (value == value.init) {
+					monitorTargetLimit = ulong.max;
+				} else {
+					monitorTargetLimit = parse!ulong(value);
+				}
+				break;
+			case ISupportToken.maxList:
+				auto splitModes = value.splitter(",");
+				foreach (listEntry; splitModes) {
+					auto splitArgs = listEntry.findSplit(":");
+					immutable limit = parse!ulong(splitArgs[2]);
+					foreach (modeChar; splitArgs[0]) {
+						maxList[modeChar] = limit;
+					}
+				}
+				break;
+			case ISupportToken.targMax:
+				auto splitCmd = value.splitter(",");
+				foreach (listEntry; splitCmd) {
+					auto splitArgs = listEntry.findSplit(":");
+					if (splitArgs[2].empty) {
+						targetMaxByCommand[splitArgs[0]] = ulong.max;
+					} else {
+						immutable limit = parse!ulong(splitArgs[2]);
+						targetMaxByCommand[splitArgs[0]] = limit;
+					}
+				}
+				break;
+			case ISupportToken.chanLimit:
+				auto splitPrefix = value.splitter(",");
+				foreach (listEntry; splitPrefix) {
+					auto splitArgs = listEntry.findSplit(":");
+					immutable limit = parse!ulong(splitArgs[2]);
+					foreach (prefix; splitArgs[0]) {
+						chanLimits[prefix] = limit;
+					}
+				}
+				break;
+			case ISupportToken.maxTargets:
+				maxTargets = parse!ulong(value);
+				break;
+			case ISupportToken.maxChannels:
+				chanLimits['#'] = parse!ulong(value);
+				break;
+			case ISupportToken.maxPara:
+				maximumParameters = parse!ulong(value);
+				break;
+			case ISupportToken.startTLS:
+				startTLS = true;
+				break;
+			case ISupportToken.ssl:
+				sslServer = value;
+				break;
+			case ISupportToken.operLog:
+				logsOperCommands = true;
+				break;
+			case ISupportToken.silence:
+				silence = true;
+				break;
+			case ISupportToken.network:
+				network = value;
+				break;
+			case ISupportToken.caseMapping:
+				final switch (value.toLower()) {
+					case CaseMapping.rfc1459:
+						caseMapping = CaseMapping.rfc1459;
+						break;
+					case CaseMapping.rfc3454:
+						caseMapping = CaseMapping.rfc3454;
+						break;
+					case CaseMapping.strictRFC1459:
+						caseMapping = CaseMapping.strictRFC1459;
+						break;
+					case CaseMapping.ascii:
+						caseMapping = CaseMapping.ascii;
+						break;
+				}
+				break;
+			case ISupportToken.charSet:
+				//Has serious issues and has been removed from drafts
+				//So we leave this one unparsed
+				charSet = value;
+				break;
+			case ISupportToken.uhNames:
+				userhostsInNames = true;
+				break;
+			case ISupportToken.namesX:
+				userhostsInNames = true;
+				break;
+			case ISupportToken.invEx:
+				inviteExceptions = value.byCodeUnit.front;
+				break;
+			case ISupportToken.excepts:
+				banExceptions = value.byCodeUnit.front;
+				break;
+			case ISupportToken.callerID, ISupportToken.accept:
+				//value is required, but not all implementations support it
+				if (value == value.init) {
+					callerID = 'g';
+				} else {
+					callerID = value.byCodeUnit.front;
+				}
+				break;
+			case ISupportToken.deaf:
+				if (value == value.init) {
+					deaf = 'd';
+				} else {
+					deaf = value.byCodeUnit.front;
+				}
+				break;
+			case ISupportToken.eList:
+				extendedList = value;
+				break;
+			case ISupportToken.secureList:
+				secureList = true;
+				break;
+			case ISupportToken.noQuit:
+				noQuit = true;
+				break;
+			case ISupportToken.remove:
+				supportsRemove = true;
+				break;
+			case ISupportToken.eSilence:
+				extendedSilence = true;
+				break;
+			case ISupportToken.override_:
+				allowsOperOverride = true;
+				break;
+			case ISupportToken.vBanList:
+				variableBanList = true;
+				break;
+			case ISupportToken.map:
+				supportsMap = true;
+				break;
+			case ISupportToken.safeList:
+				safeList = true;
+				break;
+			case ISupportToken.chIdLen:
+				channelIDLengths['!'] = parse!ulong(value);
+				break;
+			case ISupportToken.idChan:
+				auto splitPrefix = value.splitter(",");
+				foreach (listEntry; splitPrefix) {
+					auto splitArgs = listEntry.findSplit(":");
+					immutable limit = parse!ulong(splitArgs[2]);
+					foreach (prefix; splitArgs[0]) {
+						channelIDLengths[prefix] = limit;
+					}
+				}
+				break;
+			case ISupportToken.std:
+				standard = value;
+				break;
+			case ISupportToken.rfc2812:
+				rfc2812 = true;
+				break;
+			case ISupportToken.penalty:
+				penalty = true;
+				break;
+			case ISupportToken.language:
+				auto splitLangs = value.splitter(",");
+				maxLanguages = to!ulong(splitLangs.front);
+				splitLangs.popFront();
+				foreach (lang; splitLangs)
+					languages ~= lang;
+				break;
+			//default:
+			//	debug import std.stdio : writeln;
+			//	debug writeln("Unknown token: ", token, value != value.init ? "=" : "", value);
+			//	break;
+		}
+	}
+}
+template parseNumeric(Numeric numeric) {
+	static if (numeric.among(noInformationNumerics)) {
+		static assert(0, "Cannot parse "~numeric~": No information to parse.");
+	}
+	//004 <username> <server_name> <version> <user_modes> <chan_modes> [<channel_modes_with_params> <user_modes_with_params> <server_modes> <server_modes_with_params>]
+	static if (numeric == Numeric.RPL_MYINFO) {
+		auto parseNumeric(T)(T input) {
+			MyInfo server;
+			input.popFront();
+			server.name = input.front;
+			input.popFront();
+			server.version_ = input.front;
+			input.popFront();
+			server.userModes = input.front;
+			input.popFront();
+			server.channelModes = input.front;
+			input.popFront();
+			if (!input.empty) {
+				server.channelModesWithParams = input.front;
+				input.popFront();
+			}
+			if (!input.empty) {
+				server.userModesWithParams = input.front;
+				input.popFront();
+			}
+			if (!input.empty) {
+				server.serverModes = input.front;
+				input.popFront();
+			}
+			if (!input.empty) {
+				server.serverModesWithParams = input.front;
+				input.popFront();
+			}
+			return server;
+		}
+	}
+	static if (numeric == Numeric.RPL_ISUPPORT) {
+		auto parseNumeric(T)(T input, ref ISupport iSupport) {
+			immutable username = input.front;
+			input.popFront();
+			while (!input.empty && !input.isColonParameter) {
+				auto splitParams = input.front.findSplit("=");
+				iSupport.insertToken(splitParams[0], splitParams[2]);
+				input.popFront();
+			}
+		}
+		auto parseNumeric(T)(T input) {
+			iSupport tmp;
+			parseNumeric(input, tmp);
+			return tmp;
+		}
+	}
+	//322 <username> <channel> <count> :[\[<modes\] ]<topic>
+	static if (numeric == Numeric.RPL_LIST) {
+		auto parseNumeric(T)(T input, ModeType[char] channelModeTypes) {
+			//Note: RFC2812 makes no mention of the modes being included.
+			//Seems to be a de-facto standard, supported by several softwares.
+			Channel channel;
+			//username doesn't really help us here. skip it
+			input.popFront();
+			channel.name = input.front;
+			input.popFront();
+			auto str = input.front;
+			channel.userCount = parse!uint(str);
+			input.popFront();
+			if (input.front.startsWith("[+")) {
+				auto splitTopicStr = input.front.findSplitAfter("] ");
+				channel.topic = Topic(splitTopicStr[1]);
+				channel.modes = parseModeString(splitTopicStr[0][1..$], channelModeTypes).filter!(x => x.change == Change.set).map!(x => x.mode).array;
+			} else {
+				channel.topic = Topic(input.front);
+			}
+			return channel;
+		}
+	}
+	//600 <nickname> <username> <hostname> <signontime> :logged on
+	//601 <nickname> <username> <hostname> <lastnickchange> :logged off
+	//602 <nickname> <username> <hostname> <lastnickchange> :stopped watching
+	//604 <nickname> <username> <hostname> <lastnickchange> :is online
+	//605 <nickname> <username> <hostname> <lastnickchange> :is offline
+	//609 <nickname> <username> <hostname> <awaysince> :is away
+	static if (numeric.among(Numeric.RPL_LOGON, Numeric.RPL_LOGOFF, Numeric.RPL_WATCHOFF, Numeric.RPL_NOWOFF, Numeric.RPL_NOWON, Numeric.RPL_NOWISAWAY)) {
+		auto parseNumeric(T)(T input) {
+			auto output = User();
+			output.mask.nickname = input.front;
+			input.popFront();
+			output.mask.ident = input.front;
+			input.popFront();
+			output.mask.host = input.front;
+			input.popFront();
+			const tz = SysTime.fromUnixTime(input.front.to!long, UTC());
+			return output;
+		}
+	}
+	//730 <nick> :target[!user@host][,target[!user@host]]*
+	static if (numeric == Numeric.RPL_MONONLINE) {
+		auto parseNumeric(T)(T input) {
+			input.popFront();
+			auto split = input.front.splitter(",");
+			return split.map!(x => { User user; user.mask = UserMask(x); return user; }());
+		}
+	}
+	//731 <nick> :target[,target2]*
+	//732 <nick> :target[,target2]*
+	static if (numeric.among(Numeric.RPL_MONOFFLINE,Numeric.RPL_MONLIST)) {
+		auto parseNumeric(T)(T input) {
+			input.popFront();
+			auto split = input.front.splitter(",");
+			return split.map!(x => { User user; user.mask.nickname = x; return user; }());
+		}
+	}
+	//734 <nick> <limit> <targets> :Monitor list is full.
+	static if (numeric == Numeric.ERR_MONLISTFULL) {
+		auto parseNumeric(T)(T input) {
+			input.popFront();
+			auto limit = input.front.to!ulong;
+			input.popFront();
+			User user;
+			user.mask.nickname = input.front;
+			return Tuple!(ulong, "limit", User, "userAdded")(limit, user);
+		}
+	}
+	//353 =/*/@ <channel> :<prefix[es]><usermask>[ <prefix[es]><usermask>...]
+	static if (numeric == Numeric.RPL_NAMREPLY) {
+		auto parseNumeric(T)(T input) {
+			auto chanFlag = input.front;
+			input.popFront();
+			auto channel = input.front;
+			return "";
+		}
+	}
+	//332 <channel> :<topic>
+	static if (numeric == Numeric.RPL_TOPIC) {
+		auto parseNumeric(T)(T input) {
+			return "";
+		}
+	}
+	//333 <channel> <setter> <timestamp>
+	static if (numeric == Numeric.RPL_TOPICWHOTIME) {
+		auto parseNumeric(T)(T input) {
+			return "";
+		}
+	}
+}
+@safe pure nothrow @nogc unittest { //Numeric.RPL_MYINFO
+	import std.range : only;
+	{
+		auto info = parseNumeric!(Numeric.RPL_MYINFO)(only("someone", "localhost", "IRCd-2.0", "BGHIRSWcdgikorswx", "ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz", "FIJLYabefghjkloqv"));
+		assert(info.name == "localhost");
+		assert(info.version_ == "IRCd-2.0");
+		assert(info.userModes == "BGHIRSWcdgikorswx");
+		assert(info.userModesWithParams == "");
+		assert(info.channelModes == "ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz");
+		assert(info.channelModesWithParams == "FIJLYabefghjkloqv");
+		assert(info.serverModes == "");
+		assert(info.serverModesWithParams == "");
+	}
+}
+@safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LIST
+	import std.algorithm.searching : canFind;
+	import std.range : only;
+	{
+		immutable listEntry = parseNumeric!(Numeric.RPL_LIST)(only("someone", "#test", "4", "[+fnt 200:2] some words"), ['n': ModeType.d, 't': ModeType.d, 'f': ModeType.c]);
+		assert(listEntry.name == "#test");
+		assert(listEntry.userCount == 4);
+		assert(listEntry.topic == Topic("some words"));
+		assert(listEntry.modes.canFind(Mode(ModeType.d, 'n')));
+		assert(listEntry.modes.canFind(Mode(ModeType.d, 't')));
+		assert(listEntry.modes.canFind(Mode(ModeType.c, 'f', Nullable!string("100:2"))));
+	}
+	{
+		immutable listEntry = parseNumeric!(Numeric.RPL_LIST)(only("someone", "#test2", "6", "[+fnst 100:2] some more words"), ['n': ModeType.d, 't': ModeType.d, 'f': ModeType.c]);
+		assert(listEntry.name == "#test2");
+		assert(listEntry.userCount == 6);
+		assert(listEntry.topic == Topic("some more words"));
+		assert(listEntry.modes.canFind(Mode(ModeType.d, 'n')));
+		assert(listEntry.modes.canFind(Mode(ModeType.d, 't')));
+		assert(listEntry.modes.canFind(Mode(ModeType.d, 's')));
+		assert(listEntry.modes.canFind(Mode(ModeType.c, 'f', Nullable!string("100:2"))));
+	}
+	{
+		immutable listEntry = parseNumeric!(Numeric.RPL_LIST)(only("someone", "#test3", "1", "no modes?"), ['n': ModeType.d, 't': ModeType.d, 'f': ModeType.c]);
+		assert(listEntry.name == "#test3");
+		assert(listEntry.userCount == 1);
+		assert(listEntry.topic == Topic("no modes?"));
+		assert(listEntry.modes.length == 0);
+	}
+}
+@safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LOGON
+	import std.range : only;
+	{
+		immutable logon = parseNumeric!(Numeric.RPL_LOGON)(only("someone", "someIdent", "example.net", "911248013", "logged on"));
+		assert(logon.mask.nickname == "someone");
+		assert(logon.mask.ident == "someIdent");
+		assert(logon.mask.host == "example.net");
+	}
+}
+@safe pure nothrow @nogc unittest { //Numeric.RPL_MONONLINE
+	import std.range : only;
+	{
+		auto logon = parseNumeric!(Numeric.RPL_MONONLINE)(only("test", "someone!someIdent@example.net"));
+		assert(logon.front.mask.nickname == "someone");
+		assert(logon.front.mask.ident == "someIdent");
+		assert(logon.front.mask.host == "example.net");
+	}
+	{
+		auto logon = parseNumeric!(Numeric.RPL_MONONLINE)(only("test", "someone!someIdent@example.net,someone2!someOther@example.com"));
+		assert(logon.front.mask.nickname == "someone");
+		assert(logon.front.mask.ident == "someIdent");
+		assert(logon.front.mask.host == "example.net");
+		logon.popFront();
+		assert(logon.front.mask.nickname == "someone2");
+		assert(logon.front.mask.ident == "someOther");
+		assert(logon.front.mask.host == "example.com");
+	}
+}
+@safe pure nothrow @nogc unittest { //Numeric.RPL_MONOFFLINE
+	import std.range : only;
+	{
+		auto logoff = parseNumeric!(Numeric.RPL_MONONLINE)(only("test", "someone"));
+		assert(logoff.front.mask.nickname == "someone");
+		assert(logoff.front.mask.ident.isNull);
+		assert(logoff.front.mask.host.isNull);
+	}
+	{
+		auto logoff = parseNumeric!(Numeric.RPL_MONONLINE)(only("test", "someone,someone2"));
+		assert(logoff.front.mask.nickname == "someone");
+		assert(logoff.front.mask.ident.isNull);
+		assert(logoff.front.mask.host.isNull);
+		logoff.popFront();
+		assert(logoff.front.mask.nickname == "someone2");
+		assert(logoff.front.mask.ident.isNull);
+		assert(logoff.front.mask.host.isNull);
+	}
+}
+@safe pure /+nothrow @nogc+/ unittest { //Numeric.ERR_MONLISTFULL
+	import std.range : only;
+	auto test = parseNumeric!(Numeric.ERR_MONLISTFULL)(only("someone", "5", "someone2", "Monitor list is full."));
+	assert(test.limit == 5);
+	assert(test.userAdded.nickname == "someone2");
+}
