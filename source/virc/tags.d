@@ -148,7 +148,7 @@ template arrayToTuple(alias R) if (isInputRange!(typeof(R))) {
 		assert(splitStr.tags.length == 1);
 		assert("time" in splitStr.tags);
 		assert(splitStr.tags["time"] == "2011-10-19T16:40:51.620Z");
-		enum testTime = SysTime(DateTime(2011,10,19,16,40,51), 620.msecs, UTC());
+		immutable testTime = SysTime(DateTime(2011,10,19,16,40,51), 620.msecs, UTC());
 		assert(parseTime(splitStr.tags) == testTime);
 	}
 	//ditto
