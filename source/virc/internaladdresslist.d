@@ -45,8 +45,13 @@ unittest {
 	assert("Test" in test);
 	assert("NotTest" !in test);
 	assert(test["Test"] == User("Test!testo@testy"));
-	test.update(User("Test!testo2@testy2"));
+	auto testUser = User("Test!testo2@testy2");
+	testUser.account = "Testly";
+	testUser.realName = "Von Testington";
+	test.update(testUser);
 	assert(test["Test"] == User("Test!testo2@testy2"));
+	assert(test["Test"].account == "Testly");
+	assert(test["Test"].realName == "Von Testington");
 	test.update(User("Test"));
 	assert(test["Test"] == User("Test!testo2@testy2"));
 
