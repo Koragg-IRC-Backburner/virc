@@ -129,14 +129,6 @@ template arrayToTuple(alias R) if (isInputRange!(typeof(R))) {
 		assert("account" in splitStr.tags);
 		assert(splitStr.tags["account"] == "hax0r");
 	}
-	//Example from http://ircv3.net/specs/core/message-intents-3.3.html
-	{
-		auto splitStr = `@intent=ACTION PRIVMSG #ircv3 :kicks Jobe`.splitTag;
-		assert(splitStr.msg == "PRIVMSG #ircv3 :kicks Jobe");
-		assert(splitStr.tags.length == 1);
-		assert("intent" in splitStr.tags);
-		assert(splitStr.tags["intent"] == "ACTION");
-	}
 }
 ///
 @safe /+pure nothrow @nogc+/ unittest {
