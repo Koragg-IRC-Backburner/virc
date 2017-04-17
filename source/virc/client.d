@@ -956,6 +956,29 @@ unittest {
 		assert(metadata.length == 1);
 		assert(metadata[0].messageNumeric == Numeric.ERR_MONLISTFULL);
 	}
+	{ //extended-join http://ircv3.net/specs/extensions/extended-join-3.1.html
+		auto buffer = appender!(string);
+		auto client = ircClient(buffer, testUser);
+
+
+		User[] users;
+		client.onJoin = (const User user, const Channel chan, const MessageMetadata metadata) {
+			users ~= user;
+		};
+
+		initializeWithCaps(client, [Capability("extended-join")]);
+
+		client.put(":nick!user@host JOIN #channelname accountname :Real Name");
+		auto user = User("nick!user@host");
+		user.account = "accountname";
+		user.realName = "Real Name";
+		assert(users.front == user);
+
+		user.account.nullify();
+		users = [];
+		client.put(":nick!user@host JOIN #channelname * :Real Name");
+		assert(users.front == user);
+	}
 }
 auto ircChunks(T)(const string begin, T range, const string inSeparator) {
 	return cumulativeFold!((a, b) => a + b)(range.map!(a => a.length+inSeparator.length)).map!(x => x - inSeparator.length);
