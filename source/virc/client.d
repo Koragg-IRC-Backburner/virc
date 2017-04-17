@@ -895,7 +895,7 @@ unittest {
 			assert(metadata.time == SysTime(DateTime(2012,06,30,23,59,59), 419.msecs, UTC()));
 		};
 		initialize(client);
-		client.put ("@time=2012-06-30T23:59:59.419Z :John!~john@1.2.3.4 JOIN #chan");
+		client.put("@time=2012-06-30T23:59:59.419Z :John!~john@1.2.3.4 JOIN #chan");
 		assert(users.length == 1);
 		assert(users[0].nickname == "John");
 		assert(channels.length == 1);
