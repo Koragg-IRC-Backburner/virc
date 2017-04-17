@@ -121,7 +121,14 @@ unittest {
 	{
 		const testParsed = parseModeString("-s+nk secret", ['k': ModeType.b]);
 		assert(testParsed.filter!(x => x.change == Change.set).map!(x => x.mode).canFind(Mode(ModeType.d, 'n')));
-		assert(testParsed.filter!(x => x.change == Change.set).map!(x => x.mode).canFind(Mode(ModeType.d, 'k', Nullable!string("secret"))));
+		assert(testParsed.filter!(x => x.change == Change.set).map!(x => x.mode).canFind(Mode(ModeType.b, 'k', Nullable!string("secret"))));
+		assert(testParsed.filter!(x => x.change == Change.unset).map!(x => x.mode).canFind(Mode(ModeType.d, 's')));
+	}
+	{
+		const testParsed = parseModeString("-sk+nl secret 4", ['k': ModeType.b, 'l': ModeType.c]);
+		assert(testParsed.filter!(x => x.change == Change.set).map!(x => x.mode).canFind(Mode(ModeType.d, 'n')));
+		assert(testParsed.filter!(x => x.change == Change.set).map!(x => x.mode).canFind(Mode(ModeType.b, 'l', Nullable!string("4"))));
+		assert(testParsed.filter!(x => x.change == Change.unset).map!(x => x.mode).canFind(Mode(ModeType.b, 'k', Nullable!string("secret"))));
 		assert(testParsed.filter!(x => x.change == Change.unset).map!(x => x.mode).canFind(Mode(ModeType.d, 's')));
 	}
 	{
