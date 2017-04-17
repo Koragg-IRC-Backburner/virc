@@ -3,7 +3,7 @@ import std.format : formattedWrite, format;
 import std.range.primitives : isOutputRange, ElementType, isInputRange;
 import std.range : put, empty, front, walkLength, chain;
 import std.algorithm.iteration : splitter, filter, map, chunkBy, cumulativeFold;
-import std.algorithm.searching : startsWith, canFind, skipOver, findSplit, findSplitAfter, endsWith, find;
+import std.algorithm.searching : startsWith, canFind, skipOver, findSplit, findSplitAfter, endsWith, find, findSplitBefore;
 import std.exception : enforce;
 import std.algorithm.comparison : among;
 import std.meta : AliasSeq;
@@ -319,7 +319,9 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 	private void pong(string nonce) {
 		write("PONG :%s", nonce);
 	}
-	public void put(string line) {
+	public void put(string line) @safe {
+		//Chops off terminating \r\n. Everything after is ignored, according to spec.
+		line = findSplitBefore(line, "\r\n")[0];
 		debug(verbose) writeln("I: ", line);
 		assert(!invalid);
 		if (line.empty) {
@@ -760,6 +762,18 @@ unittest {
 		client.put(":localhost CAP * LS :multi-prefix sasl=EXTERNAL server-time");
 		client.put(":localhost CAP * ACK :multi-prefix server-time");
 		initialize(client);
+	}
+	{
+		auto buffer = appender!string;
+		auto client = ircClient(buffer, testUser);
+		bool lineReceived;
+		client.onRaw = (const MessageMetadata) {
+			lineReceived = true;
+		};
+		client.put("");
+		assert(lineReceived == false);
+		client.put("\r\n");
+		assert(lineReceived == false);
 	}
 	//Request capabilities (IRC v3.2)
 	{
