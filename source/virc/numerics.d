@@ -2,10 +2,10 @@ module virc.numerics;
 import std.array : array;
 import std.datetime : SysTime, UTC;
 import std.typecons : Nullable, Tuple;
-import std.range : popFront, front, empty, lockstep;
+import std.range : popFront, front, empty, zip;
 import std.conv : parse, to;
 import std.meta : AliasSeq;
-import std.algorithm : splitter, findSplit, findSplitAfter, startsWith, map, among, filter;
+import std.algorithm : splitter, findSplit, findSplitAfter, startsWith, map, among, filter, skipOver;
 import std.string : toLower;
 import std.utf : byCodeUnit;
 
@@ -376,6 +376,11 @@ enum ISupportToken {
 	watch = "WATCH",
 	whoX = "WHOX"
 }
+class UnknownISupportTokenException : Exception {
+	this(string token, string file = __FILE__, size_t line = __LINE__) @safe pure {
+		super("Unknown Token: "~ token, file, line);
+	}
+}
 struct ISupport {
 	char[char] prefixes;
 	string channelTypes = "#&!+"; //RFC2811 specifies four channel types.
@@ -398,7 +403,7 @@ struct ISupport {
 	ulong channelLength = 200;
 	ulong[char] channelIDLengths;
 	Nullable!string standard;
-	bool silence;
+	Nullable!ulong silence;
 	bool extendedSilence;
 	bool rfc2812;
 	bool penalty;
@@ -435,21 +440,30 @@ struct ISupport {
 	ulong monitorTargetLimit = 0;
 	ulong[string] targetMaxByCommand;
 	string charSet;
-	void insertToken(string token, string value) {
-		final switch (cast(ISupportToken)token) {
+	void insertToken(string token, Nullable!string val) @safe pure {
+		string value;
+		if (!val.isNull) {
+			value = val.get;
+		}
+		bool isEnabled = !val.isNull;
+		switch (cast(ISupportToken)token) {
 			case ISupportToken.chanModes:
-				auto splitModes = value.splitter(",");
-				foreach (modeType; AliasSeq!(ModeType.a, ModeType.b, ModeType.c, ModeType.d)) {
-					foreach (modeChar; splitModes.front) {
-						channelModeTypes[modeChar] = modeType;
+				if (isEnabled) {
+					auto splitModes = value.splitter(",");
+					foreach (modeType; AliasSeq!(ModeType.a, ModeType.b, ModeType.c, ModeType.d)) {
+						foreach (modeChar; splitModes.front) {
+							channelModeTypes[modeChar] = modeType;
+						}
+						splitModes.popFront();
 					}
-					splitModes.popFront();
+				} else {
+					channelModeTypes = channelModeTypes.init;
 				}
 				break;
 			case ISupportToken.prefix:
 				auto split = value.findSplit(")");
 				split[0].popFront();
-				foreach (modeChar, prefix; lockstep(split[0].byCodeUnit, split[2].byCodeUnit)) {
+				foreach (modeChar, prefix; zip(split[0].byCodeUnit, split[2].byCodeUnit)) {
 					prefixes[modeChar] = prefix;
 					if (modeChar !in channelModeTypes) {
 						channelModeTypes[modeChar] = ModeType.d;
@@ -460,10 +474,10 @@ struct ISupport {
 				channelTypes = value;
 				break;
 			case ISupportToken.wallChOps:
-				wAllChannelOps = true;
+				wAllChannelOps = isEnabled;
 				break;
 			case ISupportToken.wallVoices:
-				wAllChannelVoices = true;
+				wAllChannelVoices = isEnabled;
 				break;
 			case ISupportToken.statusMsg:
 				statusMessage = value;
@@ -472,25 +486,25 @@ struct ISupport {
 				banExtensions = value;
 				break;
 			case ISupportToken.fnc:
-				forcedNickChanges = true;
+				forcedNickChanges = isEnabled;
 				break;
 			case ISupportToken.userIP:
-				userIP = true;
+				userIP = isEnabled;
 				break;
 			case ISupportToken.cPrivmsg:
-				cPrivmsg = true;
+				cPrivmsg = isEnabled;
 				break;
 			case ISupportToken.cNotice:
-				cNotice = true;
+				cNotice = isEnabled;
 				break;
 			case ISupportToken.knock:
-				knock = true;
+				knock = isEnabled;
 				break;
 			case ISupportToken.vChans:
-				virtualChannels = true;
+				virtualChannels = isEnabled;
 				break;
 			case ISupportToken.whoX:
-				whoX = true;
+				whoX = isEnabled;
 				break;
 			case ISupportToken.awayLen:
 				awayLength = parse!ulong(value);
@@ -567,13 +581,17 @@ struct ISupport {
 				}
 				break;
 			case ISupportToken.chanLimit:
-				auto splitPrefix = value.splitter(",");
-				foreach (listEntry; splitPrefix) {
-					auto splitArgs = listEntry.findSplit(":");
-					immutable limit = parse!ulong(splitArgs[2]);
-					foreach (prefix; splitArgs[0]) {
-						chanLimits[prefix] = limit;
+				if (isEnabled) {
+					auto splitPrefix = value.splitter(",");
+					foreach (listEntry; splitPrefix) {
+						auto splitArgs = listEntry.findSplit(":");
+						immutable limit = parse!ulong(splitArgs[2]);
+						foreach (prefix; splitArgs[0]) {
+							chanLimits[prefix] = limit;
+						}
 					}
+				} else {
+					chanLimits = chanLimits.init;
 				}
 				break;
 			case ISupportToken.maxTargets:
@@ -586,16 +604,20 @@ struct ISupport {
 				maximumParameters = parse!ulong(value);
 				break;
 			case ISupportToken.startTLS:
-				startTLS = true;
+				startTLS = isEnabled;
 				break;
 			case ISupportToken.ssl:
 				sslServer = value;
 				break;
 			case ISupportToken.operLog:
-				logsOperCommands = true;
+				logsOperCommands = isEnabled;
 				break;
 			case ISupportToken.silence:
-				silence = true;
+				if (value.empty || !isEnabled) {
+					silence.nullify();
+				} else {
+					silence = value.parse!ulong;
+				}
 				break;
 			case ISupportToken.network:
 				network = value;
@@ -622,10 +644,10 @@ struct ISupport {
 				charSet = value;
 				break;
 			case ISupportToken.uhNames:
-				userhostsInNames = true;
+				userhostsInNames = isEnabled;
 				break;
 			case ISupportToken.namesX:
-				userhostsInNames = true;
+				userhostsInNames = isEnabled;
 				break;
 			case ISupportToken.invEx:
 				inviteExceptions = value.byCodeUnit.front;
@@ -652,28 +674,28 @@ struct ISupport {
 				extendedList = value;
 				break;
 			case ISupportToken.secureList:
-				secureList = true;
+				secureList = isEnabled;
 				break;
 			case ISupportToken.noQuit:
-				noQuit = true;
+				noQuit = isEnabled;
 				break;
 			case ISupportToken.remove:
-				supportsRemove = true;
+				supportsRemove = isEnabled;
 				break;
 			case ISupportToken.eSilence:
-				extendedSilence = true;
+				extendedSilence = isEnabled;
 				break;
 			case ISupportToken.override_:
-				allowsOperOverride = true;
+				allowsOperOverride = isEnabled;
 				break;
 			case ISupportToken.vBanList:
-				variableBanList = true;
+				variableBanList = isEnabled;
 				break;
 			case ISupportToken.map:
-				supportsMap = true;
+				supportsMap = isEnabled;
 				break;
 			case ISupportToken.safeList:
-				safeList = true;
+				safeList = isEnabled;
 				break;
 			case ISupportToken.chIdLen:
 				channelIDLengths['!'] = parse!ulong(value);
@@ -692,10 +714,10 @@ struct ISupport {
 				standard = value;
 				break;
 			case ISupportToken.rfc2812:
-				rfc2812 = true;
+				rfc2812 = isEnabled;
 				break;
 			case ISupportToken.penalty:
-				penalty = true;
+				penalty = isEnabled;
 				break;
 			case ISupportToken.language:
 				auto splitLangs = value.splitter(",");
@@ -704,10 +726,7 @@ struct ISupport {
 				foreach (lang; splitLangs)
 					languages ~= lang;
 				break;
-			//default:
-			//	debug import std.stdio : writeln;
-			//	debug writeln("Unknown token: ", token, value != value.init ? "=" : "", value);
-			//	break;
+			default: throw new UnknownISupportTokenException(token);
 		}
 	}
 }
@@ -752,13 +771,19 @@ template parseNumeric(Numeric numeric) {
 			immutable username = input.front;
 			input.popFront();
 			while (!input.empty && !input.isColonParameter) {
-				auto splitParams = input.front.findSplit("=");
-				iSupport.insertToken(splitParams[0], splitParams[2]);
+				auto token = input.front;
+				auto isDisabled = token.skipOver('-');
+				auto splitParams = token.findSplit("=");
+				Nullable!string param;
+				if (!isDisabled) {
+					param = splitParams[2];
+				}
+				iSupport.insertToken(splitParams[0], param);
 				input.popFront();
 			}
 		}
 		auto parseNumeric(T)(T input) {
-			iSupport tmp;
+			ISupport tmp;
 			parseNumeric(input, tmp);
 			return tmp;
 		}
