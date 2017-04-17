@@ -111,6 +111,7 @@ struct Capability {
 	bool isSticky;
 	bool isDisabled;
 	bool isAcked;
+	string value;
 
 	alias name this;
 
@@ -135,6 +136,9 @@ struct Capability {
 				break;
 		}
 		isVendorSpecific = name.byCodeUnit.canFind('/');
+	}
+	string toString() {
+		return name~(value.empty ? "" : "=")~value;
 	}
 }
 struct MessageMetadata {
@@ -319,7 +323,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 	private void pong(string nonce) {
 		write("PONG :%s", nonce);
 	}
-	public void put(string line) @safe {
+	public void put(string line) {
 		//Chops off terminating \r\n. Everything after is ignored, according to spec.
 		line = findSplitBefore(line, "\r\n")[0];
 		debug(verbose) writeln("I: ", line);
@@ -759,8 +763,13 @@ unittest {
 		assert(client.server.iSupport.userhostsInNames == true);
 	}
 	void initializeCaps(T)(ref T client) {
-		client.put(":localhost CAP * LS :multi-prefix sasl=EXTERNAL server-time");
-		client.put(":localhost CAP * ACK :multi-prefix server-time");
+		initializeWithCaps(client, [Capability("multi-prefix"), Capability("server-time"), Capability("sasl", false, false, false, "EXTERNAL")]);
+	}
+	void initializeWithCaps(T)(ref T client, Capability[] caps) {
+		foreach (i, cap; caps) {
+			client.put(":localhost CAP * LS " ~ ((i+1 == caps.length) ? "" : "* ")~ ":" ~ cap.toString);
+			client.put(":localhost CAP * ACK :" ~ cap.name);
+		}
 		initialize(client);
 	}
 	{
