@@ -40,12 +40,12 @@ struct IRCSplitter {
 	string front() @nogc @safe pure nothrow {
 		return str[0..upper];
 	}
-	auto save() {
+	auto save() @nogc @safe pure nothrow {
 		return this;
 	}
 }
 
-unittest {
+@safe pure nothrow unittest {
 	import std.algorithm : equal;
 	import std.array;
 	import std.stdio;
