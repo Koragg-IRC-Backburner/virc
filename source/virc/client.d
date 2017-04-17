@@ -979,6 +979,28 @@ unittest {
 		client.put(":nick!user@host JOIN #channelname * :Real Name");
 		assert(users.front == user);
 	}
+	{
+		auto buffer = appender!(string);
+		auto client = ircClient(buffer, testUser);
+
+
+		User[] users;
+		const(Channel)[] channels;
+		string lastMsg;
+		client.onPart = (const User user, const Channel chan, const string msg, const MessageMetadata) {
+			users ~= user;
+			channels ~= chan;
+			lastMsg = msg;
+		};
+
+		initialize(client);
+
+		client.put(":WiZ!jto@tolsun.oulu.fi PART #playzone :I lost");
+		auto user = User("WiZ!jto@tolsun.oulu.fi");
+		assert(users.front == user);
+		assert(channels.front == Channel("#playzone"));
+		assert(lastMsg == "I lost");
+	}
 }
 auto ircChunks(T)(const string begin, T range, const string inSeparator) {
 	return cumulativeFold!((a, b) => a + b)(range.map!(a => a.length+inSeparator.length)).map!(x => x - inSeparator.length);
