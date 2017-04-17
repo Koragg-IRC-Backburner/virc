@@ -28,7 +28,7 @@ struct Topic {
 
 struct User {
 	UserMask mask;
-	this(string str) {
+	this(string str) @safe pure nothrow @nogc {
 		mask = UserMask(str);
 	}
 	string nickname() @safe pure nothrow @nogc const {
@@ -59,4 +59,19 @@ struct User {
 		}
 		return this.mask == b.mask;
 	}
+}
+@safe pure nothrow @nogc unittest {
+	auto user = User("Test!Testo@Testy");
+	auto compUser = User("Test!Testo@Testy");
+	assert(user.mask.nickname == "Test");
+	assert(user.mask.ident == "Testo");
+	assert(user.mask.host == "Testy");
+	assert(user == compUser);
+	user.realName = "TestseT";
+	compUser.realName = "whoever";
+	assert(user != compUser);
+	compUser.realName = user.realName;
+	user.account = "Testeridoo";
+	compUser.account = "Tototo";
+	assert(user != compUser);
 }
