@@ -4,7 +4,7 @@ import virc.common;
 
 struct InternalAddressList {
 	private User[string] users;
-	void update(User user) {
+	void update(User user) @safe pure nothrow {
 		if (user.nickname !in users) {
 			users[user.nickname] = user;
 		} else {
@@ -23,23 +23,23 @@ struct InternalAddressList {
 			users[user.nickname].mask.nickname = user.mask.nickname;
 		}
 	}
-	void rename(User user, string oldNick) {
+	void rename(User user, string oldNick) @safe pure nothrow {
 		users[user.nickname] = users[oldNick];
 		users.remove(oldNick);
 		update(user);
 	}
-	void invalidate(string deadUser) {
+	void invalidate(string deadUser) @safe pure nothrow {
 		users.remove(deadUser);
 	}
-	User opIndex(string name) @safe {
+	User opIndex(string name) @safe pure nothrow {
 		return users[name];
 	}
-	bool opIn_r(string name) @safe {
+	bool opIn_r(string name) @safe pure nothrow {
 		return ((name in users) !is null);
 	}
 }
 ///
-unittest {
+@safe pure nothrow unittest {
 	auto test = InternalAddressList();
 	test.update((User("Test!testo@testy")));
 	assert("Test" in test);
