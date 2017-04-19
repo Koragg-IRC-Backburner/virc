@@ -313,6 +313,34 @@ struct MyInfo {
 	string serverModes;
 	string serverModesWithParams;
 }
+struct LUserClient {
+	string message;
+	this(string msg) pure @safe {
+		message = msg;
+	}
+}
+struct LUserMe {
+	string message;
+	this(string msg) pure @safe {
+		message = msg;
+	}
+}
+struct LUserChannels {
+	ulong numChans;
+	string message;
+	this(string chans, string msg) pure @safe {
+		numChans = chans.to!ulong;
+		message = msg;
+	}
+}
+struct LUserOp {
+	ulong numOpers;
+	string message;
+	this(string ops, string msg) pure @safe {
+		numOpers = ops.to!ulong;
+		message = msg;
+	}
+}
 enum ISupportToken {
 	accept = "ACCEPT",
 	awayLen = "AWAYLEN",
@@ -788,6 +816,40 @@ template parseNumeric(Numeric numeric) {
 			return tmp;
 		}
 	}
+	//251 :There are <users> users and <services> services on <servers> servers
+	//TODO: Find out if this is safe to parse
+	static if (numeric == Numeric.RPL_LUSERCLIENT) {
+		auto parseNumeric(T)(T input) {
+			return LUserClient(input.front);
+		}
+	}
+	//252 <opers> :operator(s) online
+	static if (numeric == Numeric.RPL_LUSEROP) {
+		auto parseNumeric(T)(T input) {
+			auto ops = input.front;
+			input.popFront();
+			auto msg = input.front;
+			auto output = LUserOp(ops, msg);
+			return output;
+		}
+	}
+	//254 <channels> :channels formed
+	static if (numeric == Numeric.RPL_LUSERCHANNELS) {
+		auto parseNumeric(T)(T input) {
+			auto chans = input.front;
+			input.popFront();
+			auto msg = input.front;
+			auto output = LUserChannels(chans, msg);
+			return output;
+		}
+	}
+	//255 :I have <clients> clients and <servers> servers
+	//TODO: Find out if this is safe to parse
+	static if (numeric == Numeric.RPL_LUSERME) {
+		auto parseNumeric(T)(T input) {
+			return LUserMe(input.front);
+		}
+	}
 	//322 <username> <channel> <count> :[\[<modes\] ]<topic>
 	static if (numeric == Numeric.RPL_LIST) {
 		auto parseNumeric(T)(T input, ModeType[char] channelModeTypes) {
@@ -923,6 +985,36 @@ template parseNumeric(Numeric numeric) {
 	}
 	{
 		assertThrown(parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone WHATISTHIS :are supported by this server")));
+	}
+}
+@safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LUSERCLIENT
+	import std.range : only;
+	{
+		immutable luser = parseNumeric!(Numeric.RPL_LUSERCLIENT)(only("There are 42 users and 43 services on 44 servers"));
+		assert(luser.message == "There are 42 users and 43 services on 44 servers");
+	}
+}
+@safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LUSEROP
+	import std.range : only;
+	{
+		immutable luser = parseNumeric!(Numeric.RPL_LUSEROP)(only("45", "operator(s) online"));
+		assert(luser.numOpers == 45);
+		assert(luser.message == "operator(s) online");
+	}
+}
+@safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LUSERCHANNELS
+	import std.range : only;
+	{
+		immutable luser = parseNumeric!(Numeric.RPL_LUSERCHANNELS)(only("46", "channels formed"));
+		assert(luser.numChans == 46);
+		assert(luser.message == "channels formed");
+	}
+}
+@safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LUSERME
+	import std.range : only;
+	{
+		immutable luser = parseNumeric!(Numeric.RPL_LUSERME)(only("I have 47 clients and 48 servers"));
+		assert(luser.message == "I have 47 clients and 48 servers");
 	}
 }
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LIST
