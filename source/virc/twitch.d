@@ -83,15 +83,18 @@ unittest { //Source: https://github.com/justintv/Twitch-API/blob/master/IRC.md
 		auto parsed = splitTag("@color=#0D4200;display-name=TWITCH_UserNaME;emote-sets=0,33,50,237,793,2126,3517,4578,5569,9400,10337,12239;turbo=0;user-id=1337;user-type=admin :tmi.twitch.tv GLOBALUSERSTATE");
 		//assert(parsed.tags.emoteSets.equal(only("0", "33", "50", "237", "793", "2126", "3517", "4578", "5569", "9400", "10337", "12239")));
 		assert(parsed.tags.color == "#0D4200");
+		assert(parsed.tags.mod.isNull);
 		assert(parsed.tags.displayName == "TWITCH_UserNaME");
 		assert(parsed.tags.userID == "1337");
 		assert(parsed.tags.turbo == false);
+		assert(parsed.tags.slow.isNull);
 		assert(parsed.tags.userType == "admin");
 	}
 	{
 		auto parsed = splitTag("@broadcaster-lang=;r9k=0;slow=0;subs-only=0 :tmi.twitch.tv ROOMSTATE #channel");
 		assert(parsed.tags.r9k == false);
 		assert(parsed.tags.broadcasterLang == "");
+		assert(parsed.tags.displayName.isNull);
 		assert(parsed.tags.slow == 0);
 		assert(parsed.tags.subsOnly == false);
 	}
@@ -135,6 +138,7 @@ unittest { //Source: https://github.com/justintv/Twitch-API/blob/master/IRC.md
 	}
 	{
 		auto parsed = splitTag("@ban-reason=Follow\\sthe\\srules :tmi.twitch.tv CLEARCHAT #channel :target_username");
+		assert(parsed.tags.banDuration.isNull);
 		assert(parsed.tags.banReason == "Follow the rules");
 	}
 }

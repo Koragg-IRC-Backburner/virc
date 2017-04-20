@@ -155,8 +155,7 @@ T replaceEscape(T, replacements...)(T input) {
 		T output;
 		enum findStrs = aliasSeqOf!([replacements].map!((x) => x[0]));
 		for (size_t position = 0; position < input.length; position++) {
-			switch(input[position..$].startsWith(findStrs)) {
-				default: assert(0);
+			final switch(input[position..$].startsWith(findStrs)) {
 				case 0:
 					output ~= input[position]; break;
 				foreach (index, replacement; replacements) {
