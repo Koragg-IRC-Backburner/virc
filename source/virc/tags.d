@@ -6,7 +6,7 @@ import std.algorithm : startsWith, map, splitter, filter, findSplit;
 import std.array : front, empty;
 import std.datetime : SysTime, UTC, msecs;
 import std.exception : enforce;
-import std.meta : TT = AliasSeq;
+import std.meta : aliasSeqOf;
 import std.range : dropOne, isInputRange, only;
 import std.typecons : Nullable;
 import std.utf;
@@ -82,12 +82,6 @@ SysTime parseTime(string[string] tags) @safe {
 	enforce("time" in tags);
 	return SysTime.fromISOExtString(tags["time"], UTC());
 }
-template arrayToTuple(alias R) if (isInputRange!(typeof(R))) {
-  static if (R.empty)
-     alias arrayToTuple = TT!();
-  else
-     alias arrayToTuple = TT!(R.front(), arrayToTuple!(R.dropOne()));
-}
 ///
 @safe pure /+nothrow @nogc+/ unittest {
 	//Example from http://ircv3.net/specs/core/message-tags-3.2.html
@@ -159,7 +153,7 @@ T replaceEscape(T, replacements...)(T input) {
 		return input;
 	} else {
 		T output;
-		enum findStrs = arrayToTuple!([replacements].map!((x) => x[0]));
+		enum findStrs = aliasSeqOf!([replacements].map!((x) => x[0]));
 		for (size_t position = 0; position < input.length; position++) {
 			switch(input[position..$].startsWith(findStrs)) {
 				default: assert(0);
