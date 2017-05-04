@@ -1036,6 +1036,16 @@ unittest {
 		assert(users[4] == User("nick!user@host"));
 		assert(users[5] == User("nick!newuser@new.host.goes.here"));
 	}
+	{ //PING? PONG!
+		import std.range : popFrontN;
+		auto buffer = appender!(string);
+		auto client = ircClient(buffer, testUser);
+
+		initialize(client);
+		client.put("PING :words");
+		auto lineByLine = buffer.data.lineSplitter();
+		assert(lineByLine.array[$-1] == "PONG :words");
+	}
 }
 auto ircChunks(T)(const string begin, T range, const string inSeparator) {
 	return cumulativeFold!((a, b) => a + b)(range.map!(a => a.length+inSeparator.length)).map!(x => x - inSeparator.length);
