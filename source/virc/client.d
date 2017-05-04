@@ -992,7 +992,7 @@ unittest {
 		client.put(":nick!user@host JOIN #channelname * :Real Name");
 		assert(users.front == user);
 	}
-	{
+	{ //example taken from RFC2812, section 3.2.2
 		auto buffer = appender!(string);
 		auto client = ircClient(buffer, testUser);
 
