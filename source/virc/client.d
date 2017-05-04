@@ -296,6 +296,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		void delegate(const User, const Target, const ModeChange mode, const MessageMetadata) onMode;
 		void delegate(const User, const Target, const Message, const MessageMetadata) onMessage;
 		void delegate(const Channel, const MessageMetadata) onList;
+		void delegate(const User, const User, const MessageMetadata) onChgHost;
 		void delegate(const MessageMetadata) onError;
 		void delegate(const MessageMetadata) onRaw;
 		void delegate() onConnect;
@@ -435,6 +436,15 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 				split.popFront();
 				auto modes = parseModeString(split.front, server.iSupport.channelModeTypes);
 				recMode(source, target, modes, metadata);
+				break;
+			case IRCV3Commands.chghost:
+				User user = source;
+				User target;
+				target.mask.nickname = user.nickname;
+				target.mask.ident = split.front;
+				split.popFront();
+				target.mask.host = split.front;
+				recChgHost(source, target, metadata);
 				break;
 			case Numeric.RPL_WELCOME:
 				isRegistered = true;
@@ -631,6 +641,9 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 	}
 	private void recLogon(const User user, const MessageMetadata metadata) {
 		tryCall!"onUserOnline"(user, metadata);
+	}
+	private void recChgHost(const User user, const User target, const MessageMetadata metadata) {
+		tryCall!"onChgHost"(user, target, metadata);
 	}
 	private void endRegistration() {
 		write("CAP END");
@@ -1000,6 +1013,28 @@ unittest {
 		assert(users.front == user);
 		assert(channels.front == Channel("#playzone"));
 		assert(lastMsg == "I lost");
+	}
+	{ //http://ircv3.net/specs/extensions/chghost-3.2.html
+		auto buffer = appender!(string);
+		auto client = ircClient(buffer, testUser);
+
+
+		User[] users;
+		client.onChgHost = (const User user, const User newUser, const MessageMetadata) {
+			users ~= user;
+			users ~= newUser;
+		};
+
+		initialize(client);
+		client.put(":nick!user@host CHGHOST user new.host.goes.here");
+		assert(users[0] == User("nick!user@host"));
+		assert(users[1] == User("nick!user@new.host.goes.here"));
+		client.put(":nick!user@host CHGHOST newuser host");
+		assert(users[2] == User("nick!user@host"));
+		assert(users[3] == User("nick!newuser@host"));
+		client.put(":nick!user@host CHGHOST newuser new.host.goes.here");
+		assert(users[4] == User("nick!user@host"));
+		assert(users[5] == User("nick!newuser@new.host.goes.here"));
 	}
 }
 auto ircChunks(T)(const string begin, T range, const string inSeparator) {
