@@ -319,10 +319,10 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 
 	}
 	public void ping(string nonce) {
-		write("PING :%s", nonce);
+		write!"PING :%s"(nonce);
 	}
 	private void pong(string nonce) {
-		write("PONG :%s", nonce);
+		write!"PONG :%s"(nonce);
 	}
 	public void put(string line) {
 		//Chops off terminating \r\n. Everything after is ignored, according to spec.
@@ -558,7 +558,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		auto requestCaps = caps.filter!(among!supportedCaps);
 		capReqCount += requestCaps.save().walkLength;
 		if (!requestCaps.empty) {
-			write("CAP REQ :%-(%s %)", requestCaps);
+			write!"CAP REQ :%-(%s %)"(requestCaps);
 		}
 		foreach (ref cap; caps) {
 			tryCall!"onReceiveCapLS"(cap, metadata);
@@ -678,27 +678,27 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		return capsEnabled.canFind("MONITOR");
 	}
 	public void quit(const string msg) {
-		write("QUIT :%s", msg);
+		write!"QUIT :%s"(msg);
 		invalid = true;
 	}
 	public void changeNickname(const string nick) {
-		write("NICK %s", nick);
+		write!"NICK %s"(nick);
 	}
 	public void join(T,U = void[])(T channel, U keys = U.init) if (isInputRange!T && isInputRange!U) in {
 		assert(channels.filter!(x => server.iSupport.canFind(x.front)).empty, channel.front~": Not a channel type");
 		assert(!channels.empty, "No channels specified");
 	} body {
 		if (!keys.empty) {
-			write("JOIN %-(%s,%) %-(%s,%)", channels, keys);
+			write!"JOIN %-(%s,%) %-(%s,%)"(channels, keys);
 		} else {
-			write("JOIN %-(%s,%)", channels);
+			write!"JOIN %-(%s,%)"(channels);
 		}
 	}
 	public void join(string chan) {
-		write("JOIN %s", chan);
+		write!"JOIN %s"(chan);
 	}
 	public void msg(string target, string msg) {
-		write(RFC1459Commands.privmsg ~ " %s :%s", target, msg);
+		write!"PRIVMSG %s :%s"(target, msg);
 	}
 	private void recUnknownCommand(const string cmd, const MessageMetadata metadata) {
 		if (cmd.filter!(x => !x.isDigit).empty) {
@@ -715,10 +715,21 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 			return;
 		}
 		if (!password.isNull) {
-			write("PASS :%s", password);
+			write!"PASS :%s"(password);
 		}
 		changeNickname(nickname);
-		write("USER %s 0 * :%s", username, realname);
+		write!"USER %s 0 * :%s"(username, realname);
+	}
+	private void write(string fmt, T...)(T args) {
+		debug(verbose) writefln!("O: "~fmt)(args);
+		formattedWrite!fmt(output, args);
+		std.range.put(output, "\r\n");
+		debug {
+			tryCall!"onSend"(format!fmt(args));
+		}
+		static if (is(typeof(output.flush()))) {
+			output.flush();
+		}
 	}
 	private void write(T...)(const string fmt, T args) {
 		debug(verbose) writefln("O: "~fmt, args);
@@ -732,11 +743,11 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		}
 	}
 	private void write(const string text) {
-		write("%s", text);
+		write!"%s"(text);
 	}
 	private void writeList(T)(const string begin, const string separator, T range) {
 		foreach (chunk; ircChunks(begin, range, server.iSupport.lineLength, separator)) {
-			write("%s :%-(%s%s%)", begin, chunk, separator);
+			write!"%s :%-(%s%s%)"(begin, chunk, separator);
 		}
 	}
 	private bool isEnabled(const Capability cap) {
@@ -1037,7 +1048,6 @@ unittest {
 		assert(users[5] == User("nick!newuser@new.host.goes.here"));
 	}
 	{ //PING? PONG!
-		import std.range : popFrontN;
 		auto buffer = appender!(string);
 		auto client = ircClient(buffer, testUser);
 
