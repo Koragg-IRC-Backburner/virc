@@ -1056,6 +1056,19 @@ unittest {
 		auto lineByLine = buffer.data.lineSplitter();
 		assert(lineByLine.array[$-1] == "PONG :words");
 	}
+	{ //QUIT and invalidation check
+		import core.exception : AssertError;
+		import std.exception : assertThrown;
+		auto buffer = appender!(string);
+		auto client = ircClient(buffer, testUser);
+
+		initialize(client);
+		client.quit("I'm out");
+		auto lineByLine = buffer.data.lineSplitter();
+		assert(lineByLine.array[$-1] == "QUIT :I'm out");
+		assert(client.invalid);
+		assertThrown!AssertError(client.put("PING :hahahaha"));
+	}
 }
 auto ircChunks(T)(const string begin, T range, const string inSeparator) {
 	return cumulativeFold!((a, b) => a + b)(range.map!(a => a.length+inSeparator.length)).map!(x => x - inSeparator.length);
