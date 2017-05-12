@@ -9,7 +9,7 @@ struct IRCSplitter {
 		str = input;
 		popFront();
 	}
-	void popFront() @nogc @safe pure nothrow {
+	auto popFront() {
 		if (blankColon) {
 			blankColon = false;
 		} else {
@@ -34,13 +34,13 @@ struct IRCSplitter {
 			}
 		}
 	}
-	bool empty() @nogc @safe pure nothrow {
+	auto empty() {
 		return str.length == 0 && !blankColon;
 	}
-	string front() @nogc @safe pure nothrow {
+	auto front() {
 		return str[0..upper];
 	}
-	auto save() @nogc @safe pure nothrow {
+	auto save() {
 		return this;
 	}
 }

@@ -520,7 +520,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 			default: recUnknownCommand(firstToken, metadata); break;
 		}
 	}
-	void put(ubyte[] rawString) {
+	void put(immutable(ubyte)[] rawString) {
 		put(rawString.toUTF8String);
 	}
 	private void recCap(T)(T tokens, MessageMetadata metadata) if (isInputRange!T && is(ElementType!T == string)) {

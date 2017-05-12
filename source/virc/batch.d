@@ -8,10 +8,10 @@ struct BatchProcessor {
 	private Batch[string] batchCache;
 	Batch[] batches;
 	bool[] consumeBatch;
-	void put(string line) {
+	auto put(string line) {
 		put(line.splitTag());
 	}
-	void put(parsedMessage splitMsg) {
+	auto put(parsedMessage splitMsg) {
 		auto processed = BatchCommand(splitMsg.msg);
 		Batch newBatch;
 		if (processed.isValid && processed.isNew) {
@@ -33,7 +33,7 @@ struct BatchProcessor {
 				consumeBatch ~= false;
 			}
 		} else {
-			void findBatch(ref Batch[string] searchBatches, string identifier) {
+			void findBatch(ref Batch[string] searchBatches, string identifier) @safe pure {
 				foreach (ref batch; searchBatches) {
 					if (batch.referenceTag == identifier) {
 						if (processed.isValid) {
@@ -51,18 +51,18 @@ struct BatchProcessor {
 			findBatch(batchCache, splitMsg.tags["batch"]);
 		}
 	}
-	bool empty() {
+	auto empty() {
 		import std.range : empty;
 		return (batches.empty && batchless.empty);
 	}
-	void popFront() {
+	auto popFront() {
 		if (consumeBatch[0]) {
 			batches = batches[1..$];
 		} else
 			batchless = batchless[1..$];
 		consumeBatch = consumeBatch[1..$];
 	}
-	Batch front() {
+	auto front() {
 		if (consumeBatch[0])
 			return batches[0];
 		else
@@ -70,10 +70,11 @@ struct BatchProcessor {
 	}
 }
 private struct BatchCommand {
-	this(string msg) {
-		import std.string : split, toUpper;
+	this(string msg) @safe pure nothrow {
+		import std.string : split;
+		import std.uni : sicmp;
 		auto splitMsg = msg.split(" ");
-		if ((splitMsg.length <= 2) || (splitMsg[1].toUpper() != "BATCH"))
+		if ((splitMsg.length <= 2) || (sicmp(splitMsg[1],"BATCH")))
 			return;
 		isValid = true;
 		server = splitMsg[0];
@@ -90,7 +91,7 @@ private struct BatchCommand {
 	string type;
 	string[] parameters;
 	bool isNew;
-	bool isClosed() { return !isNew; }
+	auto isClosed() { return !isNew; }
 	bool isValid = false;
 }
 struct Batch {
@@ -100,25 +101,25 @@ struct Batch {
 	string[] parameters; ///Miscellaneous details associated with the batch. Meanings vary based on type.
 	parsedMessage[] lines; ///Lines captured minus the batch tag and starting/ending commands.
 	Batch[string] nestedBatches; ///Any batches nested inside this one.
-	void put(parsedMessage line) {
+	auto put(parsedMessage line) {
 		lines ~= line;
 	}
 }
-unittest {
+@safe pure /+nothrow+/ unittest {
 	import std.range : isOutputRange, isInputRange, takeOne;
 	import std.algorithm : copy;
 	static assert(isOutputRange!(BatchProcessor, string), "BatchProcessor failed outputrange test");
 	static assert(isInputRange!BatchProcessor, "BatchProcessor failed inputrange test");
 	//Example from http://ircv3.net/specs/extensions/batch-3.2.html
 	{
-		BatchProcessor batchProcessor;
+		auto batchProcessor = new BatchProcessor;
 		auto lines = [`:irc.host BATCH +yXNAbvnRHTRBv netsplit irc.hub other.host`,
 					`@batch=yXNAbvnRHTRBv :aji!a@a QUIT :irc.hub other.host`,
 					`@batch=yXNAbvnRHTRBv :nenolod!a@a QUIT :irc.hub other.host`,
 					`:nick!user@host PRIVMSG #channel :This is not in batch, so processed immediately`,
 					`@batch=yXNAbvnRHTRBv :jilles!a@a QUIT :irc.hub other.host`,
 					`:irc.host BATCH -yXNAbvnRHTRBv`];
-		copy(lines, &batchProcessor);
+		copy(lines, batchProcessor);
 		{
 			auto batch = takeOne(batchProcessor).front;
 			assert(batch.lines == [parsedMessage(":nick!user@host PRIVMSG #channel :This is not in batch, so processed immediately")]);
@@ -136,7 +137,7 @@ unittest {
 	}
 	//ditto
 	{
-		BatchProcessor batchProcessor;
+		auto batchProcessor = new BatchProcessor;
 		auto lines = [`:irc.host BATCH +1 example.com/foo`,
 					`@batch=1 :nick!user@host PRIVMSG #channel :Message 1`,
 					`:irc.host BATCH +2 example.com/foo`,
@@ -146,7 +147,7 @@ unittest {
 					`:irc.host BATCH -1`,
 					`@batch=2 :nick!user@host PRIVMSG #channel :Message 5`,
 					`:irc.host BATCH -2`];
-		copy(lines, &batchProcessor);
+		copy(lines, batchProcessor);
 		{
 			auto batch = takeOne(batchProcessor).front;
 			assert(batch.type == "example.com/foo");
@@ -165,13 +166,13 @@ unittest {
 	}
 	//ditto
 	{
-		BatchProcessor batchProcessor;
+		auto batchProcessor = new BatchProcessor;
 		auto lines = [`:irc.host BATCH +outer example.com/foo`,
 					`@batch=outer :irc.host BATCH +inner example.com/bar`,
 					`@batch=inner :nick!user@host PRIVMSG #channel :Hi`,
 					`@batch=outer :irc.host BATCH -inner`,
 					`:irc.host BATCH -outer`];
-		copy(lines, &batchProcessor);
+		copy(lines, batchProcessor);
 		{
 			auto batch = takeOne(batchProcessor).front;
 			assert(batch.type == "example.com/foo");
@@ -189,13 +190,13 @@ unittest {
 	}
 	//Example from http://ircv3.net/specs/extensions/batch/netsplit-3.2.html
 	{
-		BatchProcessor batchProcessor;
+		auto batchProcessor = new BatchProcessor;
 		auto lines = [`:irc.host BATCH +yXNAbvnRHTRBv netsplit irc.hub other.host`,
 					`@batch=yXNAbvnRHTRBv :aji!a@a QUIT :irc.hub other.host`,
 					`@batch=yXNAbvnRHTRBv :nenolod!a@a QUIT :irc.hub other.host`,
 					`@batch=yXNAbvnRHTRBv :jilles!a@a QUIT :irc.hub other.host`,
 					`:irc.host BATCH -yXNAbvnRHTRBv`];
-		copy(lines, &batchProcessor);
+		copy(lines, batchProcessor);
 		{
 			auto batch = takeOne(batchProcessor).front;
 			assert(batch.type == "netsplit");
@@ -208,7 +209,7 @@ unittest {
 	}
 	//ditto
 	{
-		BatchProcessor batchProcessor;
+		auto batchProcessor = new BatchProcessor;
 		auto lines = [`:irc.host BATCH +4lMeQwsaOMs6s netjoin irc.hub other.host`,
 					`@batch=4lMeQwsaOMs6s :aji!a@a JOIN #atheme`,
 					`@batch=4lMeQwsaOMs6s :nenolod!a@a JOIN #atheme`,
@@ -217,7 +218,7 @@ unittest {
 					`@batch=4lMeQwsaOMs6s :jilles!a@a JOIN #ircv3`,
 					`@batch=4lMeQwsaOMs6s :Elizacat!a@a JOIN #ircv3`,
 					`:irc.host BATCH -4lMeQwsaOMs6s`];
-		copy(lines, &batchProcessor);
+		copy(lines, batchProcessor);
 		{
 			auto batch = takeOne(batchProcessor).front;
 			assert(batch.type == "netjoin");
@@ -230,13 +231,13 @@ unittest {
 	}
 	//Upcoming chathistory batch, subject to change
 	{
-		BatchProcessor batchProcessor;
+		auto batchProcessor = new BatchProcessor;
 		auto lines = [`:irc.host BATCH +sxtUfAeXBgNoD chathistory #channel`,
 					`@batch=sxtUfAeXBgNoD;time=2015-06-26T19:40:31.230Z :foo!foo@example.com PRIVMSG #channel :I like turtles.`,
 					`@batch=sxtUfAeXBgNoD;time=2015-06-26T19:43:53.410Z :bar!bar@example.com NOTICE #channel :Tortoises are better.`,
 					`@batch=sxtUfAeXBgNoD;time=2015-06-26T19:48:18.140Z :irc.host PRIVMSG #channel :Squishy animals are inferior to computers.`,
 					`:irc.host BATCH -sxtUfAeXBgNoD`];
-		copy(lines, &batchProcessor);
+		copy(lines, batchProcessor);
 		{
 			auto batch = takeOne(batchProcessor).front;
 			assert(batch.type == "chathistory");
@@ -249,12 +250,12 @@ unittest {
 	}
 	//ditto
 	{
-		BatchProcessor batchProcessor;
+		auto batchProcessor = new BatchProcessor;
 		auto lines = [`:irc.host BATCH +sxtUfAeXBgNoD chathistory remote`,
 					`@batch=sxtUfAeXBgNoD;time=2015-06-26T19:40:31.230Z :remote!foo@example.com PRIVMSG local :I like turtles.`,
 					`@batch=sxtUfAeXBgNoD;time=2015-06-26T19:43:53.410Z :local!bar@example.com PRIVMSG remote :Tortoises are better.`,
 					`:irc.host BATCH -sxtUfAeXBgNoD`];
-		copy(lines, &batchProcessor);
+		copy(lines, batchProcessor);
 		{
 			auto batch = takeOne(batchProcessor).front;
 			assert(batch.type == "chathistory");

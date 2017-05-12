@@ -55,7 +55,7 @@ struct TwitchEmote {
 	ulong endPosition;
 }
 
-unittest { //Source: https://github.com/justintv/Twitch-API/blob/master/IRC.md
+@safe pure /+nothrow+/ unittest { //Source: https://github.com/justintv/Twitch-API/blob/master/IRC.md
 	{
 		import std.algorithm.comparison : equal;
 		auto parsed = splitTag("@badges=global_mod/1,turbo/1;color=#0D4200;display-name=TWITCH_UserNaME;emotes=25:0-4,12-16/1902:6-10;mod=0;room-id=1337;subscriber=0;turbo=1;user-id=1337;user-type=global_mod :twitch_username!twitch_username@twitch_username.tmi.twitch.tv PRIVMSG #channel :Kappa Keepo Kappa");

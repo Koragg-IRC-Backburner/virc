@@ -95,7 +95,7 @@ auto parseModeString(string input, ModeType[char] channelModeTypes) {
 	return changes;
 }
 
-unittest {
+@safe pure nothrow unittest {
 	import std.algorithm : canFind, filter, map;
 	import std.range : empty;
 	{

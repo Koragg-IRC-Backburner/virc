@@ -12,7 +12,8 @@ enum CaseMapping {
 	ascii = "ascii"
 }
 auto toIRCUpper(CaseMapping caseMapping = CaseMapping.rfc1459)(string input) {
-	static dchar upper(dchar input) {
+	import std.utf : byCodeUnit;
+	static char upper(char input) {
 		if (input.isAlpha) {
 			return input.toUpper();
 		}
@@ -29,20 +30,22 @@ auto toIRCUpper(CaseMapping caseMapping = CaseMapping.rfc1459)(string input) {
 		}
 		return input;
 	}
-	return input.map!upper;
+	return input.byCodeUnit.map!upper;
 }
 ///
-unittest {
+@safe pure nothrow unittest {
 	import std.algorithm : equal;
-	assert("test".toIRCUpper!(CaseMapping.rfc1459).equal("TEST"));
-	assert("test".toIRCUpper!(CaseMapping.strictRFC1459).equal("TEST"));
-	assert("test".toIRCUpper!(CaseMapping.ascii).equal("TEST"));
-	assert("test{}|~".toIRCUpper!(CaseMapping.rfc1459).equal("TEST[]\\^"));
-	assert("test{}|~".toIRCUpper!(CaseMapping.strictRFC1459).equal("TEST[]\\~"));
-	assert("test{}|~".toIRCUpper!(CaseMapping.ascii).equal("TEST{}|~"));
+	import std.utf : byCodeUnit;
+	assert("test".toIRCUpper!(CaseMapping.rfc1459).equal("TEST"d));
+	assert("test".toIRCUpper!(CaseMapping.strictRFC1459).equal("TEST"d));
+	assert("test".toIRCUpper!(CaseMapping.ascii).equal("TEST"d));
+	assert("test{}|~".toIRCUpper!(CaseMapping.rfc1459).equal("TEST[]\\^"d));
+	assert("test{}|~".toIRCUpper!(CaseMapping.strictRFC1459).equal("TEST[]\\~"d));
+	assert("test{}|~".toIRCUpper!(CaseMapping.ascii).equal("TEST{}|~"d));
 }
 auto toIRCLower(CaseMapping caseMapping = CaseMapping.rfc1459)(string input) {
-	static dchar lower(dchar input) {
+	import std.utf : byCodeUnit;
+	static char lower(char input) {
 		if (input.isAlpha) {
 			return input.toLower();
 		}
@@ -59,15 +62,15 @@ auto toIRCLower(CaseMapping caseMapping = CaseMapping.rfc1459)(string input) {
 		}
 		return input;
 	}
-	return input.map!lower;
+	return input.byCodeUnit.map!lower;
 }
 ///
-unittest {
+@safe pure nothrow unittest {
 	import std.algorithm : equal;
-	assert("TEST".toIRCLower!(CaseMapping.rfc1459).equal("test"));
-	assert("TEST".toIRCLower!(CaseMapping.strictRFC1459).equal("test"));
-	assert("TEST".toIRCLower!(CaseMapping.ascii).equal("test"));
-	assert("TEST[]\\^".toIRCLower!(CaseMapping.rfc1459).equal("test{}|~"));
-	assert("TEST[]\\~".toIRCLower!(CaseMapping.strictRFC1459).equal("test{}|~"));
-	assert("TEST{}|~".toIRCLower!(CaseMapping.ascii).equal("test{}|~"));
+	assert("TEST".toIRCLower!(CaseMapping.rfc1459).equal("test"d));
+	assert("TEST".toIRCLower!(CaseMapping.strictRFC1459).equal("test"d));
+	assert("TEST".toIRCLower!(CaseMapping.ascii).equal("test"d));
+	assert("TEST[]\\^".toIRCLower!(CaseMapping.rfc1459).equal("test{}|~"d));
+	assert("TEST[]\\~".toIRCLower!(CaseMapping.strictRFC1459).equal("test{}|~"d));
+	assert("TEST{}|~".toIRCLower!(CaseMapping.ascii).equal("test{}|~"d));
 }

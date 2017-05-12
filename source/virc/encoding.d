@@ -9,7 +9,7 @@ import std.encoding;
 + mid-codepoint by the protocol's line length will be treated as invalid UTF-8.
 +/
 
-auto toUTF8String(Encoding = Latin1String)(const ubyte[] raw) {
+auto toUTF8String(Encoding = Latin1String)(const immutable(ubyte)[] raw) {
 	auto utf = cast(string)raw;
 	static if (!is(Encoding == string)) {
 		if (!utf.isValid()) {
@@ -20,8 +20,8 @@ auto toUTF8String(Encoding = Latin1String)(const ubyte[] raw) {
 	}
 	return utf;
 }
-
-pure unittest {
+///@system due to transcode()
+@system pure unittest {
 	import std.string : representation;
 	//
 	assert("test".representation.toUTF8String == "test");

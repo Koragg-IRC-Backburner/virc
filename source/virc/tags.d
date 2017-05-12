@@ -14,10 +14,10 @@ import std.utf;
 struct parsedMessage {
 	string msg;
 	IRCTags tags;
-	this(string text) {
+	this(string text) pure @safe nothrow @nogc {
 		msg = text;
 	}
-	this(string text, string[string] inTags) {
+	this(string text, string[string] inTags) pure @safe nothrow @nogc {
 		msg = text;
 		tags = IRCTags(inTags);
 	}
@@ -60,7 +60,7 @@ Nullable!Duration secondDurationTag(string tag)(IRCTags tags) {
 	}
 	return Nullable!Duration(tags[tag].to!long.seconds);
 }
-auto splitTag(string input) @safe pure {
+auto splitTag(string input) {
 	parsedMessage output;
 	if (input.startsWith("@")) {
 		auto splitMsg = input.dropOne.findSplit(" ");
@@ -86,7 +86,7 @@ SysTime parseTime(string[string] tags) @safe {
 @safe pure /+nothrow @nogc+/ unittest {
 	//Example from http://ircv3.net/specs/core/message-tags-3.2.html
 	{
-		auto splitStr = ":nick!ident@host.com PRIVMSG me :Hello".splitTag;
+		immutable splitStr = ":nick!ident@host.com PRIVMSG me :Hello".splitTag;
 		assert(splitStr.msg == ":nick!ident@host.com PRIVMSG me :Hello");
 		assert(splitStr.tags.length == 0);
 	}
@@ -144,6 +144,7 @@ SysTime parseTime(string[string] tags) @safe {
 		assert(splitStr.tags.length == 1);
 		assert("time" in splitStr.tags);
 		assert(splitStr.tags["time"] == "2012-06-30T23:59:60.419Z");
+		//leap seconds not currently representable
 		//assert(parseTime(splitStr.tags) == SysTime(DateTime(2012,06,30,23,59,60), 419.msecs, UTC()));
 	}
 }
@@ -153,9 +154,9 @@ T replaceEscape(T, replacements...)(T input) {
 		return input;
 	} else {
 		T output;
-		enum findStrs = aliasSeqOf!([replacements].map!((x) => x[0]));
+		enum findStrs = aliasSeqOf!([replacements].map!((x) => x[0].byCodeUnit));
 		for (size_t position = 0; position < input.length; position++) {
-			final switch(input[position..$].startsWith(findStrs)) {
+			final switch(input[position..$].byCodeUnit.startsWith(findStrs)) {
 				case 0:
 					output ~= input[position]; break;
 				foreach (index, replacement; replacements) {
@@ -171,7 +172,7 @@ T replaceEscape(T, replacements...)(T input) {
 	}
 }
 ///
-@safe /+pure @nogc nothrow+/ unittest {
+@safe pure nothrow unittest {
 	assert(replaceEscape("") == "");
 	assert(replaceEscape!(string, only("a", "b"))("a") == "b");
 	assert(replaceEscape!(string, only("a", "b"), only("aa", "b"))("aa") == "bb");
