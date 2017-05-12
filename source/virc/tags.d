@@ -8,6 +8,7 @@ import std.datetime : SysTime, UTC, msecs;
 import std.exception : enforce;
 import std.meta : aliasSeqOf;
 import std.range : dropOne, isInputRange, only;
+import std.traits : isArray;
 import std.typecons : Nullable;
 import std.utf;
 
@@ -28,37 +29,101 @@ struct IRCTags {
 }
 
 Nullable!bool booleanTag(string tag)(IRCTags tags) {
-	if (tag !in tags) {
-		return Nullable!bool.init;
+	Nullable!bool output;
+	if (tag in tags) {
+		if (tags[tag] == "1") {
+			output = true;
+		} else if (tags[tag] == "0") {
+			output = false;
+		} //Other values treated as if tag not present
 	}
-	return Nullable!bool(tags[tag] == "1");
+	return output;
+}
+///
+@safe pure nothrow unittest {
+	assert(ParsedMessage("").tags.booleanTag!"test".isNull);
+	assert(ParsedMessage("", ["test": "aaaaa"]).tags.booleanTag!"test".isNull);
+	assert(!ParsedMessage("", ["test": "0"]).tags.booleanTag!"test");
+	assert(ParsedMessage("", ["test": "1"]).tags.booleanTag!"test");
 }
 Nullable!string stringTag(string tag)(IRCTags tags) {
-	if (tag !in tags) {
-		return Nullable!string.init;
-	}
-	return Nullable!string(tags[tag]);
+	return typeTag!(tag, string)(tags);
 }
-Nullable!type typeTag(string tag, type)(IRCTags tags) {
+Nullable!Type typeTag(string tag, Type)(IRCTags tags) {
 	import std.conv : to;
-	if (tag !in tags) {
-		return Nullable!type.init;
+	Nullable!Type output;
+	if (tag in tags) {
+		try {
+			output = tags[tag].to!Type;
+		} catch (Exception) {} //Act as if tag doesn't exist if malformed
 	}
-	return Nullable!type(tags[tag].to!type);
+	return output;
 }
-//auto arrayTag(string tag, type)(IRCTags tags) {
-//	import std.conv : to;
-//	if (tag !in tags) {
-//		return Nullable!type.init;
-//	}
-//	return Nullable!type(tags[tag].to!type);
-//}
+///
+@safe pure nothrow unittest {
+	assert(ParsedMessage("").tags.typeTag!("test", uint).isNull);
+	assert(ParsedMessage("", ["test": "a"]).tags.typeTag!("test", uint).isNull);
+	assert(ParsedMessage("", ["test": "0"]).tags.typeTag!("test", uint) == 0);
+	assert(ParsedMessage("", ["test": "10"]).tags.typeTag!("test", uint) == 10);
+	assert(ParsedMessage("", ["test": "words"]).tags.typeTag!("test", string) == "words");
+	assert(ParsedMessage("", ["test": "words"]).tags.stringTag!"test" == "words");
+	static struct Something {
+		char val;
+		this(string str) @safe pure nothrow {
+			val = str[0];
+		}
+	}
+	assert(ParsedMessage("", ["test": "words"]).tags.typeTag!("test", Something).val == 'w');
+}
+auto arrayTag(string tag, string delimiter = ",", Type = string[])(IRCTags tags) if (isArray!Type){
+	import std.algorithm : splitter;
+	import std.conv : to;
+	import std.range : ElementType;
+	Nullable!Type output;
+	if (tag in tags) {
+		auto split = tags[tag].splitter(delimiter);
+		output = [];
+		foreach (element; split) {
+			try {
+				output ~= element.to!(ElementType!Type);
+			} catch (Exception) { //Malformed, reset everything
+				output = output.init;
+				break;
+			}
+		}
+	}
+	return output;
+}
+///
+@safe pure nothrow unittest {
+	assert(ParsedMessage("").tags.arrayTag!("test").isNull);
+	assert(ParsedMessage("", ["test":""]).tags.arrayTag!("test").empty);
+	assert(ParsedMessage("", ["test":"a"]).tags.arrayTag!("test").front == "a");
+	assert(ParsedMessage("", ["test":"a,b"]).tags.arrayTag!("test") == ["a", "b"]);
+	assert(ParsedMessage("", ["test":"a:b"]).tags.arrayTag!("test", ":") == ["a", "b"]);
+	assert(ParsedMessage("", ["test":"9,1"]).tags.arrayTag!("test", ",", uint[]) == [9, 1]);
+	assert(ParsedMessage("", ["test":"9,a"]).tags.arrayTag!("test", ",", uint[]).isNull);
+}
 Nullable!Duration secondDurationTag(string tag)(IRCTags tags) {
 	import std.conv : to;
-	if (tag !in tags) {
-		return Nullable!Duration.init;
+	Nullable!Duration output;
+	if (tag in tags) {
+		try {
+			output = tags[tag].to!long.seconds;
+		} catch (Exception) {} //Not a duration. Act like tag is nonexistent.
 	}
-	return Nullable!Duration(tags[tag].to!long.seconds);
+	return output;
+}
+///
+@safe pure nothrow unittest {
+	import core.time : hours;
+	assert(ParsedMessage("").tags.secondDurationTag!("test").isNull);
+	assert(ParsedMessage("", ["test": "a"]).tags.secondDurationTag!("test").isNull);
+	assert(ParsedMessage("", ["test": "3600"]).tags.secondDurationTag!("test") == 1.hours);
+}
+auto parseTime(string[string] tags) {
+	enforce("time" in tags);
+	return SysTime.fromISOExtString(tags["time"], UTC());
 }
 auto splitTag(string input) {
 	ParsedMessage output;
@@ -68,19 +133,17 @@ auto splitTag(string input) {
 		foreach (tag; splitTags) {
 			auto splitKV = tag.findSplit("=");
 			auto key = splitKV[0];
-			if (!splitKV[1].empty)
+			if (!splitKV[1].empty) {
 				output.tags[key] = splitKV[2].replaceEscape!(string, only(`\\`, `\`), only(`\:`, `;`), only(`\r`, "\r"), only(`\n`, "\n"), only(`\s`, " "));
-			else
+			} else {
 				output.tags[key] = "";
+			}
 		}
 		output.msg = splitMsg[2];
-	} else
+	} else {
 		output.msg = input;
+	}
 	return output;
-}
-SysTime parseTime(string[string] tags) @safe {
-	enforce("time" in tags);
-	return SysTime.fromISOExtString(tags["time"], UTC());
 }
 ///
 @safe pure /+nothrow @nogc+/ unittest {
