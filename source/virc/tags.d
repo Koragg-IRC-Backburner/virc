@@ -11,7 +11,7 @@ import std.range : dropOne, isInputRange, only;
 import std.typecons : Nullable;
 import std.utf;
 
-struct parsedMessage {
+struct ParsedMessage {
 	string msg;
 	IRCTags tags;
 	this(string text) pure @safe nothrow @nogc {
@@ -61,7 +61,7 @@ Nullable!Duration secondDurationTag(string tag)(IRCTags tags) {
 	return Nullable!Duration(tags[tag].to!long.seconds);
 }
 auto splitTag(string input) {
-	parsedMessage output;
+	ParsedMessage output;
 	if (input.startsWith("@")) {
 		auto splitMsg = input.dropOne.findSplit(" ");
 		auto splitTags = splitMsg[0].splitter(";").filter!(a => !a.empty);
