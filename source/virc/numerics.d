@@ -437,7 +437,7 @@ struct ISupport {
 	bool penalty;
 	bool forcedNickChanges;
 	bool safeList;
-	ulong awayLength;
+	ulong awayLength = ulong.max;
 	bool noQuit;
 	bool userIP;
 	bool cPrivmsg;
@@ -535,7 +535,11 @@ struct ISupport {
 				whoX = isEnabled;
 				break;
 			case ISupportToken.awayLen:
-				awayLength = parse!ulong(value);
+				try {
+					awayLength = parse!ulong(value);
+				} catch (Exception) {
+					awayLength = ulong.max;
+				}
 				break;
 			case ISupportToken.nickLen:
 				nickLength = parse!ulong(value);
@@ -613,9 +617,24 @@ struct ISupport {
 					auto splitPrefix = value.splitter(",");
 					foreach (listEntry; splitPrefix) {
 						auto splitArgs = listEntry.findSplit(":");
-						immutable limit = parse!ulong(splitArgs[2]);
-						foreach (prefix; splitArgs[0]) {
-							chanLimits[prefix] = limit;
+						if (splitArgs[1] != ":") {
+							chanLimits = chanLimits.init;
+							break;
+						}
+						try {
+							immutable limit = parse!ulong(splitArgs[2]);
+							foreach (prefix; splitArgs[0]) {
+								chanLimits[prefix] = limit;
+							}
+						} catch (Exception) {
+							if (splitArgs[2] == "") {
+								foreach (prefix; splitArgs[0]) {
+									chanLimits[prefix] = ulong.max;
+								}
+							} else {
+								chanLimits = chanLimits.init;
+								break;
+							}
 						}
 					}
 				} else {
@@ -651,7 +670,7 @@ struct ISupport {
 				network = value;
 				break;
 			case ISupportToken.caseMapping:
-				final switch (value.toLower()) {
+				switch (value.toLower()) {
 					case CaseMapping.rfc1459:
 						caseMapping = CaseMapping.rfc1459;
 						break;
@@ -663,6 +682,9 @@ struct ISupport {
 						break;
 					case CaseMapping.ascii:
 						caseMapping = CaseMapping.ascii;
+						break;
+					default:
+						caseMapping = CaseMapping.unknown;
 						break;
 				}
 				break;
