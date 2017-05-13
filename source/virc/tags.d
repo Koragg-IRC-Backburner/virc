@@ -239,5 +239,4 @@ T replaceEscape(T, replacements...)(T input) {
 	assert(replaceEscape("") == "");
 	assert(replaceEscape!(string, only("a", "b"))("a") == "b");
 	assert(replaceEscape!(string, only("a", "b"), only("aa", "b"))("aa") == "bb");
-	//assert(replaceEscape!(string, only("aa", "b"), only("a", "b"))("aa") == "b");
 }
