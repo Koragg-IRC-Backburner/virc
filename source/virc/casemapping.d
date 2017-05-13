@@ -6,6 +6,7 @@ import std.range.primitives : isInputRange;
 
 
 enum CaseMapping {
+	unknown = "",
 	rfc1459 = "rfc1459",
 	strictRFC1459 = "strict-rfc1459",
 	rfc3454 = "rfc3454",
