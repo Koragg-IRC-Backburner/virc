@@ -758,6 +758,49 @@ struct ISupport {
 		}
 	}
 }
+@safe pure unittest {
+	auto isupport = ISupport();
+	{
+		assert(isupport.awayLength == ulong.max);
+		isupport.insertToken("AWAYLEN", Nullable!string("8"));
+		assert(isupport.awayLength == 8);
+		isupport.insertToken("AWAYLEN", Nullable!string.init);
+		assert(isupport.awayLength == ulong.max);
+	}
+	{
+		assert(isupport.callerID.isNull);
+		isupport.insertToken("CALLERID", Nullable!string("h"));
+		assert(isupport.callerID == 'h');
+		isupport.insertToken("CALLERID", Nullable!string.init);
+		assert(isupport.callerID == 'g');
+	}
+	{
+		assert(isupport.caseMapping == CaseMapping.unknown);
+		isupport.insertToken("CASEMAPPING", Nullable!string("rfc1459"));
+		assert(isupport.caseMapping == CaseMapping.rfc1459);
+		isupport.insertToken("CASEMAPPING", Nullable!string("ascii"));
+		assert(isupport.caseMapping == CaseMapping.ascii);
+		isupport.insertToken("CASEMAPPING", Nullable!string("rfc3454"));
+		assert(isupport.caseMapping == CaseMapping.rfc3454);
+		isupport.insertToken("CASEMAPPING", Nullable!string("strict-rfc1459"));
+		assert(isupport.caseMapping == CaseMapping.strictRFC1459);
+		isupport.insertToken("CASEMAPPING", Nullable!string.init);
+		assert(isupport.caseMapping == CaseMapping.unknown);
+	}
+	{
+		assert(isupport.chanLimits.length == 0);
+		isupport.insertToken("CHANLIMIT", Nullable!string("#+:25,&:"));
+		assert(isupport.chanLimits['#'] == 25);
+		assert(isupport.chanLimits['+'] == 25);
+		assert(isupport.chanLimits['&'] == ulong.max);
+		isupport.insertToken("CHANLIMIT", Nullable!string.init);
+		assert(isupport.chanLimits.length == 0);
+		isupport.insertToken("CHANLIMIT", Nullable!string("q"));
+		assert(isupport.chanLimits.length == 0);
+		isupport.insertToken("CHANLIMIT", Nullable!string("!:f"));
+		assert(isupport.chanLimits.length == 0);
+	}
+}
 template parseNumeric(Numeric numeric) {
 	static if (numeric.among(noInformationNumerics)) {
 		static assert(0, "Cannot parse "~numeric~": No information to parse.");
