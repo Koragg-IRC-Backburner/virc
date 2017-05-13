@@ -47,9 +47,6 @@ struct IRCSplitter {
 
 @safe pure nothrow unittest {
 	import std.algorithm : equal;
-	import std.array;
-	import std.stdio;
-	import std.range;
 	assert(IRCSplitter("").empty);
 	assert(IRCSplitter("test").equal(["test"]));
 	assert(IRCSplitter("test word2").equal(["test", "word2"]));

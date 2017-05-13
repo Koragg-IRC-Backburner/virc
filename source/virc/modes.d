@@ -1,6 +1,6 @@
 module virc.modes;
 
-import std.algorithm : splitter, among;
+import std.algorithm : among, splitter;
 import std.range.primitives : isInputRange, isOutputRange;
 import std.range : put;
 import std.typecons : Nullable, Tuple;

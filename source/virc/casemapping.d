@@ -1,8 +1,8 @@
 module virc.casemapping;
 
-import std.range.primitives : isInputRange;
-import std.ascii : toUpper, toLower, isAlpha;
 import std.algorithm : map;
+import std.ascii : isAlpha, toLower, toUpper;
+import std.range.primitives : isInputRange;
 
 
 enum CaseMapping {

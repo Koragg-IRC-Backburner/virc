@@ -1,12 +1,12 @@
 module virc.numerics;
+import std.algorithm : among, filter, findSplit, findSplitAfter, map, skipOver, splitter, startsWith;
 import std.array : array;
-import std.datetime : SysTime, UTC;
-import std.typecons : Nullable, Tuple;
-import std.range : popFront, front, empty, zip;
 import std.conv : parse, to;
+import std.datetime : SysTime, UTC;
 import std.meta : AliasSeq;
-import std.algorithm : splitter, findSplit, findSplitAfter, startsWith, map, among, filter, skipOver;
+import std.range : empty, front, popFront, zip;
 import std.string : toLower;
+import std.typecons : Nullable, Tuple;
 import std.utf : byCodeUnit;
 
 import virc.casemapping;

@@ -1,8 +1,8 @@
 module virc.usermask;
 
 import std.algorithm : findSplit;
-import std.typecons : Nullable;
 import std.range;
+import std.typecons : Nullable;
 
 struct UserMask {
 	string nickname;

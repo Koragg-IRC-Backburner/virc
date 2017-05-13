@@ -19,13 +19,13 @@ debug import std.stdio : writeln, writefln;
 static import std.range;
 
 import virc.common;
-import virc.ircsplitter;
+import virc.encoding;
 import virc.internaladdresslist;
+import virc.ircsplitter;
 import virc.modes;
 import virc.numerics;
 import virc.tags;
 import virc.usermask;
-import virc.encoding;
 
 struct NickInfo {
 	string nickname;
@@ -767,12 +767,12 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 
 
 unittest {
-	import std.array : appender, array;
-	import std.string : lineSplitter;
-	import std.range: empty, tail;
 	import std.algorithm : equal, sort;
-
+	import std.array : appender, array;
+	import std.range: empty, tail;
 	import std.stdio : writeln;
+	import std.string : lineSplitter;
+
 
 	enum testUser = NickInfo("nick", "ident", "real name!");
 	void initialize(T)(ref T client) {

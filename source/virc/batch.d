@@ -1,8 +1,6 @@
 module virc.batch;
 import virc.tags;
 
-
-import std.stdio : writeln;
 struct BatchProcessor {
 	ParsedMessage[] batchless;
 	private Batch[string] batchCache;
@@ -106,8 +104,8 @@ struct Batch {
 	}
 }
 @safe pure /+nothrow+/ unittest {
-	import std.range : isOutputRange, isInputRange, takeOne;
 	import std.algorithm : copy;
+	import std.range : isInputRange, isOutputRange, takeOne;
 	static assert(isOutputRange!(BatchProcessor, string), "BatchProcessor failed outputrange test");
 	static assert(isInputRange!BatchProcessor, "BatchProcessor failed inputrange test");
 	//Example from http://ircv3.net/specs/extensions/batch-3.2.html

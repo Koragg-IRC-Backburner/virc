@@ -1,9 +1,9 @@
 module virc.twitch;
 
-import std.range : choose, only, takeNone, drop, chain;
 import std.algorithm;
-import std.typecons : Nullable;
 import std.conv : to;
+import std.range :  chain, choose, drop, only, takeNone;
+import std.typecons : Nullable;
 
 import virc.tags;
 

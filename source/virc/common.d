@@ -1,7 +1,7 @@
 module virc.common;
 
 import std.datetime : SysTime;
-import std.range : put, isOutputRange;
+import std.range : isOutputRange, put;
 import std.typecons : Nullable;
 
 import virc.modes;

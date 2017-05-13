@@ -2,9 +2,9 @@ module virc.tags;
 
 
 import core.time : Duration, seconds;
-import std.algorithm : startsWith, map, splitter, filter, findSplit;
-import std.array : front, empty;
-import std.datetime : SysTime, UTC, msecs;
+import std.algorithm : filter, findSplit, map, splitter, startsWith;
+import std.array : empty, front;
+import std.datetime : msecs, SysTime, UTC;
 import std.exception : enforce;
 import std.meta : aliasSeqOf;
 import std.range : dropOne, isInputRange, only;
@@ -189,7 +189,7 @@ auto splitTag(string input) {
 }
 ///
 @safe /+pure nothrow @nogc+/ unittest {
-	import std.datetime : SysTime, DateTime, UTC, msecs;
+	import std.datetime : DateTime, msecs, SysTime, UTC;
 	//Example from http://ircv3.net/specs/extensions/server-time-3.2.html
 	{
 		auto splitStr = "@time=2011-10-19T16:40:51.620Z :Angel!angel@example.org PRIVMSG Wiz :Hello".splitTag;

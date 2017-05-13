@@ -1,7 +1,7 @@
 module virc.encoding;
 
-import std.string;
 import std.encoding;
+import std.string;
 
 /++
 + Decodes a byte array to a UTF-8 string. Old IRC clients don't use UTF-8,
