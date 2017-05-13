@@ -297,6 +297,10 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		void delegate(const User, const Target, const Message, const MessageMetadata) onMessage;
 		void delegate(const Channel, const MessageMetadata) onList;
 		void delegate(const User, const User, const MessageMetadata) onChgHost;
+		void delegate(const LUserClient, const MessageMetadata) onLUserClient;
+		void delegate(const LUserOp, const MessageMetadata) onLUserOp;
+		void delegate(const LUserChannels, const MessageMetadata) onLUserChannels;
+		void delegate(const LUserMe, const MessageMetadata) onLUserMe;
 		void delegate(const MessageMetadata) onError;
 		void delegate(const MessageMetadata) onRaw;
 		void delegate() onConnect;
@@ -498,12 +502,16 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 				tryCall!"onError"(metadata);
 				break;
 			case Numeric.RPL_LUSERCLIENT:
+				tryCall!"onLUserClient"(parseNumeric!(Numeric.RPL_LUSERCLIENT)(split), metadata);
 				break;
 			case Numeric.RPL_LUSEROP:
+				tryCall!"onLUserOp"(parseNumeric!(Numeric.RPL_LUSEROP)(split), metadata);
 				break;
 			case Numeric.RPL_LUSERCHANNELS:
+				tryCall!"onLUserChannels"(parseNumeric!(Numeric.RPL_LUSERCHANNELS)(split), metadata);
 				break;
 			case Numeric.RPL_LUSERME:
+				tryCall!"onLUserMe"(parseNumeric!(Numeric.RPL_LUSERME)(split), metadata);
 				break;
 			case Numeric.RPL_TOPIC:
 				//auto channel = Channel(split.front);
