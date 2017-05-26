@@ -146,7 +146,7 @@ struct MessageMetadata {
 	string[string] tags;
 	Nullable!Numeric messageNumeric;
 	string original;
-	string toString() const @safe pure nothrow @nogc {
+	auto toString() const {
 		return original;
 	}
 }
@@ -157,22 +157,22 @@ enum MessageType {
 struct Message {
 	string msg;
 	MessageType type;
-	bool isCTCP() const pure @safe nothrow @nogc {
+	auto isCTCP() const {
 		return (msg.startsWith("\x01")) && (msg.endsWith("\x01"));
 	}
-	bool isNotice() const pure @safe nothrow @nogc {
+	auto isNotice() const {
 		return type == MessageType.notice;
 	}
-	bool isPrivmsg() const pure @safe nothrow @nogc {
+	auto isPrivmsg() const {
 		return type == MessageType.privmsg;
 	}
-	string ctcpCommand() const pure @safe nothrow @nogc in {
+	auto ctcpCommand() const in {
 		assert(isCTCP, "This is not a CTCP message!");
 	} body {
 		auto split = msg[1..$-1].splitter(" ");
 		return split.front;
 	}
-	string ctcpArgs() const pure @safe nothrow @nogc in {
+	auto ctcpArgs() const in {
 		assert(isCTCP, "This is not a CTCP message!");
 	} body {
 		return msg.find(" ")[1..$-1];

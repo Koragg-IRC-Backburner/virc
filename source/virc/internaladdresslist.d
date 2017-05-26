@@ -31,10 +31,10 @@ struct InternalAddressList {
 	void invalidate(string deadUser) @safe pure nothrow {
 		users.remove(deadUser);
 	}
-	User opIndex(string name) @safe pure nothrow {
+	auto opIndex(string name) {
 		return users[name];
 	}
-	bool opIn_r(string name) @safe pure nothrow {
+	auto opIn_r(string name) {
 		return ((name in users) !is null);
 	}
 }

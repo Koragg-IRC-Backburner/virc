@@ -20,7 +20,7 @@ struct Mode {
 	invariant() {
 		assert((type != ModeType.d) || arg.isNull);
 	}
-	bool opEquals(Mode b) const @safe nothrow pure @nogc {
+	auto opEquals(Mode b) const {
 		return (mode == b.mode);
 	}
 }

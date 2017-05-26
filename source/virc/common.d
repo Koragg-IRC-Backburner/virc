@@ -21,27 +21,27 @@ struct Topic {
 	string message;
 	Nullable!SysTime time;
 	Nullable!User setBy;
-	bool opEquals(const Topic b) const @safe pure nothrow @nogc{
+	auto opEquals(const Topic b) const {
 		return message == b.message;
 	}
 }
 
 struct User {
 	UserMask mask;
+	Nullable!string realName;
+	Nullable!string account;
 	this(string str) @safe pure nothrow @nogc {
 		mask = UserMask(str);
 	}
-	string nickname() @safe pure nothrow @nogc const {
+	auto nickname() const {
 		return mask.nickname;
 	}
-	string ident() @safe pure nothrow @nogc const {
+	auto ident() const {
 		return mask.ident;
 	}
-	string host() @safe pure nothrow @nogc const  {
+	auto host() const  {
 		return mask.host;
 	}
-	Nullable!string realName;
-	Nullable!string account;
 	void toString(T)(T sink) const if (isOutputRange!(T, const(char))) {
 		mask.toString(sink);
 		if (!account.isNull) {
@@ -50,7 +50,7 @@ struct User {
 			put(sink, ")");
 		}
 	}
-	bool opEquals(const User b) const @safe pure nothrow @nogc {
+	auto opEquals(const User b) const {
 		if (!this.realName.isNull && !b.realName.isNull && (this.realName != b.realName)) {
 			return false;
 		}
