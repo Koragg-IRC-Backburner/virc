@@ -1,9 +1,14 @@
+/++
++ Maintains user information for use where it may otherwise be missing.
++/
 module virc.internaladdresslist;
 
 import virc.common;
 
+///
 struct InternalAddressList {
 	private User[string] users;
+	///
 	void update(User user) @safe pure nothrow {
 		if (user.nickname !in users) {
 			users[user.nickname] = user;
@@ -23,17 +28,21 @@ struct InternalAddressList {
 			users[user.nickname].mask.nickname = user.mask.nickname;
 		}
 	}
+	///
 	void rename(User user, string oldNick) @safe pure nothrow {
 		users[user.nickname] = users[oldNick];
 		users.remove(oldNick);
 		update(user);
 	}
+	///
 	void invalidate(string deadUser) @safe pure nothrow {
 		users.remove(deadUser);
 	}
+	///
 	auto opIndex(string name) {
 		return users[name];
 	}
+	///
 	auto opIn_r(string name) {
 		return ((name in users) !is null);
 	}

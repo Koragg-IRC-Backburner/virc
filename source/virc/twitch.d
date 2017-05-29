@@ -1,3 +1,6 @@
+/++
++ Module handling various IRC extensions used by Twitch.
++/
 module virc.twitch;
 
 import std.algorithm;
@@ -7,26 +10,43 @@ import std.typecons : Nullable;
 
 import virc.tags;
 
+///
 alias banReason = stringTag!"ban-reason";
+///
 alias banDuration = secondDurationTag!"ban-duration";
+///
 alias bits = typeTag!("slow", ulong);
+///
 alias broadcasterLang = stringTag!"broadcaster-lang";
+///
 alias color = stringTag!"color";
+///
 alias displayName = stringTag!"display-name";
 //alias emoteSets = arrayTag!("emote-sets", string);
 alias mod = booleanTag!"mod";
+///
 alias login = stringTag!"login";
+///
 alias msgID = stringTag!"msg-id";
+///
 alias r9k = booleanTag!"r9k";
+///
 alias roomID = stringTag!"room-id";
+///
 alias slow = typeTag!("slow", ulong);
+///
 alias subsOnly = booleanTag!"subs-only";
+///
 alias subscriber = booleanTag!"subscriber";
+///
 alias systemMsg = stringTag!"system-msg";
+///
 alias turbo = booleanTag!"turbo";
+///
 alias userID = stringTag!"user-id";
+///
 alias userType = stringTag!"user-type";
-
+///
 auto emotes(IRCTags tags) {
 	auto parseTag(string str) {
 		return str.splitter("/")
@@ -48,10 +68,15 @@ auto emotes(IRCTags tags) {
 		return Nullable!(typeof(parseTag("")))(parseTag(tags["emotes"]));
 	return Nullable!(typeof(parseTag(""))).init;
 }
-
+/++
++
++/
 struct TwitchEmote {
+	///
 	ulong id;
+	///
 	ulong beginPosition;
+	///
 	ulong endPosition;
 }
 

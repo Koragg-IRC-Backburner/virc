@@ -1,3 +1,6 @@
+/++
++ Module for various low-level IRC connection details.
++/
 module virc.connection;
 /++
     TLS Modes. For better security, use as many flags as possible.

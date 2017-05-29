@@ -1,3 +1,6 @@
+/++
++ IRCv3 tags capability support.
++/
 module virc.tags;
 
 
@@ -11,23 +14,35 @@ import std.range : dropOne, isInputRange, only;
 import std.traits : isArray;
 import std.typecons : Nullable;
 import std.utf;
-
+/++
++
++/
 struct ParsedMessage {
+	///
 	string msg;
+	///
 	IRCTags tags;
+	///
 	this(string text) pure @safe nothrow @nogc {
 		msg = text;
 	}
+	///
 	this(string text, string[string] inTags) pure @safe nothrow @nogc {
 		msg = text;
 		tags = IRCTags(inTags);
 	}
 }
+/++
++
++/
 struct IRCTags {
+	///
 	string[string] tags;
 	alias tags this;
 }
-
+/++
++
++/
 Nullable!bool booleanTag(string tag)(IRCTags tags) {
 	Nullable!bool output;
 	if (tag in tags) {
@@ -46,9 +61,15 @@ Nullable!bool booleanTag(string tag)(IRCTags tags) {
 	assert(!ParsedMessage("", ["test": "0"]).tags.booleanTag!"test");
 	assert(ParsedMessage("", ["test": "1"]).tags.booleanTag!"test");
 }
+/++
++
++/
 Nullable!string stringTag(string tag)(IRCTags tags) {
 	return typeTag!(tag, string)(tags);
 }
+/++
++
++/
 Nullable!Type typeTag(string tag, Type)(IRCTags tags) {
 	import std.conv : to;
 	Nullable!Type output;
@@ -75,6 +96,9 @@ Nullable!Type typeTag(string tag, Type)(IRCTags tags) {
 	}
 	assert(ParsedMessage("", ["test": "words"]).tags.typeTag!("test", Something).val == 'w');
 }
+/++
++
++/
 auto arrayTag(string tag, string delimiter = ",", Type = string[])(IRCTags tags) if (isArray!Type){
 	import std.algorithm : splitter;
 	import std.conv : to;
@@ -104,6 +128,9 @@ auto arrayTag(string tag, string delimiter = ",", Type = string[])(IRCTags tags)
 	assert(ParsedMessage("", ["test":"9,1"]).tags.arrayTag!("test", ",", uint[]) == [9, 1]);
 	assert(ParsedMessage("", ["test":"9,a"]).tags.arrayTag!("test", ",", uint[]).isNull);
 }
+/++
++
++/
 Nullable!Duration secondDurationTag(string tag)(IRCTags tags) {
 	import std.conv : to;
 	Nullable!Duration output;
@@ -121,10 +148,16 @@ Nullable!Duration secondDurationTag(string tag)(IRCTags tags) {
 	assert(ParsedMessage("", ["test": "a"]).tags.secondDurationTag!("test").isNull);
 	assert(ParsedMessage("", ["test": "3600"]).tags.secondDurationTag!("test") == 1.hours);
 }
+/++
++
++/
 auto parseTime(string[string] tags) {
 	enforce("time" in tags);
 	return SysTime.fromISOExtString(tags["time"], UTC());
 }
+/++
++
++/
 auto splitTag(string input) {
 	ParsedMessage output;
 	if (input.startsWith("@")) {
@@ -211,7 +244,9 @@ auto splitTag(string input) {
 		//assert(parseTime(splitStr.tags) == SysTime(DateTime(2012,06,30,23,59,60), 419.msecs, UTC()));
 	}
 }
-
+/++
++
++/
 T replaceEscape(T, replacements...)(T input) {
 	static if (replacements.length == 0) {
 		return input;

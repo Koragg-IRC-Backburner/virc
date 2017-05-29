@@ -1,5 +1,9 @@
+/++
++ Module for dealing with IRC formatting.
++/
 module virc.style;
 
+///
 enum MIRCColours {
 	///RGB(255,255,255)
 	white = 0,
@@ -37,12 +41,20 @@ enum MIRCColours {
 	transparent = 99
 }
 
+///
 enum ControlCharacters {
+	///
 	bold = '\x02',
+	///
 	underline = '\x1F',
+	///
 	italic = '\x1D',
+	///
 	plain = '\x0F',
+	///
 	color = '\x03',
+	///
 	extendedColor = '\x04',
+	///
 	reverse = '\x16'
 }

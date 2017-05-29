@@ -1,3 +1,6 @@
+/++
++ Module for parsing IRC mode strings.
++/
 module virc.modes;
 
 import std.algorithm : among, splitter;
@@ -14,8 +17,11 @@ import std.typecons : Nullable, Tuple;
  + with it.
  +/
 struct Mode {
+	///
 	ModeType type = ModeType.d;
+	///
 	char mode;
+	///
 	Nullable!string arg;
 	invariant() {
 		assert((type != ModeType.d) || arg.isNull);
@@ -25,6 +31,9 @@ struct Mode {
 	}
 }
 
+/++
++ Mode classification.
++/
 enum ModeType {
 	///Adds/removes nick/address to a list. always has a parameter.
 	a,
@@ -35,7 +44,9 @@ enum ModeType {
 	///Mode that changes a setting and never has a parameter.
 	d
 }
-
+/++
++ Whether a mode was set or unset.
++/
 enum Change {
 	///Mode was set.
 	set,
@@ -43,8 +54,13 @@ enum Change {
 	unset
 }
 
+/++
++ Full metadata associated with a mode change.
++/
 struct ModeChange {
+	///
 	Mode mode;
+	///
 	Change change;
 	void toString(T)(T sink) const if (isOutputRange!(T, const(char))) {
 		final switch(change) {
@@ -59,6 +75,9 @@ struct ModeChange {
 	}
 }
 
+/++
++ Parse a mode string into individual mode changes.
++/
 auto parseModeString(string input, ModeType[char] channelModeTypes) {
 	ModeChange[] changes;
 	bool unsetMode = false;
@@ -94,7 +113,7 @@ auto parseModeString(string input, ModeType[char] channelModeTypes) {
 	}
 	return changes;
 }
-
+///
 @safe pure nothrow unittest {
 	import std.algorithm : canFind, filter, map;
 	import std.range : empty;

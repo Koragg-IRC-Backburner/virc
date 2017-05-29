@@ -1,13 +1,25 @@
+/++
++ IRC user masks.
++/
 module virc.usermask;
 
 import std.algorithm : findSplit;
 import std.range;
 import std.typecons : Nullable;
 
+/++
++ IRC user masks are generally in the form nick!ident@hostname. This struct
++ exists for easy separation and manipulation of each piece of the mask. This
++ also accepts cases where the ident and host are not present.
++/
 struct UserMask {
+	///
 	string nickname;
+	///
 	Nullable!string ident;
+	///
 	Nullable!string host;
+	///
 	this(string maskString) @safe pure nothrow @nogc {
 		auto split = maskString.findSplit("!");
 		nickname = split[0];

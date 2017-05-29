@@ -1,3 +1,6 @@
+/++
++ Module for defining, parsing and handling the large number of IRC numerics.
++/
 module virc.numerics;
 import std.algorithm : among, filter, findSplit, findSplitAfter, map, skipOver, splitter, startsWith;
 import std.array : array;
@@ -14,272 +17,522 @@ import virc.common;
 import virc.modes;
 import virc.usermask;
 
+///
 enum Numeric {
 	//RFC1459 Command responses: https://tools.ietf.org/html/rfc1459#section-6.2
+	///
 	RPL_TRACELINK = "200",
+	///
 	RPL_TRACECONNECTING = "201",
+	///
 	RPL_TRACEHANDSHAKE = "202",
+	///
 	RPL_TRACEUNKNOWN = "203",
+	///
 	RPL_TRACEOPERATOR = "204",
+	///
 	RPL_TRACEUSER = "205",
+	///
 	RPL_TRACESERVER = "206",
+	///
 	RPL_TRACENEWTYPE = "208",
+	///
 	RPL_STATSLINKINFO = "211",
+	///
 	RPL_STATSCOMMANDS = "212",
+	///
 	RPL_STATSCLINE = "213",
+	///
 	RPL_STATSNLINE = "214",
+	///
 	RPL_STATSILINE = "215",
+	///
 	RPL_STATSKLINE = "216",
+	///
 	RPL_STATSYLINE = "218",
+	///
 	RPL_ENDOFSTATS = "219",
+	///
 	RPL_STATSLLINE = "241",
+	///
 	RPL_STATSUPTIME = "242",
+	///
 	RPL_STATSOLINE = "243",
+	///
 	RPL_STATSHLINE = "244",
+	///
 	RPL_UMODEIS = "221",
+	///
 	RPL_LUSERCLIENT = "251",
+	///
 	RPL_LUSEROP = "252",
+	///
 	RPL_LUSERUNKNOWN = "253",
+	///
 	RPL_LUSERCHANNELS = "254",
+	///
 	RPL_LUSERME = "255",
+	///
 	RPL_ADMINME = "256",
+	///
 	RPL_ADMINLOC1 = "257",
+	///
 	RPL_ADMINLOC2 = "258",
+	///
 	RPL_ADMINEMAIL = "259",
+	///
 	RPL_TRACELOG = "261",
+	///
 	RPL_NONE = "300",
+	///
 	RPL_AWAY = "301",
+	///
 	RPL_USERHOST = "302",
+	///
 	RPL_ISON = "303",
+	///
 	RPL_UNAWAY = "305",
+	///
 	RPL_NOWAWAY = "306",
+	///
 	RPL_WHOISUSER = "311",
+	///
 	RPL_WHOISSERVER = "312",
+	///
 	RPL_WHOISOPERATOR = "313",
+	///
 	RPL_WHOWASUSER = "314",
+	///
 	RPL_ENDOFWHO = "315",
+	///
 	RPL_WHOISIDLE = "317",
+	///
 	RPL_ENDOFWHOIS = "318",
+	///
 	RPL_WHOISCHANNELS = "319",
+	///
 	RPL_LISTSTART = "321",
+	///
 	RPL_LIST = "322",
+	///
 	RPL_LISTEND = "323",
+	///
 	RPL_CHANNELMODEIS = "324",
+	///
 	RPL_NOTOPIC = "331",
+	///
 	RPL_TOPIC = "332",
+	///
 	RPL_INVITING = "341",
+	///
 	RPL_SUMMONING = "342",
+	///
 	RPL_VERSION = "351",
+	///
 	RPL_WHOREPLY = "352",
+	///
 	RPL_NAMREPLY = "353",
+	///
 	RPL_LINKS = "364",
+	///
 	RPL_ENDOFLINKS = "365",
+	///
 	RPL_ENDOFNAMES = "366",
+	///
 	RPL_BANLIST = "367",
+	///
 	RPL_ENDOFBANLIST = "368",
+	///
 	RPL_ENDOFWHOWAS = "369",
+	///
 	RPL_INFO = "371",
+	///
 	RPL_MOTD = "372",
+	///
 	RPL_ENDOFINFO = "374",
+	///
 	RPL_MOTDSTART = "375",
+	///
 	RPL_ENDOFMOTD = "376",
+	///
 	RPL_YOUREOPER = "381",
+	///
 	RPL_REHASHING = "382",
+	///
 	RPL_TIME = "391",
+	///
 	RPL_USERSSTART = "392",
+	///
 	RPL_USERS = "393",
+	///
 	RPL_ENDOFUSERS = "394",
+	///
 	RPL_NOUSERS = "395",
 	//RFC1459 Errors: https://tools.ietf.org/html/rfc1459#section-6.1
+	///
 	ERR_NOSUCHNICK = "401",
+	///
 	ERR_NOSUCHSERVER = "402",
+	///
 	ERR_NOSUCHCHANNEL = "403",
+	///
 	ERR_CANNOTSENDTOCHAN = "404",
+	///
 	ERR_TOOMANYCHANNELS = "405",
+	///
 	ERR_WASNOSUCHNICK = "406",
+	///
 	ERR_TOOMANYTARGETS = "407",
+	///
 	ERR_NOORIGIN = "409",
+	///
 	ERR_NORECIPIENT = "411",
+	///
 	ERR_NOTEXTTOSEND = "412",
+	///
 	ERR_NOTOPLEVEL = "413",
+	///
 	ERR_WILDTOPLEVEL = "414",
+	///
 	ERR_UNKNOWNCOMMAND = "421",
+	///
 	ERR_NOMOTD = "422",
+	///
 	ERR_NOADMININFO = "423",
+	///
 	ERR_FILEERROR = "424",
+	///
 	ERR_NONICKNAMEGIVEN = "431",
+	///
 	ERR_ERRONEUSNICKNAME = "432",
+	///
 	ERR_NICKNAMEINUSE = "433",
+	///
 	ERR_NICKCOLLISION = "436",
+	///
 	ERR_USERNOTINCHANNEL = "441",
+	///
 	ERR_NOTONCHANNEL = "442",
+	///
 	ERR_USERONCHANNEL = "443",
+	///
 	ERR_NOLOGIN = "444",
+	///
 	ERR_SUMMONDISABLED = "445",
+	///
 	ERR_USERSDISABLED = "446",
+	///
 	ERR_NOTREGISTERED = "451",
+	///
 	ERR_NEEDMOREPARAMS = "461",
+	///
 	ERR_ALREADYREGISTRED = "462",
+	///
 	ERR_NOPERMFORHOST = "463",
+	///
 	ERR_PASSWDMISMATCH = "464",
+	///
 	ERR_YOUREBANNEDCREEP = "465",
+	///
 	ERR_KEYSET = "467",
+	///
 	ERR_CHANNELISFULL = "471",
+	///
 	ERR_UNKNOWNMODE = "472",
+	///
 	ERR_INVITEONLYCHAN = "473",
+	///
 	ERR_BANNEDFROMCHAN = "474",
+	///
 	ERR_BADCHANNELKEY = "475",
+	///
 	ERR_NOPRIVILEGES = "481",
+	///
 	ERR_CHANOPRIVSNEEDED = "482",
+	///
 	ERR_CANTKILLSERVER = "483",
+	///
 	ERR_NOOPERHOST = "491",
+	///
 	ERR_UMODEUNKNOWNFLAG = "501",
+	///
 	ERR_USERSDONTMATCH = "502",
 	//RFC1459 Reserved: https://tools.ietf.org/html/rfc1459#section-6.3
 	//Obsolete or reserved for "future use"
+	///
 	RPL_STATSQLINE = "217",
+	///
 	RPL_SERVICEINFO = "231",
+	///
 	RPL_ENDOFSERVICES = "232",
+	///
 	RPL_SERVICE = "233",
+	///
 	RPL_WHOISCHANOP = "316",
+	///
 	RPL_KILLDONE = "361",
+	///
 	RPL_CLOSING = "362",
+	///
 	RPL_CLOSEEND = "363",
+	///
 	RPL_INFOSTART = "373",
+	///
 	RPL_MYPORTIS = "384",
+	///
 	ERR_NOSERVICEHOST = "492",
 	//RFC2812 Command responses: https://tools.ietf.org/html/rfc2812#section-5.1
+	///
 	RPL_WELCOME = "001",
+	///
 	RPL_YOURHOST = "002",
+	///
 	RPL_CREATED = "003",
+	///
 	RPL_MYINFO = "004",
+	///
 	RPL_BOUNCE = "005",
+	///
 	RPL_TRACESERVICE = "207",
+	///
 	RPL_TRACECLASS = "209",
+	///
 	RPL_SERVLIST = "234",
+	///
 	RPL_SERVLISTEND = "235",
+	///
 	RPL_TRACEEND = "262",
+	///
 	RPL_TRYAGAIN = "263",
+	///
 	RPL_UNIQOPIS = "325",
+	///
 	RPL_INVITELIST = "346",
+	///
 	RPL_ENDOFINVITELIST = "347",
+	///
 	RPL_EXCEPTLIST = "348",
+	///
 	RPL_ENDOFEXCEPTLIST = "349",
 	//RFC2812 Errors: https://tools.ietf.org/html/rfc2812#section-5.2
+	///
 	ERR_NOSUCHSERVICE = "408",
+	///
 	ERR_BADMASK = "415",
+	///
 	ERR_TOOMANYMATCHES = "416", //Errata
+	///
 	ERR_UNAVAILRESOURCE = "437",
+	///
 	ERR_YOUWILLBEBANNED = "466",
+	///
 	ERR_BADCHANMASK = "476",
+	///
 	ERR_NOCHANMODES = "477",
+	///
 	ERR_BANLISTFULL = "478",
+	///
 	ERR_RESTRICTED = "484",
+	///
 	ERR_UNIQOPPRIVSNEEDED = "485",
 	//RFC2812 Reserved: https://tools.ietf.org/html/rfc2812#section-5.3
+	///
 	RPL_STATSVLINE = "240",
+	///
 	RPL_STATSSLINE = "245", //244 in original doc, 245 in errata
+	///
 	RPL_STATSPING = "246",
+	///
 	RPL_STATSBLINE = "247",
+	///
 	RPL_STATSDLINE = "250",
 	//Monitor: http://ircv3.net/specs/core/monitor-3.2.html
+	///
 	RPL_MONONLINE = "730",
+	///
 	RPL_MONOFFLINE = "731",
+	///
 	RPL_MONLIST = "732",
+	///
 	RPL_ENDOFMONLIST = "733",
+	///
 	ERR_MONLISTFULL = "734",
 	//Metadata: http://ircv3.net/specs/core/metadata-3.2.html
+	///
 	RPL_WHOISKEYVALUE = "760",
+	///
 	RPL_KEYVALUE = "761",
+	///
 	RPL_METADATAEND = "762",
+	///
 	ERR_METADATALIMIT = "764",
+	///
 	ERR_TARGETINVALID = "765",
+	///
 	ERR_NOMATCHINGKEY = "766",
+	///
 	ERR_KEYINVALID = "767",
+	///
 	ERR_KEYNOTSET = "768",
+	///
 	ERR_KEYNOPERMISSION = "769",
 	//SASL: http://ircv3.net/specs/extensions/sasl-3.1.html
+	///
 	RPL_LOGGEDIN = "900",
+	///
 	RPL_LOGGEDOUT = "901",
+	///
 	ERR_NICKLOCKED = "902",
+	///
 	RPL_SASLSUCCESS = "903",
+	///
 	ERR_SASLFAIL = "904",
+	///
 	ERR_SASLTOOLONG = "905",
+	///
 	ERR_SASLABORTED = "906",
+	///
 	ERR_SASLALREADY = "907",
+	///
 	RPL_SASLMECHS = "908",
 	//STARTTLS: http://ircv3.net/specs/extensions/tls-3.1.html
+	///
 	RPL_STARTTLS = "670",
+	///
 	ERR_STARTTLS = "691",
 	//IRCX: http://tools.ietf.org/id/draft-pfenning-irc-extensions-04.txt
 	//Pretty uncommon, but included for completeness
+	///
 	IRCRPL_IRCX = "800",
+	///
 	IRCRPL_ACCESSADD = "801",
+	///
 	IRCRPL_ACCESSDELETE = "802",
+	///
 	IRCRPL_ACCESSSTART = "803",
+	///
 	IRCRPL_ACCESSLIST = "804",
+	///
 	IRCRPL_ACCESSEND = "805",
+	///
 	IRCRPL_EVENTADD = "806",
+	///
 	IRCRPL_EVENTDEL = "807",
+	///
 	IRCRPL_EVENTSTART = "808",
+	///
 	IRCRPL_EVENTLIST = "809",
+	///
 	IRCRPL_EVENTEND = "810",
+	///
 	IRCRPL_LISTXSTART = "811",
+	///
 	IRCRPL_LISTXLIST = "812",
+	///
 	IRCRPL_LISTXPICS = "813",
+	///
 	IRCRPL_LISTXTRUNC = "816",
+	///
 	IRCRPL_LISTXEND = "817",
+	///
 	IRCRPL_PROPLIST = "818",
+	///
 	IRCRPL_PROPEND = "819",
+	///
 	IRCERR_BADCOMMAND = "900",
+	///
 	IRCERR_TOOMANYARGUMENTS = "901",
+	///
 	IRCERR_BADFUNCTION = "902",
+	///
 	IRCERR_BADLEVEL = "903",
+	///
 	IRCERR_BADTAG = "904",
+	///
 	IRCERR_BADPROPERTY = "905",
+	///
 	IRCERR_BADVALUE = "906",
+	///
 	IRCERR_RESOURCE = "907",
+	///
 	IRCERR_SECURITY = "908",
+	///
 	IRCERR_ALREADYAUTHENTICATED = "909",
+	///
 	IRCERR_AUTHENTICATIONFAILED = "910",
+	///
 	IRCERR_AUTHENTICATIONSUSPENDED = "911",
+	///
 	IRCERR_UNKNOWNPACKAGE = "912",
+	///
 	IRCERR_NOACCESS = "913",
+	///
 	IRCERR_DUPACCESS = "914",
+	///
 	IRCERR_MISACCESS = "915",
+	///
 	IRCERR_TOOMANYACCESSES = "916",
+	///
 	IRCERR_EVENTDUP = "918",
+	///
 	IRCERR_EVENTMIS = "919",
+	///
 	IRCERR_NOSUCHEVENT = "920",
+	///
 	IRCERR_TOOMANYEVENTS = "921",
+	///
 	IRCERR_NOWHISPER = "923",
+	///
 	IRCERR_NOSUCHOBJECT = "924",
+	///
 	IRCERR_NOTSUPPORTED = "925",
+	///
 	IRCERR_CHANNELEXIST = "926",
+	///
 	IRCERR_ALREADYONCHANNEL = "927",
+	///
 	IRCERR_UNKNOWNERROR = "999",
 	//WATCH: https://github.com/grawity/irc-docs/blob/master/client/draft-meglio-irc-watch-00.txt
+	///
 	RPL_GONEAWAY = "598",
+	///
 	RPL_NOTAWAY = "599",
+	///
 	RPL_LOGON = "600",
+	///
 	RPL_LOGOFF = "601",
+	///
 	RPL_WATCHOFF = "602",
+	///
 	RPL_WATCHSTAT = "603",
+	///
 	RPL_NOWON = "604",
+	///
 	RPL_NOWOFF = "605",
+	///
 	RPL_WATCHLIST = "606",
+	///
 	RPL_ENDOFWATCHLIST = "607",
+	///
 	RPL_CLEARWATCH = "608",
+	///
 	RPL_NOWISAWAY = "609",
 	//Misc
+	///
 	RPL_TEXT = "304",
 	//Unknown origin, but in use
+	///
 	RPL_YOURID = "042",
+	///
 	RPL_LOCALUSERS = "265",
+	///
 	RPL_GLOBALUSERS = "266",
+	///
 	RPL_TOPICWHOTIME = "333",
+	///
 	RPL_HOSTHIDDEN = "396",
 	//ISUPPORT: http://www.irc.org/tech_docs/draft-brocklesby-irc-isupport-03.txt
+	///
 	RPL_ISUPPORT = "005"
 }
 alias noInformationNumerics = AliasSeq!(
@@ -303,171 +556,333 @@ alias listEndNumerics =AliasSeq!(
 	Numeric.RPL_ENDOFNAMES,
 	Numeric.RPL_ENDOFMONLIST
 );
+/++
++ 004 RPL_MYINFO response.
++/
 struct MyInfo {
+	///
 	string name;
+	///
 	string version_;
+	///
 	string userModes;
+	///
 	string userModesWithParams;
+	///
 	string channelModes;
+	///
 	string channelModesWithParams;
+	///
 	string serverModes;
+	///
 	string serverModesWithParams;
 }
+/++
++
++/
 struct LUserClient {
+	///
 	string message;
+	///
 	this(string msg) pure @safe {
 		message = msg;
 	}
 }
+/++
++
++/
 struct LUserMe {
+	///
 	string message;
+	///
 	this(string msg) pure @safe {
 		message = msg;
 	}
 }
+/++
++
++/
 struct LUserChannels {
+	///
 	ulong numChans;
+	///
 	string message;
+	///
 	this(string chans, string msg) pure @safe {
 		numChans = chans.to!ulong;
 		message = msg;
 	}
 }
+/++
++
++/
 struct LUserOp {
+	///
 	ulong numOpers;
+	///
 	string message;
+	///
 	this(string ops, string msg) pure @safe {
 		numOpers = ops.to!ulong;
 		message = msg;
 	}
 }
+/++
++
++/
 enum ISupportToken {
+	///
 	accept = "ACCEPT",
+	///
 	awayLen = "AWAYLEN",
+	///
 	callerID = "CALLERID",
+	///
 	caseMapping = "CASEMAPPING",
+	///
 	chanLimit = "CHANLIMIT",
+	///
 	chanModes = "CHANMODES",
+	///
 	channelLen = "CHANNELLEN",
+	///
 	chanTypes = "CHANTYPES",
+	///
 	charSet = "CHARSET",
+	///
 	chIdLen = "CHIDLEN",
+	///
 	cNotice = "CNOTICE",
+	///
 	cPrivmsg = "CPRIVMSG",
+	///
 	deaf = "DEAF",
+	///
 	eList = "ELIST",
+	///
 	eSilence = "ESILENCE",
+	///
 	excepts = "EXCEPTS",
+	///
 	extBan = "EXTBAN",
+	///
 	fnc = "FNC",
+	///
 	idChan = "IDCHAN",
+	///
 	invEx = "INVEX",
+	///
 	kickLen = "KICKLEN",
+	///
 	knock = "KNOCK",
+	///
 	language = "LANGUAGE",
+	///
 	lineLen = "LINELEN",
+	///
 	map = "MAP",
+	///
 	maxBans = "MAXBANS",
+	///
 	maxChannels = "MAXCHANNELS",
+	///
 	maxList = "MAXLIST",
+	///
 	maxPara = "MAXPARA",
+	///
 	maxTargets = "MAXTARGETS",
+	///
 	metadata = "METADATA",
+	///
 	modes = "MODES",
+	///
 	monitor = "MONITOR",
+	///
 	namesX = "NAMESX",
+	///
 	network = "NETWORK",
+	///
 	nickLen = "NICKLEN",
+	///
 	noQuit = "NOQUIT",
+	///
 	operLog = "OPERLOG",
+	///
 	override_ = "OVERRIDE",
+	///
 	penalty = "PENALTY",
+	///
 	prefix = "PREFIX",
+	///
 	remove = "REMOVE",
+	///
 	rfc2812 = "RFC2812",
+	///
 	safeList = "SAFELIST",
+	///
 	secureList = "SECURELIST",
+	///
 	silence = "SILENCE",
+	///
 	ssl = "SSL",
+	///
 	startTLS = "STARTTLS",
+	///
 	statusMsg = "STATUSMSG",
+	///
 	std = "STD",
+	///
 	targMax = "TARGMAX",
+	///
 	topicLen = "TOPICLEN",
+	///
 	uhNames = "UHNAMES",
+	///
 	userIP = "USERIP",
+	///
 	userLen = "USERLEN",
+	///
 	vBanList = "VBANLIST",
+	///
 	vChans = "VCHANS",
+	///
 	wallChOps = "WALLCHOPS",
+	///
 	wallVoices = "WALLVOICES",
+	///
 	watch = "WATCH",
+	///
 	whoX = "WHOX"
 }
+/++
++
++/
 class UnknownISupportTokenException : Exception {
-	this(string token, string file = __FILE__, size_t line = __LINE__) @safe pure {
+	package this(string token, string file = __FILE__, size_t line = __LINE__) @safe pure {
 		super("Unknown Token: "~ token, file, line);
 	}
 }
+/++
++
++/
 struct ISupport {
+	///
 	char[char] prefixes;
+	///
 	string channelTypes = "#&!+"; //RFC2811 specifies four channel types.
+	///
 	ModeType[char] channelModeTypes;
+	///
 	ulong maxModesPerCommand;
+	///
 	ulong[char] chanLimits;
+	///
 	ulong nickLength = 9;
+	///
 	ulong[char] maxList;
+	///
 	string network;
+	///
 	Nullable!char banExceptions;
+	///
 	Nullable!char inviteExceptions;
+	///
 	bool wAllChannelOps;
+	///
 	bool wAllChannelVoices;
+	///
 	string statusMessage;
+	///
 	CaseMapping caseMapping;
+	///
 	string extendedList;
+	///
 	ulong topicLength = 390;
+	///
 	ulong kickLength;
+	///
 	ulong userLength;
+	///
 	ulong channelLength = 200;
+	///
 	ulong[char] channelIDLengths;
+	///
 	Nullable!string standard;
+	///
 	Nullable!ulong silence;
+	///
 	bool extendedSilence;
+	///
 	bool rfc2812;
+	///
 	bool penalty;
+	///
 	bool forcedNickChanges;
+	///
 	bool safeList;
+	///
 	ulong awayLength = ulong.max;
+	///
 	bool noQuit;
+	///
 	bool userIP;
+	///
 	bool cPrivmsg;
+	///
 	bool cNotice;
+	///
 	ulong maxTargets;
+	///
 	bool knock;
+	///
 	bool virtualChannels;
+	///
 	ulong maximumWatches;
+	///
 	bool whoX;
+	///
 	Nullable!char callerID;
+	///
 	string[] languages;
+	///
 	ulong maxLanguages;
+	///
 	bool startTLS; //DANGEROUS!
+	///
 	string banExtensions;
+	///
 	bool logsOperCommands;
+	///
 	string sslServer;
+	///
 	bool userhostsInNames;
+	///
 	bool namesExtended;
+	///
 	bool secureList;
+	///
 	bool supportsRemove;
+	///
 	bool allowsOperOverride;
+	///
 	bool variableBanList;
+	///
 	bool supportsMap;
+	///
 	ulong maximumParameters = 12;
+	///
 	ulong lineLength = 512;
+	///
 	Nullable!char deaf;
+	///
 	ulong metadata = 0;
+	///
 	ulong monitorTargetLimit = 0;
+	///
 	ulong[string] targetMaxByCommand;
+	///
 	string charSet;
+	///
 	void insertToken(string token, Nullable!string val) @safe pure {
 		string value;
 		if (!val.isNull) {
@@ -780,6 +1195,7 @@ struct ISupport {
 		}
 	}
 }
+///
 @safe pure unittest {
 	auto isupport = ISupport();
 	{
@@ -823,6 +1239,9 @@ struct ISupport {
 		assert(isupport.chanLimits.length == 0);
 	}
 }
+/++
++
++/
 template parseNumeric(Numeric numeric) {
 	static if (numeric.among(noInformationNumerics)) {
 		static assert(0, "Cannot parse "~numeric~": No information to parse.");
@@ -860,7 +1279,7 @@ template parseNumeric(Numeric numeric) {
 		}
 	}
 	static if (numeric == Numeric.RPL_ISUPPORT) {
-		auto parseNumeric(T)(T input, ref ISupport iSupport) {
+		void parseNumeric(T)(T input, ref ISupport iSupport) {
 			immutable username = input.front;
 			input.popFront();
 			while (!input.empty && !input.isColonParameter) {
@@ -1007,6 +1426,7 @@ template parseNumeric(Numeric numeric) {
 		}
 	}
 }
+///
 @safe pure nothrow @nogc unittest { //Numeric.RPL_MYINFO
 	import std.range : only;
 	{
@@ -1021,6 +1441,7 @@ template parseNumeric(Numeric numeric) {
 		assert(info.serverModesWithParams == "");
 	}
 }
+///
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_ISUPPORT
 	import std.exception : assertNotThrown, assertThrown;
 	import virc.ircsplitter : IRCSplitter;
@@ -1052,6 +1473,7 @@ template parseNumeric(Numeric numeric) {
 		assertThrown(parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone WHATISTHIS :are supported by this server")));
 	}
 }
+///
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LUSERCLIENT
 	import std.range : only;
 	{
@@ -1059,6 +1481,7 @@ template parseNumeric(Numeric numeric) {
 		assert(luser.message == "There are 42 users and 43 services on 44 servers");
 	}
 }
+///
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LUSEROP
 	import std.range : only;
 	{
@@ -1067,6 +1490,7 @@ template parseNumeric(Numeric numeric) {
 		assert(luser.message == "operator(s) online");
 	}
 }
+///
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LUSERCHANNELS
 	import std.range : only;
 	{
@@ -1075,6 +1499,7 @@ template parseNumeric(Numeric numeric) {
 		assert(luser.message == "channels formed");
 	}
 }
+///
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LUSERME
 	import std.range : only;
 	{
@@ -1082,6 +1507,7 @@ template parseNumeric(Numeric numeric) {
 		assert(luser.message == "I have 47 clients and 48 servers");
 	}
 }
+///
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LIST
 	import std.algorithm.searching : canFind;
 	import std.range : only;
@@ -1112,6 +1538,7 @@ template parseNumeric(Numeric numeric) {
 		assert(listEntry.modes.length == 0);
 	}
 }
+///
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LOGON
 	import std.range : only;
 	{
@@ -1121,6 +1548,7 @@ template parseNumeric(Numeric numeric) {
 		assert(logon.mask.host == "example.net");
 	}
 }
+///
 @safe pure nothrow @nogc unittest { //Numeric.RPL_MONONLINE
 	import std.range : only;
 	{
@@ -1140,6 +1568,7 @@ template parseNumeric(Numeric numeric) {
 		assert(logon.front.mask.host == "example.com");
 	}
 }
+///
 @safe pure nothrow @nogc unittest { //Numeric.RPL_MONOFFLINE
 	import std.range : only;
 	{
@@ -1159,6 +1588,7 @@ template parseNumeric(Numeric numeric) {
 		assert(logoff.front.mask.host.isNull);
 	}
 }
+///
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.ERR_MONLISTFULL
 	import std.range : only;
 	auto test = parseNumeric!(Numeric.ERR_MONLISTFULL)(only("someone", "5", "someone2", "Monitor list is full."));

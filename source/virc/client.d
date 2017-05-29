@@ -1,3 +1,7 @@
+/++
++ Module containing IRC client guts. Parses and dispatches to appropriate
++ handlers/
++/
 module virc.client;
 import std.format : formattedWrite, format;
 import std.range.primitives : isOutputRange, ElementType, isInputRange;
@@ -27,14 +31,26 @@ import virc.numerics;
 import virc.tags;
 import virc.usermask;
 
+/++
++
++/
 struct NickInfo {
+	///
 	string nickname;
+	///
 	string username;
+	///
 	string realname;
 }
 
+/++
++
++/
 enum defaultPrefixes = ['o': '@', 'v': '+'];
 
+/++
++
++/
 enum supportedCaps = AliasSeq!(
 	"account-notify", // http://ircv3.net/specs/extensions/account-notify-3.1.html
 	"account-tag", // http://ircv3.net/specs/extensions/account-tag-3.2.html
@@ -51,51 +67,99 @@ enum supportedCaps = AliasSeq!(
 	"userhost-in-names", // http://ircv3.net/specs/extensions/userhost-in-names-3.2.html
 );
 
+/++
++
++/
 enum ISUPPORT {
+	///
 	prefix,
+	///
 	chantypes,
+	///
 	chanmodes,
+	///
 	modes,
+	///
 	maxchannels,
+	///
 	chanlimit,
+	///
 	nicklen,
+	///
 	maxbans,
+	///
 	maxlist,
+	///
 	network,
+	///
 	excepts,
+	///
 	invex,
+	///
 	wallchops,
+	///
 	wallvoices,
+	///
 	statusmsg,
+	///
 	casemapping,
+	///
 	elist,
+	///
 	topiclen,
+	///
 	kicklen,
+	///
 	channellen,
+	///
 	chidlen,
+	///
 	idchan,
+	///
 	std,
+	///
 	silence,
+	///
 	rfc2812,
+	///
 	penalty,
+	///
 	fnc,
+	///
 	safelist,
+	///
 	awaylen,
+	///
 	noquit,
+	///
 	userip,
+	///
 	cprivmsg,
+	///
 	cnotice,
+	///
 	maxnicklen,
+	///
 	maxtargets,
+	///
 	knock,
+	///
 	vchans,
+	///
 	watch,
+	///
 	whox,
+	///
 	callerid,
+	///
 	accept,
+	///
 	language
 }
 
+/++
++
++/
 auto ircClient(T, alias mix = null)(ref T output, NickInfo info, Nullable!string password = Nullable!string.init) {
 	auto client = IRCClient!(T, mix)(output);
 	client.username = info.username;
@@ -105,18 +169,28 @@ auto ircClient(T, alias mix = null)(ref T output, NickInfo info, Nullable!string
 	return client;
 }
 
+/++
++
++/
 struct Capability {
+	///
 	string name;
+	///
 	bool isVendorSpecific;
+	///
 	bool isSticky;
+	///
 	bool isDisabled;
+	///
 	bool isAcked;
+	///
 	string value;
 
 	alias name this;
 
 	@disable this();
 
+	///
 	this(string str) @safe pure @nogc {
 		switch (str[0]) {
 			case '~':
@@ -137,53 +211,85 @@ struct Capability {
 		}
 		isVendorSpecific = name.byCodeUnit.canFind('/');
 	}
+	///
 	string toString() {
 		return name~(value.empty ? "" : "=")~value;
 	}
 }
+/++
++
++/
 struct MessageMetadata {
+	///
 	SysTime time;
+	///
 	string[string] tags;
+	///
 	Nullable!Numeric messageNumeric;
+	///
 	string original;
+	///
 	auto toString() const {
 		return original;
 	}
 }
+/++
++
++/
 enum MessageType {
 	notice,
 	privmsg
 }
+/++
++
++/
 struct Message {
+	///
 	string msg;
+	///
 	MessageType type;
+	///
 	auto isCTCP() const {
 		return (msg.startsWith("\x01")) && (msg.endsWith("\x01"));
 	}
+	///
 	auto isNotice() const {
 		return type == MessageType.notice;
 	}
+	///
 	auto isPrivmsg() const {
 		return type == MessageType.privmsg;
 	}
+	///
 	auto ctcpCommand() const in {
 		assert(isCTCP, "This is not a CTCP message!");
 	} body {
 		auto split = msg[1..$-1].splitter(" ");
 		return split.front;
 	}
+	///
 	auto ctcpArgs() const in {
 		assert(isCTCP, "This is not a CTCP message!");
 	} body {
 		return msg.find(" ")[1..$-1];
 	}
 }
+/++
++
++/
 struct Server {
+	///
 	MyInfo myInfo;
+	///
 	ISupport iSupport;
 }
+/++
++
++/
 struct Target {
+	///
 	Nullable!Channel channel;
+	///
 	Nullable!User user;
 	void toString(T)(T sink) const if (isOutputRange!(T, const(char))) {
 		if (!channel.isNull) {
@@ -193,6 +299,9 @@ struct Target {
 		}
 	}
 }
+/++
++
++/
 enum RFC1459Commands {
 	privmsg = "PRIVMSG",
 	notice = "NOTICE",
@@ -235,9 +344,15 @@ enum RFC1459Commands {
 	userhost = "USERHOST",
 	ison = "ISON",
 }
+/++
++
++/
 enum RFC2812Commands {
 	service = "SERVICE"
 }
+/++
++
++/
 enum IRCV3Commands {
 	cap = "CAP",
 	metadata = "METADATA",
@@ -248,6 +363,9 @@ enum IRCV3Commands {
 	batch = "BATCH",
 	chghost = "CHGHOST"
 }
+/++
++
++/
 enum CapabilityServerSubcommands {
 	ls = "LS",
 	acknowledge = "ACK",
@@ -256,6 +374,9 @@ enum CapabilityServerSubcommands {
 	new_ = "NEW",
 	delete_ = "DEL"
 }
+/++
++
++/
 enum CapabilityClientSubcommands {
 	ls = "LS",
 	list = "LIST",
@@ -772,9 +893,8 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		}
 	}
 }
-
-
-unittest {
+///
+@system unittest {
 	import std.algorithm : equal, sort;
 	import std.array : appender, array;
 	import std.range: empty, tail;
@@ -1078,6 +1198,9 @@ unittest {
 		assertThrown!AssertError(client.put("PING :hahahaha"));
 	}
 }
+/++
++
++/
 auto ircChunks(T)(const string begin, T range, const string inSeparator) {
 	return cumulativeFold!((a, b) => a + b)(range.map!(a => a.length+inSeparator.length)).map!(x => x - inSeparator.length);
 }

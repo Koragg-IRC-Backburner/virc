@@ -1,3 +1,6 @@
+/++
++ Module for handling low-level message encoding.
++/
 module virc.encoding;
 
 import std.encoding;
@@ -20,10 +23,11 @@ auto toUTF8String(Encoding = Latin1String)(const immutable(ubyte)[] raw) {
 	}
 	return utf;
 }
-///@system due to transcode()
+//@system due to transcode()
+///
 @system pure unittest {
 	import std.string : representation;
-	//
+	//Basic case
 	assert("test".representation.toUTF8String == "test");
 	//ISO-8859-1
 	assert([cast(ubyte)0xA9].toUTF8String == "©");

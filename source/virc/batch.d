@@ -1,15 +1,25 @@
+/++
++ Module for supporting IRCv3's BATCH capability.
++/
 module virc.batch;
 import virc.tags;
-
+/++
++
++/
 struct BatchProcessor {
+	///
 	ParsedMessage[] batchless;
 	private Batch[string] batchCache;
+	///
 	Batch[] batches;
+	///
 	bool[] consumeBatch;
-	auto put(string line) {
+	///
+	void put(string line) @safe pure {
 		put(line.splitTag());
 	}
-	auto put(ParsedMessage splitMsg) {
+	///
+	void put(ParsedMessage splitMsg) @safe pure {
 		auto processed = BatchCommand(splitMsg.msg);
 		Batch newBatch;
 		if (processed.isValid && processed.isNew) {
@@ -49,17 +59,20 @@ struct BatchProcessor {
 			findBatch(batchCache, splitMsg.tags["batch"]);
 		}
 	}
+	///
 	auto empty() {
 		import std.range : empty;
 		return (batches.empty && batchless.empty);
 	}
-	auto popFront() {
+	///
+	void popFront() @safe pure {
 		if (consumeBatch[0]) {
 			batches = batches[1..$];
 		} else
 			batchless = batchless[1..$];
 		consumeBatch = consumeBatch[1..$];
 	}
+	///
 	auto front() {
 		if (consumeBatch[0])
 			return batches[0];
@@ -92,14 +105,24 @@ private struct BatchCommand {
 	auto isClosed() { return !isNew; }
 	bool isValid = false;
 }
+/++
++
++/
 struct Batch {
+	///
 	bool isValidBatch = true;
-	string referenceTag; ///A simple string identifying the batch. Uniqueness is not guaranteed?
-	string type; ///Indicates how the batch is to be processed. Examples include netsplit, netjoin, chathistory
-	string[] parameters; ///Miscellaneous details associated with the batch. Meanings vary based on type.
-	ParsedMessage[] lines; ///Lines captured minus the batch tag and starting/ending commands.
-	Batch[string] nestedBatches; ///Any batches nested inside this one.
-	auto put(ParsedMessage line) {
+	///A simple string identifying the batch. Uniqueness is not guaranteed?
+	string referenceTag;
+	///Indicates how the batch is to be processed. Examples include netsplit, netjoin, chathistory
+	string type;
+	///Miscellaneous details associated with the batch. Meanings vary based on type.
+	string[] parameters;
+	///Lines captured minus the batch tag and starting/ending commands.
+	ParsedMessage[] lines;
+	///Any batches nested inside this one.
+	Batch[string] nestedBatches;
+	///
+	void put(ParsedMessage line) @safe pure {
 		lines ~= line;
 	}
 }

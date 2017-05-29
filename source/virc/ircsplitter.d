@@ -1,15 +1,26 @@
+/++
++ Module for splitting IRC commands into its individual arguments for easier
++ parsing.
++/
 module virc.ircsplitter;
 
+///
 struct IRCSplitter {
 	private string str;
 	private size_t upper;
 	private bool blankColon = false;
+	/++
+	+ This typically marks the command's main payload. No arguments will come
+	+ after this one.
+	+/
 	bool isColonParameter = false;
+	///
 	this(string input) @nogc @safe pure nothrow {
 		str = input;
 		popFront();
 	}
-	auto popFront() {
+	///
+	void popFront() @nogc @safe pure nothrow {
 		if (blankColon) {
 			blankColon = false;
 		} else {
@@ -34,17 +45,20 @@ struct IRCSplitter {
 			}
 		}
 	}
+	///
 	auto empty() {
 		return str.length == 0 && !blankColon;
 	}
+	///
 	auto front() {
 		return str[0..upper];
 	}
+	///
 	auto save() {
 		return this;
 	}
 }
-
+///
 @safe pure nothrow unittest {
 	import std.algorithm : equal;
 	assert(IRCSplitter("").empty);

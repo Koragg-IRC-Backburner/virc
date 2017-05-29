@@ -1,10 +1,15 @@
+/++
++ Module for handling the various CASEMAPPING methods used by IRC networks.
++/
 module virc.casemapping;
 
 import std.algorithm : map;
 import std.ascii : isAlpha, toLower, toUpper;
 import std.range.primitives : isInputRange;
 
-
+/++
++
++/
 enum CaseMapping {
 	unknown = "",
 	rfc1459 = "rfc1459",
@@ -12,6 +17,9 @@ enum CaseMapping {
 	rfc3454 = "rfc3454",
 	ascii = "ascii"
 }
+/++
++
++/
 auto toIRCUpper(CaseMapping caseMapping = CaseMapping.rfc1459)(string input) {
 	import std.utf : byCodeUnit;
 	static char upper(char input) {
@@ -44,6 +52,9 @@ auto toIRCUpper(CaseMapping caseMapping = CaseMapping.rfc1459)(string input) {
 	assert("test{}|~".toIRCUpper!(CaseMapping.strictRFC1459).equal("TEST[]\\~"d));
 	assert("test{}|~".toIRCUpper!(CaseMapping.ascii).equal("TEST{}|~"d));
 }
+/++
++
++/
 auto toIRCLower(CaseMapping caseMapping = CaseMapping.rfc1459)(string input) {
 	import std.utf : byCodeUnit;
 	static char lower(char input) {
