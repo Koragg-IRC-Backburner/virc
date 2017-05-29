@@ -97,6 +97,9 @@ struct LUserOp {
 auto parseNumeric(Numeric numeric)() if (numeric.among(noInformationNumerics)) {
 	static assert(0, "Cannot parse "~numeric~": No information to parse.");
 }
+/++
++
++/
 //004 <username> <server_name> <version> <user_modes> <chan_modes> [<channel_modes_with_params> <user_modes_with_params> <server_modes> <server_modes_with_params>]
 auto parseNumeric(Numeric numeric : Numeric.RPL_MYINFO, T)(T input) {
 	MyInfo server;
@@ -143,6 +146,9 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_MYINFO, T)(T input) {
 	}
 }
 
+/++
++
++/
 //251 :There are <users> users and <services> services on <servers> servers
 //TODO: Find out if this is safe to parse
 auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERCLIENT, T)(T input) {
@@ -156,6 +162,9 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERCLIENT, T)(T input) {
 		assert(luser.message == "There are 42 users and 43 services on 44 servers");
 	}
 }
+/++
++
++/
 //252 <opers> :operator(s) online
 auto parseNumeric(Numeric numeric : Numeric.RPL_LUSEROP, T)(T input) {
 	auto ops = input.front;
@@ -174,6 +183,9 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LUSEROP, T)(T input) {
 	}
 }
 
+/++
++
++/
 //254 <channels> :channels formed
 auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERCHANNELS, T)(T input) {
 	auto chans = input.front;
@@ -191,6 +203,9 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERCHANNELS, T)(T input) {
 		assert(luser.message == "channels formed");
 	}
 }
+/++
++
++/
 //255 :I have <clients> clients and <servers> servers
 //TODO: Find out if this is safe to parse
 auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERME, T)(T input) {
@@ -204,6 +219,9 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERME, T)(T input) {
 		assert(luser.message == "I have 47 clients and 48 servers");
 	}
 }
+/++
++
++/
 //322 <username> <channel> <count> :[\[<modes\] ]<topic>
 auto parseNumeric(Numeric numeric : Numeric.RPL_LIST, T)(T input, ModeType[char] channelModeTypes) {
 	//Note: RFC2812 makes no mention of the modes being included.
@@ -257,6 +275,9 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LIST, T)(T input, ModeType[char]
 	}
 }
 
+/++
++
++/
 //600 <nickname> <username> <hostname> <signontime> :logged on
 //601 <nickname> <username> <hostname> <lastnickchange> :logged off
 //602 <nickname> <username> <hostname> <lastnickchange> :stopped watching
@@ -289,6 +310,9 @@ auto parseNumeric(Numeric numeric, T)(T input) if (numeric.among(Numeric.RPL_LOG
 	}
 }
 
+/++
++
++/
 //730 <nick> :target[!user@host][,target[!user@host]]*
 auto parseNumeric(Numeric numeric : Numeric.RPL_MONONLINE, T)(T input) {
 	input.popFront();
@@ -316,6 +340,9 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_MONONLINE, T)(T input) {
 	}
 }
 
+/++
++
++/
 //731 <nick> :target[,target2]*
 //732 <nick> :target[,target2]*
 auto parseNumeric(Numeric numeric, T)(T input) if (numeric.among(Numeric.RPL_MONOFFLINE,Numeric.RPL_MONLIST)) {
@@ -344,6 +371,9 @@ auto parseNumeric(Numeric numeric, T)(T input) if (numeric.among(Numeric.RPL_MON
 	}
 }
 
+/++
++
++/
 //734 <nick> <limit> <targets> :Monitor list is full.
 auto parseNumeric(Numeric numeric : Numeric.ERR_MONLISTFULL, T)(T input) {
 	input.popFront();
@@ -361,6 +391,9 @@ auto parseNumeric(Numeric numeric : Numeric.ERR_MONLISTFULL, T)(T input) {
 	assert(test.userAdded.nickname == "someone2");
 }
 
+/++
++
++/
 //333 <channel> <setter> <timestamp>
 auto parseNumeric(Numeric numeric : Numeric.RPL_TOPICWHOTIME, T)(T input) {
 	return "";
@@ -369,6 +402,9 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_TOPICWHOTIME, T)(T input) {
 unittest {
 
 }
+/++
++
++/
 //332 <channel> :<topic>
 auto parseNumeric(Numeric numeric : Numeric.RPL_TOPIC, T)(T input) {
 	return "";
@@ -378,6 +414,9 @@ unittest {
 
 }
 
+/++
++
++/
 //353 =/*/@ <channel> :<prefix[es]><usermask>[ <prefix[es]><usermask>...]
 auto parseNumeric(Numeric numeric : Numeric.RPL_NAMREPLY, T)(T input) {
 	auto chanFlag = input.front;
