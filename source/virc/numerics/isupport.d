@@ -276,7 +276,7 @@ struct ISupport {
 		if (!val.isNull) {
 			value = val.get;
 		}
-		bool isEnabled = !val.isNull;
+		const isEnabled = !val.isNull;
 		switch (cast(ISupportToken)token) {
 			case ISupportToken.chanModes:
 				if (isEnabled) {
