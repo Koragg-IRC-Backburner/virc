@@ -94,190 +94,38 @@ struct LUserOp {
 /++
 +
 +/
-template parseNumeric(Numeric numeric) {
-	static if (numeric.among(noInformationNumerics)) {
-		static assert(0, "Cannot parse "~numeric~": No information to parse.");
+auto parseNumeric(Numeric numeric)() if (numeric.among(noInformationNumerics)) {
+	static assert(0, "Cannot parse "~numeric~": No information to parse.");
+}
+//004 <username> <server_name> <version> <user_modes> <chan_modes> [<channel_modes_with_params> <user_modes_with_params> <server_modes> <server_modes_with_params>]
+auto parseNumeric(Numeric numeric : Numeric.RPL_MYINFO, T)(T input) {
+	MyInfo server;
+	input.popFront();
+	server.name = input.front;
+	input.popFront();
+	server.version_ = input.front;
+	input.popFront();
+	server.userModes = input.front;
+	input.popFront();
+	server.channelModes = input.front;
+	input.popFront();
+	if (!input.empty) {
+		server.channelModesWithParams = input.front;
+		input.popFront();
 	}
-	//004 <username> <server_name> <version> <user_modes> <chan_modes> [<channel_modes_with_params> <user_modes_with_params> <server_modes> <server_modes_with_params>]
-	static if (numeric == Numeric.RPL_MYINFO) {
-		auto parseNumeric(T)(T input) {
-			MyInfo server;
-			input.popFront();
-			server.name = input.front;
-			input.popFront();
-			server.version_ = input.front;
-			input.popFront();
-			server.userModes = input.front;
-			input.popFront();
-			server.channelModes = input.front;
-			input.popFront();
-			if (!input.empty) {
-				server.channelModesWithParams = input.front;
-				input.popFront();
-			}
-			if (!input.empty) {
-				server.userModesWithParams = input.front;
-				input.popFront();
-			}
-			if (!input.empty) {
-				server.serverModes = input.front;
-				input.popFront();
-			}
-			if (!input.empty) {
-				server.serverModesWithParams = input.front;
-				input.popFront();
-			}
-			return server;
-		}
+	if (!input.empty) {
+		server.userModesWithParams = input.front;
+		input.popFront();
 	}
-	static if (numeric == Numeric.RPL_ISUPPORT) {
-		void parseNumeric(T)(T input, ref ISupport iSupport) {
-			immutable username = input.front;
-			input.popFront();
-			while (!input.empty && !input.isColonParameter) {
-				auto token = input.front;
-				immutable isDisabled = token.skipOver('-');
-				auto splitParams = token.findSplit("=");
-				Nullable!string param;
-				if (!isDisabled) {
-					param = splitParams[2];
-				}
-				iSupport.insertToken(splitParams[0], param);
-				input.popFront();
-			}
-		}
-		auto parseNumeric(T)(T input) {
-			ISupport tmp;
-			parseNumeric(input, tmp);
-			return tmp;
-		}
+	if (!input.empty) {
+		server.serverModes = input.front;
+		input.popFront();
 	}
-	//251 :There are <users> users and <services> services on <servers> servers
-	//TODO: Find out if this is safe to parse
-	static if (numeric == Numeric.RPL_LUSERCLIENT) {
-		auto parseNumeric(T)(T input) {
-			return LUserClient(input.front);
-		}
+	if (!input.empty) {
+		server.serverModesWithParams = input.front;
+		input.popFront();
 	}
-	//252 <opers> :operator(s) online
-	static if (numeric == Numeric.RPL_LUSEROP) {
-		auto parseNumeric(T)(T input) {
-			auto ops = input.front;
-			input.popFront();
-			auto msg = input.front;
-			auto output = LUserOp(ops, msg);
-			return output;
-		}
-	}
-	//254 <channels> :channels formed
-	static if (numeric == Numeric.RPL_LUSERCHANNELS) {
-		auto parseNumeric(T)(T input) {
-			auto chans = input.front;
-			input.popFront();
-			auto msg = input.front;
-			auto output = LUserChannels(chans, msg);
-			return output;
-		}
-	}
-	//255 :I have <clients> clients and <servers> servers
-	//TODO: Find out if this is safe to parse
-	static if (numeric == Numeric.RPL_LUSERME) {
-		auto parseNumeric(T)(T input) {
-			return LUserMe(input.front);
-		}
-	}
-	//322 <username> <channel> <count> :[\[<modes\] ]<topic>
-	static if (numeric == Numeric.RPL_LIST) {
-		auto parseNumeric(T)(T input, ModeType[char] channelModeTypes) {
-			//Note: RFC2812 makes no mention of the modes being included.
-			//Seems to be a de-facto standard, supported by several softwares.
-			Channel channel;
-			//username doesn't really help us here. skip it
-			input.popFront();
-			channel.name = input.front;
-			input.popFront();
-			auto str = input.front;
-			channel.userCount = parse!uint(str);
-			input.popFront();
-			if (input.front.startsWith("[+")) {
-				auto splitTopicStr = input.front.findSplitAfter("] ");
-				channel.topic = Topic(splitTopicStr[1]);
-				channel.modes = parseModeString(splitTopicStr[0][1..$], channelModeTypes).filter!(x => x.change == Change.set).map!(x => x.mode).array;
-			} else {
-				channel.topic = Topic(input.front);
-			}
-			return channel;
-		}
-	}
-	//600 <nickname> <username> <hostname> <signontime> :logged on
-	//601 <nickname> <username> <hostname> <lastnickchange> :logged off
-	//602 <nickname> <username> <hostname> <lastnickchange> :stopped watching
-	//604 <nickname> <username> <hostname> <lastnickchange> :is online
-	//605 <nickname> <username> <hostname> <lastnickchange> :is offline
-	//609 <nickname> <username> <hostname> <awaysince> :is away
-	static if (numeric.among(Numeric.RPL_LOGON, Numeric.RPL_LOGOFF, Numeric.RPL_WATCHOFF, Numeric.RPL_NOWOFF, Numeric.RPL_NOWON, Numeric.RPL_NOWISAWAY)) {
-		auto parseNumeric(T)(T input) {
-			import std.typecons : tuple;
-			auto user = User();
-			user.mask.nickname = input.front;
-			input.popFront();
-			user.mask.ident = input.front;
-			input.popFront();
-			user.mask.host = input.front;
-			input.popFront();
-			auto timeOccurred = SysTime.fromUnixTime(input.front.to!long, UTC());
-			return tuple!("user", "timeOccurred")(user, timeOccurred);
-		}
-	}
-	//730 <nick> :target[!user@host][,target[!user@host]]*
-	static if (numeric == Numeric.RPL_MONONLINE) {
-		auto parseNumeric(T)(T input) {
-			input.popFront();
-			auto split = input.front.splitter(",");
-			return split.map!(x => { User user; user.mask = UserMask(x); return user; }());
-		}
-	}
-	//731 <nick> :target[,target2]*
-	//732 <nick> :target[,target2]*
-	static if (numeric.among(Numeric.RPL_MONOFFLINE,Numeric.RPL_MONLIST)) {
-		auto parseNumeric(T)(T input) {
-			input.popFront();
-			auto split = input.front.splitter(",");
-			return split.map!(x => { User user; user.mask.nickname = x; return user; }());
-		}
-	}
-	//734 <nick> <limit> <targets> :Monitor list is full.
-	static if (numeric == Numeric.ERR_MONLISTFULL) {
-		auto parseNumeric(T)(T input) {
-			input.popFront();
-			auto limit = input.front.to!ulong;
-			input.popFront();
-			User user;
-			user.mask.nickname = input.front;
-			return Tuple!(ulong, "limit", User, "userAdded")(limit, user);
-		}
-	}
-	//353 =/*/@ <channel> :<prefix[es]><usermask>[ <prefix[es]><usermask>...]
-	static if (numeric == Numeric.RPL_NAMREPLY) {
-		auto parseNumeric(T)(T input) {
-			auto chanFlag = input.front;
-			input.popFront();
-			auto channel = input.front;
-			return "";
-		}
-	}
-	//332 <channel> :<topic>
-	static if (numeric == Numeric.RPL_TOPIC) {
-		auto parseNumeric(T)(T input) {
-			return "";
-		}
-	}
-	//333 <channel> <setter> <timestamp>
-	static if (numeric == Numeric.RPL_TOPICWHOTIME) {
-		auto parseNumeric(T)(T input) {
-			return "";
-		}
-	}
+	return server;
 }
 ///
 @safe pure nothrow @nogc unittest { //Numeric.RPL_MYINFO
@@ -294,37 +142,11 @@ template parseNumeric(Numeric numeric) {
 		assert(info.serverModesWithParams == "");
 	}
 }
-///
-@safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_ISUPPORT
-	import std.exception : assertNotThrown, assertThrown;
-	import virc.ircsplitter : IRCSplitter;
-	{
-		auto support = parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone STATUSMSG=~&@%+ CHANLIMIT=#:2 CHANMODES=a,b,c,d CHANTYPES=# :are supported by this server"));
-		assert(support.statusMessage == "~&@%+");
-		assert(support.chanLimits == ['#': 2UL]);
-		assert(support.channelTypes == "#");
-		assert(support.channelModeTypes == ['a':ModeType.a, 'b':ModeType.b, 'c':ModeType.c, 'd':ModeType.d]);
-		parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone -STATUSMSG -CHANLIMIT -CHANMODES -CHANTYPES :are supported by this server"), support);
-		assert(support.statusMessage == support.statusMessage.init);
-		assert(support.chanLimits == support.chanLimits.init);
-		assert(support.channelTypes == support.channelTypes.init);
-		assert(support.channelModeTypes == support.channelModeTypes.init);
-	}
-	{
-		auto support = parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone SILENCE=4 :are supported by this server"));
-		assert(support.silence == 4);
-		parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone SILENCE :are supported by this server"), support);
-		assert(support.silence.isNull);
-		parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone SILENCE=6 :are supported by this server"), support);
-		parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone -SILENCE :are supported by this server"), support);
-		assert(support.silence.isNull);
-	}
-	{
-		assertNotThrown(parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone :are supported by this server")));
-	}
-	{
-		assertThrown(parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone WHATISTHIS :are supported by this server")));
-	}
+
+//251 :There are <users> users and <services> services on <servers> servers
+//TODO: Find out if this is safe to parse
+auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERCLIENT, T)(T input) {
+	return LUserClient(input.front);
 }
 ///
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LUSERCLIENT
@@ -333,6 +155,14 @@ template parseNumeric(Numeric numeric) {
 		immutable luser = parseNumeric!(Numeric.RPL_LUSERCLIENT)(only("There are 42 users and 43 services on 44 servers"));
 		assert(luser.message == "There are 42 users and 43 services on 44 servers");
 	}
+}
+//252 <opers> :operator(s) online
+auto parseNumeric(Numeric numeric : Numeric.RPL_LUSEROP, T)(T input) {
+	auto ops = input.front;
+	input.popFront();
+	auto msg = input.front;
+	auto output = LUserOp(ops, msg);
+	return output;
 }
 ///
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LUSEROP
@@ -343,6 +173,15 @@ template parseNumeric(Numeric numeric) {
 		assert(luser.message == "operator(s) online");
 	}
 }
+
+//254 <channels> :channels formed
+auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERCHANNELS, T)(T input) {
+	auto chans = input.front;
+	input.popFront();
+	auto msg = input.front;
+	auto output = LUserChannels(chans, msg);
+	return output;
+}
 ///
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LUSERCHANNELS
 	import std.range : only;
@@ -352,6 +191,11 @@ template parseNumeric(Numeric numeric) {
 		assert(luser.message == "channels formed");
 	}
 }
+//255 :I have <clients> clients and <servers> servers
+//TODO: Find out if this is safe to parse
+auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERME, T)(T input) {
+	return LUserMe(input.front);
+}
 ///
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LUSERME
 	import std.range : only;
@@ -359,6 +203,27 @@ template parseNumeric(Numeric numeric) {
 		immutable luser = parseNumeric!(Numeric.RPL_LUSERME)(only("I have 47 clients and 48 servers"));
 		assert(luser.message == "I have 47 clients and 48 servers");
 	}
+}
+//322 <username> <channel> <count> :[\[<modes\] ]<topic>
+auto parseNumeric(Numeric numeric : Numeric.RPL_LIST, T)(T input, ModeType[char] channelModeTypes) {
+	//Note: RFC2812 makes no mention of the modes being included.
+	//Seems to be a de-facto standard, supported by several softwares.
+	Channel channel;
+	//username doesn't really help us here. skip it
+	input.popFront();
+	channel.name = input.front;
+	input.popFront();
+	auto str = input.front;
+	channel.userCount = parse!uint(str);
+	input.popFront();
+	if (input.front.startsWith("[+")) {
+		auto splitTopicStr = input.front.findSplitAfter("] ");
+		channel.topic = Topic(splitTopicStr[1]);
+		channel.modes = parseModeString(splitTopicStr[0][1..$], channelModeTypes).filter!(x => x.change == Change.set).map!(x => x.mode).array;
+	} else {
+		channel.topic = Topic(input.front);
+	}
+	return channel;
 }
 ///
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LIST
@@ -391,6 +256,25 @@ template parseNumeric(Numeric numeric) {
 		assert(listEntry.modes.length == 0);
 	}
 }
+
+//600 <nickname> <username> <hostname> <signontime> :logged on
+//601 <nickname> <username> <hostname> <lastnickchange> :logged off
+//602 <nickname> <username> <hostname> <lastnickchange> :stopped watching
+//604 <nickname> <username> <hostname> <lastnickchange> :is online
+//605 <nickname> <username> <hostname> <lastnickchange> :is offline
+//609 <nickname> <username> <hostname> <awaysince> :is away
+auto parseNumeric(Numeric numeric, T)(T input) if (numeric.among(Numeric.RPL_LOGON, Numeric.RPL_LOGOFF, Numeric.RPL_WATCHOFF, Numeric.RPL_NOWOFF, Numeric.RPL_NOWON, Numeric.RPL_NOWISAWAY)) {
+	import std.typecons : tuple;
+	auto user = User();
+	user.mask.nickname = input.front;
+	input.popFront();
+	user.mask.ident = input.front;
+	input.popFront();
+	user.mask.host = input.front;
+	input.popFront();
+	auto timeOccurred = SysTime.fromUnixTime(input.front.to!long, UTC());
+	return tuple!("user", "timeOccurred")(user, timeOccurred);
+}
 ///
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LOGON
 	import std.datetime : DateTime, SysTime, UTC;
@@ -403,6 +287,13 @@ template parseNumeric(Numeric numeric) {
 		static immutable date = SysTime(DateTime(1998, 11, 16, 20, 26, 53), UTC());
 		assert(logon.timeOccurred == date);
 	}
+}
+
+//730 <nick> :target[!user@host][,target[!user@host]]*
+auto parseNumeric(Numeric numeric : Numeric.RPL_MONONLINE, T)(T input) {
+	input.popFront();
+	auto split = input.front.splitter(",");
+	return split.map!(x => { User user; user.mask = UserMask(x); return user; }());
 }
 ///
 @safe pure nothrow @nogc unittest { //Numeric.RPL_MONONLINE
@@ -424,6 +315,14 @@ template parseNumeric(Numeric numeric) {
 		assert(logon.front.mask.host == "example.com");
 	}
 }
+
+//731 <nick> :target[,target2]*
+//732 <nick> :target[,target2]*
+auto parseNumeric(Numeric numeric, T)(T input) if (numeric.among(Numeric.RPL_MONOFFLINE,Numeric.RPL_MONLIST)) {
+	input.popFront();
+	auto split = input.front.splitter(",");
+	return split.map!(x => { User user; user.mask.nickname = x; return user; }());
+}
 ///
 @safe pure nothrow @nogc unittest { //Numeric.RPL_MONOFFLINE
 	import std.range : only;
@@ -444,10 +343,49 @@ template parseNumeric(Numeric numeric) {
 		assert(logoff.front.mask.host.isNull);
 	}
 }
+
+//734 <nick> <limit> <targets> :Monitor list is full.
+auto parseNumeric(Numeric numeric : Numeric.ERR_MONLISTFULL, T)(T input) {
+	input.popFront();
+	auto limit = input.front.to!ulong;
+	input.popFront();
+	User user;
+	user.mask.nickname = input.front;
+	return Tuple!(ulong, "limit", User, "userAdded")(limit, user);
+}
 ///
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.ERR_MONLISTFULL
 	import std.range : only;
 	auto test = parseNumeric!(Numeric.ERR_MONLISTFULL)(only("someone", "5", "someone2", "Monitor list is full."));
 	assert(test.limit == 5);
 	assert(test.userAdded.nickname == "someone2");
+}
+
+//333 <channel> <setter> <timestamp>
+auto parseNumeric(Numeric numeric : Numeric.RPL_TOPICWHOTIME, T)(T input) {
+	return "";
+}
+///
+unittest {
+
+}
+//332 <channel> :<topic>
+auto parseNumeric(Numeric numeric : Numeric.RPL_TOPIC, T)(T input) {
+	return "";
+}
+///
+unittest {
+
+}
+
+//353 =/*/@ <channel> :<prefix[es]><usermask>[ <prefix[es]><usermask>...]
+auto parseNumeric(Numeric numeric : Numeric.RPL_NAMREPLY, T)(T input) {
+	auto chanFlag = input.front;
+	input.popFront();
+	auto channel = input.front;
+	return "";
+}
+///
+unittest {
+
 }

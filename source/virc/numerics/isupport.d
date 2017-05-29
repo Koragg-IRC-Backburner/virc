@@ -629,3 +629,65 @@ struct ISupport {
 		assert(isupport.chanLimits.length == 0);
 	}
 }
+
+/++
++
++/
+void parseNumeric(Numeric numeric: Numeric.RPL_ISUPPORT, T)(T input, ref ISupport iSupport) {
+	import std.algorithm : findSplit, skipOver;
+	import std.typecons : Nullable;
+	immutable username = input.front;
+	input.popFront();
+	while (!input.empty && !input.isColonParameter) {
+		auto token = input.front;
+		immutable isDisabled = token.skipOver('-');
+		auto splitParams = token.findSplit("=");
+		Nullable!string param;
+		if (!isDisabled) {
+			param = splitParams[2];
+		}
+		iSupport.insertToken(splitParams[0], param);
+		input.popFront();
+	}
+}
+/++
++
++/
+auto parseNumeric(Numeric numeric: Numeric.RPL_ISUPPORT, T)(T input) {
+	ISupport tmp;
+	parseNumeric!numeric(input, tmp);
+	return tmp;
+}
+///
+@safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_ISUPPORT
+	import std.exception : assertNotThrown, assertThrown;
+	import virc.ircsplitter : IRCSplitter;
+	import virc.modes : ModeType;
+	{
+		auto support = parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone STATUSMSG=~&@%+ CHANLIMIT=#:2 CHANMODES=a,b,c,d CHANTYPES=# :are supported by this server"));
+		assert(support.statusMessage == "~&@%+");
+		assert(support.chanLimits == ['#': 2UL]);
+		assert(support.channelTypes == "#");
+		assert(support.channelModeTypes == ['a':ModeType.a, 'b':ModeType.b, 'c':ModeType.c, 'd':ModeType.d]);
+		parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone -STATUSMSG -CHANLIMIT -CHANMODES -CHANTYPES :are supported by this server"), support);
+		assert(support.statusMessage == support.statusMessage.init);
+		assert(support.chanLimits == support.chanLimits.init);
+		assert(support.channelTypes == support.channelTypes.init);
+		assert(support.channelModeTypes == support.channelModeTypes.init);
+	}
+	{
+		auto support = parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone SILENCE=4 :are supported by this server"));
+		assert(support.silence == 4);
+		parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone SILENCE :are supported by this server"), support);
+		assert(support.silence.isNull);
+		parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone SILENCE=6 :are supported by this server"), support);
+		parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone -SILENCE :are supported by this server"), support);
+		assert(support.silence.isNull);
+	}
+	{
+		assertNotThrown(parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone :are supported by this server")));
+	}
+	{
+		assertThrown(parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone WHATISTHIS :are supported by this server")));
+	}
+}
