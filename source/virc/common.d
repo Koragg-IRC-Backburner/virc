@@ -40,6 +40,10 @@ struct Topic {
 	auto opEquals(const Topic b) const {
 		return message == b.message;
 	}
+	///
+	auto toHash() const {
+		return message.hashOf;
+	}
 }
 /++
 + User metadata. User's mask will always be present, but real name's presence
@@ -85,6 +89,10 @@ struct User {
 			return false;
 		}
 		return this.mask == b.mask;
+	}
+	///
+	auto toHash() const {
+		return mask.hashOf;
 	}
 }
 @safe pure nothrow @nogc unittest {

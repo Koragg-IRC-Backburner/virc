@@ -43,8 +43,10 @@ struct NickInfo {
 /++
 +
 +/
-enum defaultPrefixes = ['o': '@', 'v': '+'];
-
+immutable char[char] defaultPrefixes;
+static this() {
+	defaultPrefixes = ['o': '@', 'v': '+'];
+}
 /++
 +
 +/
@@ -162,6 +164,7 @@ auto ircClient(T, alias mix = null)(ref T output, NickInfo info, Nullable!string
 	client.username = info.username;
 	client.realname = info.realname;
 	client.nickname = info.nickname;
+	client.password = password;
 	client.initialize();
 	return client;
 }
@@ -209,7 +212,7 @@ struct Capability {
 		isVendorSpecific = name.byCodeUnit.canFind('/');
 	}
 	///
-	string toString() {
+	string toString() const {
 		return name~(value.empty ? "" : "=")~value;
 	}
 }
@@ -398,7 +401,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		void delegate(const Capability, const MessageMetadata) onReceiveCapNak;
 		void delegate(const Capability, const MessageMetadata) onReceiveCapDel;
 		void delegate(const Capability, const MessageMetadata) onReceiveCapNew;
-		void delegate(const User, const MessageMetadata) onUserOnline;
+		void delegate(const User, const SysTime, const MessageMetadata) onUserOnline;
 		void delegate(const User, const MessageMetadata) onUserOffline;
 		void delegate(const User, const MessageMetadata) onLogin;
 		void delegate(const User, const MessageMetadata) onLogout;
@@ -599,7 +602,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 				break;
 			case Numeric.RPL_LOGON:
 				auto reply = parseNumeric!(Numeric.RPL_LOGON)(split);
-				recLogon(reply.user, metadata);
+				recLogon(reply.user, reply.timeOccurred, metadata);
 				break;
 			case Numeric.RPL_MONONLINE:
 				auto user = parseNumeric!(Numeric.RPL_MONONLINE)(split);
@@ -749,7 +752,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 	}
 	private void recMonitorOnline(T)(T users, const MessageMetadata metadata) if (isInputRange!T && is(ElementType!T == User)) {
 		foreach (user; users) {
-			tryCall!"onUserOnline"(user, metadata);
+			tryCall!"onUserOnline"(user, SysTime.init, metadata);
 		}
 	}
 	private void recMonitorOffline(T)(T users, const MessageMetadata metadata) if (isInputRange!T && is(ElementType!T == User)) {
@@ -765,8 +768,8 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 	private void recMonListFull(const typeof(parseNumeric!(Numeric.ERR_MONLISTFULL)([""])), const MessageMetadata metadata) {
 		tryCall!"onError"(metadata);
 	}
-	private void recLogon(const User user, const MessageMetadata metadata) {
-		tryCall!"onUserOnline"(user, metadata);
+	private void recLogon(const User user, const SysTime timeOccurred, const MessageMetadata metadata) {
+		tryCall!"onUserOnline"(user, timeOccurred, metadata);
 	}
 	private void recChgHost(const User user, const User target, const MessageMetadata metadata) {
 		tryCall!"onChgHost"(user, target, metadata);
@@ -1066,9 +1069,8 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		auto buffer = appender!(string);
 		auto client = ircClient(buffer, testUser);
 		User[] users;
-		const(Channel)[] channels;
 		const(MessageMetadata)[] metadata;
-		client.onUserOnline = (const User user, const MessageMetadata) {
+		client.onUserOnline = (const User user, const SysTime, const MessageMetadata) {
 			users ~= user;
 		};
 		client.onUserOffline = (const User user, const MessageMetadata) {
@@ -1114,7 +1116,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 
 
 		User[] users;
-		client.onJoin = (const User user, const Channel chan, const MessageMetadata metadata) {
+		client.onJoin = (const User user, const Channel, const MessageMetadata) {
 			users ~= user;
 		};
 
@@ -1148,7 +1150,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		initialize(client);
 
 		client.put(":WiZ!jto@tolsun.oulu.fi PART #playzone :I lost");
-		auto user = User("WiZ!jto@tolsun.oulu.fi");
+		immutable user = User("WiZ!jto@tolsun.oulu.fi");
 		assert(users.front == user);
 		assert(channels.front == Channel("#playzone"));
 		assert(lastMsg == "I lost");
@@ -1201,11 +1203,12 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 /++
 +
 +/
-auto ircChunks(T)(const string begin, T range, const string inSeparator) {
+auto ircChunks(T)(const string, T range, const string inSeparator) {
 	return cumulativeFold!((a, b) => a + b)(range.map!(a => a.length+inSeparator.length)).map!(x => x - inSeparator.length);
 }
 ///
-unittest {
+@safe pure nothrow /+@nogc+/ unittest {
 	import std.algorithm : equal;
-	assert(ircChunks("test", ["test2", "test3", "test4"], ",").equal([5, 11, 17]));
+	import std.range : only;
+	assert(ircChunks("test", only("test2", "test3", "test4"), ",").equal(only(5, 11, 17)));
 }

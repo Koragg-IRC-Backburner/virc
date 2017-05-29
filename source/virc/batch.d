@@ -142,12 +142,12 @@ struct Batch {
 					`:irc.host BATCH -yXNAbvnRHTRBv`];
 		copy(lines, batchProcessor);
 		{
-			auto batch = takeOne(batchProcessor).front;
+			const batch = takeOne(batchProcessor).front;
 			assert(batch.lines == [ParsedMessage(":nick!user@host PRIVMSG #channel :This is not in batch, so processed immediately")]);
 		}
 		batchProcessor.popFront();
 		{
-			auto batch = takeOne(batchProcessor).front;
+			const batch = takeOne(batchProcessor).front;
 			assert(batch.referenceTag == `yXNAbvnRHTRBv`);
 			assert(batch.type == `netsplit`);
 			assert(batch.parameters == [`irc.hub`, `other.host`]);
@@ -170,14 +170,14 @@ struct Batch {
 					`:irc.host BATCH -2`];
 		copy(lines, batchProcessor);
 		{
-			auto batch = takeOne(batchProcessor).front;
+			const batch = takeOne(batchProcessor).front;
 			assert(batch.type == "example.com/foo");
 			assert(batch.referenceTag == "1");
 			assert(batch.lines == [ParsedMessage(":nick!user@host PRIVMSG #channel :Message 1", ["batch": "1"]), ParsedMessage(":nick!user@host PRIVMSG #channel :Message 2", ["batch": "1"]), ParsedMessage(":nick!user@host PRIVMSG #channel :Message 3", ["batch": "1"])]);
 		}
 		batchProcessor.popFront();
 		{
-			auto batch = takeOne(batchProcessor).front;
+			const batch = takeOne(batchProcessor).front;
 			assert(batch.type == "example.com/foo");
 			assert(batch.referenceTag == "2");
 			assert(batch.lines == [ParsedMessage(":nick!user@host PRIVMSG #channel :Message 4", ["batch": "2"]), ParsedMessage(":nick!user@host PRIVMSG #channel :Message 5", ["batch": "2"])]);
@@ -219,7 +219,7 @@ struct Batch {
 					`:irc.host BATCH -yXNAbvnRHTRBv`];
 		copy(lines, batchProcessor);
 		{
-			auto batch = takeOne(batchProcessor).front;
+			const batch = takeOne(batchProcessor).front;
 			assert(batch.type == "netsplit");
 			assert(batch.referenceTag == "yXNAbvnRHTRBv");
 			assert(batch.parameters == ["irc.hub", "other.host"]);
@@ -241,7 +241,7 @@ struct Batch {
 					`:irc.host BATCH -4lMeQwsaOMs6s`];
 		copy(lines, batchProcessor);
 		{
-			auto batch = takeOne(batchProcessor).front;
+			const batch = takeOne(batchProcessor).front;
 			assert(batch.type == "netjoin");
 			assert(batch.referenceTag == "4lMeQwsaOMs6s");
 			assert(batch.parameters == ["irc.hub", "other.host"]);
@@ -260,7 +260,7 @@ struct Batch {
 					`:irc.host BATCH -sxtUfAeXBgNoD`];
 		copy(lines, batchProcessor);
 		{
-			auto batch = takeOne(batchProcessor).front;
+			const batch = takeOne(batchProcessor).front;
 			assert(batch.type == "chathistory");
 			assert(batch.referenceTag == "sxtUfAeXBgNoD");
 			assert(batch.parameters == ["#channel"]);
@@ -278,7 +278,7 @@ struct Batch {
 					`:irc.host BATCH -sxtUfAeXBgNoD`];
 		copy(lines, batchProcessor);
 		{
-			auto batch = takeOne(batchProcessor).front;
+			const batch = takeOne(batchProcessor).front;
 			assert(batch.type == "chathistory");
 			assert(batch.referenceTag == "sxtUfAeXBgNoD");
 			assert(batch.parameters == ["remote"]);

@@ -26,8 +26,13 @@ struct Mode {
 	invariant() {
 		assert((type != ModeType.d) || arg.isNull);
 	}
+	///
 	auto opEquals(Mode b) const {
 		return (mode == b.mode);
+	}
+	///
+	auto toHash() const {
+		return mode.hashOf;
 	}
 }
 
