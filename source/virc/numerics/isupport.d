@@ -3,6 +3,8 @@
 +/
 module virc.numerics.isupport;
 
+import virc.numerics.definitions;
+
 /++
 +
 +/
