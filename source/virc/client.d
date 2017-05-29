@@ -3,24 +3,21 @@
 + handlers/
 +/
 module virc.client;
-import std.format : formattedWrite, format;
-import std.range.primitives : isOutputRange, ElementType, isInputRange;
-import std.range : put, empty, front, walkLength, chain;
-import std.algorithm.iteration : splitter, filter, map, chunkBy, cumulativeFold;
-import std.algorithm.searching : startsWith, canFind, skipOver, findSplit, findSplitAfter, endsWith, find, findSplitBefore;
-import std.exception : enforce;
 import std.algorithm.comparison : among;
-import std.meta : AliasSeq;
-import std.typecons : Nullable;
+import std.algorithm.iteration : chunkBy, cumulativeFold, filter, map, splitter;
+import std.algorithm.searching : canFind, endsWith, find, findSplit, findSplitAfter, findSplitBefore, skipOver, startsWith;
 import std.array : array;
-import std.conv : text, parse;
-import std.datetime;
-import std.traits : Parameters;
 import std.ascii : isDigit;
+import std.conv : parse, text;
+import std.datetime;
+import std.exception : enforce;
+import std.format : format, formattedWrite;
+import std.meta : AliasSeq;
+import std.range.primitives : ElementType, isInputRange, isOutputRange;
+import std.range : chain, empty, front, put, walkLength;
+import std.traits : Parameters;
+import std.typecons : Nullable;
 import std.utf : byCodeUnit;
-debug import std.stdio : writeln, writefln;
-
-static import std.range;
 
 import virc.common;
 import virc.encoding;
@@ -830,6 +827,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		write!"PRIVMSG %s :%s"(target, msg);
 	}
 	private void recUnknownCommand(const string cmd, const MessageMetadata metadata) {
+		debug import std.stdio : writeln;
 		if (cmd.filter!(x => !x.isDigit).empty) {
 			recUnknownNumeric(cmd, metadata);
 		} else {
@@ -837,6 +835,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		}
 	}
 	private void recUnknownNumeric(const string cmd, const MessageMetadata metadata) {
+		debug import std.stdio : writeln;
 		debug writeln(metadata.time, " Unhandled numeric: ", cast(Numeric)cmd, " ", metadata.original);
 	}
 	private void register() {
@@ -850,9 +849,10 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		write!"USER %s 0 * :%s"(username, realname);
 	}
 	private void write(string fmt, T...)(T args) {
+		import std.range : put;
 		debug(verbose) writefln!("O: "~fmt)(args);
 		formattedWrite!fmt(output, args);
-		std.range.put(output, "\r\n");
+		put(output, "\r\n");
 		debug {
 			tryCall!"onSend"(format!fmt(args));
 		}
