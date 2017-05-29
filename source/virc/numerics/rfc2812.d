@@ -8,21 +8,30 @@ import virc.numerics.definitions;
 + 004 RPL_MYINFO response.
 +/
 struct MyInfo {
-	///
+	///Server name. Typically a valid hostname, but not necessarily.
 	string name;
-	///
+	///Version string of the software run by server.
 	string version_;
-	///
+	///Modes that can be set on users.
 	string userModes;
-	///
+	/++
+	+ Modes that can be set on users that have parameters. If non-empty, it is
+	+ assumed that the modes in userModes do not have parameters.
+	+/
 	string userModesWithParams;
-	///
+	///Modes that can be set on channels.
 	string channelModes;
-	///
+	/++
+	+ Modes that can be set on channels that have parameters. If non-empty, it is
+	+ assumed that the modes in channelModes do not have parameters.
+	+/
 	string channelModesWithParams;
-	///
+	///Modes that can be set on servers.
 	string serverModes;
-	///
+	/++
+	+ Modes that can be set on servers that have parameters. If non-empty, it is
+	+ assumed that the modes in serverModes do not have parameters.
+	+/
 	string serverModesWithParams;
 }
 /++
