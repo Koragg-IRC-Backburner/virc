@@ -1365,15 +1365,16 @@ template parseNumeric(Numeric numeric) {
 	//609 <nickname> <username> <hostname> <awaysince> :is away
 	static if (numeric.among(Numeric.RPL_LOGON, Numeric.RPL_LOGOFF, Numeric.RPL_WATCHOFF, Numeric.RPL_NOWOFF, Numeric.RPL_NOWON, Numeric.RPL_NOWISAWAY)) {
 		auto parseNumeric(T)(T input) {
-			auto output = User();
-			output.mask.nickname = input.front;
+			import std.typecons : tuple;
+			auto user = User();
+			user.mask.nickname = input.front;
 			input.popFront();
-			output.mask.ident = input.front;
+			user.mask.ident = input.front;
 			input.popFront();
-			output.mask.host = input.front;
+			user.mask.host = input.front;
 			input.popFront();
-			const tz = SysTime.fromUnixTime(input.front.to!long, UTC());
-			return output;
+			auto timeOccurred = SysTime.fromUnixTime(input.front.to!long, UTC());
+			return tuple!("user", "timeOccurred")(user, timeOccurred);
 		}
 	}
 	//730 <nick> :target[!user@host][,target[!user@host]]*
@@ -1540,12 +1541,15 @@ template parseNumeric(Numeric numeric) {
 }
 ///
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LOGON
+	import std.datetime : DateTime, SysTime, UTC;
 	import std.range : only;
 	{
 		immutable logon = parseNumeric!(Numeric.RPL_LOGON)(only("someone", "someIdent", "example.net", "911248013", "logged on"));
-		assert(logon.mask.nickname == "someone");
-		assert(logon.mask.ident == "someIdent");
-		assert(logon.mask.host == "example.net");
+		assert(logon.user.mask.nickname == "someone");
+		assert(logon.user.mask.ident == "someIdent");
+		assert(logon.user.mask.host == "example.net");
+		static immutable date = SysTime(DateTime(1998, 11, 16, 20, 26, 53), UTC());
+		assert(logon.timeOccurred == date);
 	}
 }
 ///

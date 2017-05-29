@@ -601,8 +601,8 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 				server.myInfo = parseNumeric!(Numeric.RPL_MYINFO)(split);
 				break;
 			case Numeric.RPL_LOGON:
-				auto user = parseNumeric!(Numeric.RPL_LOGON)(split);
-				recLogon(user, metadata);
+				auto reply = parseNumeric!(Numeric.RPL_LOGON)(split);
+				recLogon(reply.user, metadata);
 				break;
 			case Numeric.RPL_MONONLINE:
 				auto user = parseNumeric!(Numeric.RPL_MONONLINE)(split);
