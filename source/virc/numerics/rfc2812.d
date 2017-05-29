@@ -84,6 +84,17 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_MYINFO, T)(T input) {
 		assert(info.serverModes == "");
 		assert(info.serverModesWithParams == "");
 	}
+	{
+		immutable info = parseNumeric!(Numeric.RPL_MYINFO)(only("someone", "localhost", "IRCd-2.0", "BGHIRSWcdgikorswx", "ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz", "FIJLYabefghjkloqv", "q", "w", "x"));
+		assert(info.name == "localhost");
+		assert(info.version_ == "IRCd-2.0");
+		assert(info.userModes == "BGHIRSWcdgikorswx");
+		assert(info.userModesWithParams == "q");
+		assert(info.channelModes == "ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz");
+		assert(info.channelModesWithParams == "FIJLYabefghjkloqv");
+		assert(info.serverModes == "w");
+		assert(info.serverModesWithParams == "x");
+	}
 }
 /++
 + Parser for RPL_TRACESERVICE.
