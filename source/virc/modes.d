@@ -35,7 +35,9 @@ struct Mode {
 		return mode.hashOf;
 	}
 }
-
+@safe pure nothrow /+@nogc+/ unittest {
+	assert(Mode(ModeType.d, 'a').toHash == Mode(ModeType.d, 'a').toHash);
+}
 /++
 + Mode classification.
 +/

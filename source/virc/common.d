@@ -45,6 +45,9 @@ struct Topic {
 		return message.hashOf;
 	}
 }
+@system pure nothrow @nogc unittest {
+	assert(Topic("Hello!").toHash == Topic("Hello!").toHash);
+}
 /++
 + User metadata. User's mask will always be present, but real name's presence
 + depends on the context. Account's presence depends on the server's
@@ -109,4 +112,9 @@ struct User {
 	user.account = "Testeridoo";
 	compUser.account = "Tototo";
 	assert(user != compUser);
+}
+@system pure nothrow /+@nogc+/ unittest {
+	immutable user = User("Test!Testo@Testy");
+	immutable compUser = User("Test!Testo@Testy");
+	assert(user.toHash == compUser.toHash);
 }
