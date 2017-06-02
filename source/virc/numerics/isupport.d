@@ -608,8 +608,8 @@ struct ISupport {
 		assert(isupport.callerID == 'h');
 		isupport.insertToken(keyValuePair("CALLERID"));
 		assert(isupport.callerID == 'g');
-		//isupport.insertToken(keyValuePair("CALLERID"));
-		//assert(isupport.callerID.isNull);
+		isupport.insertToken(keyValuePair("-CALLERID"));
+		assert(isupport.callerID.isNull);
 	}
 	{
 		assert(isupport.caseMapping == CaseMapping.unknown);
@@ -685,6 +685,13 @@ struct ISupport {
 		assert(isupport.charSet == "");
 	}
 	{
+		assert('!' !in isupport.channelIDLengths);
+		isupport.insertToken(keyValuePair("CHIDLEN=5"));
+		assert(isupport.channelIDLengths['!'] == 5);
+		isupport.insertToken(keyValuePair("-CHIDLEN"));
+		assert('!' !in isupport.channelIDLengths);
+	}
+	{
 		assert(!isupport.cNotice);
 		isupport.insertToken(keyValuePair("CNOTICE"));
 		assert(isupport.cNotice);
@@ -738,6 +745,8 @@ struct ISupport {
 		assert(isupport.banExtensions.banTypes == "qjncrRa");
 		isupport.insertToken(keyValuePair("-EXTBAN"));
 		assert(isupport.banExtensions.isNull);
+		isupport.insertToken(keyValuePair("EXTBAN=8"));
+		assert(isupport.banExtensions.isNull);
 	}
 	{
 		assert(isupport.forcedNickChanges == false);
@@ -745,6 +754,356 @@ struct ISupport {
 		assert(isupport.forcedNickChanges == true);
 		isupport.insertToken(keyValuePair("-FNC"));
 		assert(isupport.forcedNickChanges == false);
+	}
+	{
+		assert(isupport.channelIDLengths.length == 0);
+		isupport.insertToken(keyValuePair("IDCHAN=!:5"));
+		assert(isupport.channelIDLengths['!'] == 5);
+		isupport.insertToken(keyValuePair("-IDCHAN"));
+		assert(isupport.channelIDLengths.length == 0);
+	}
+	{
+		assert(isupport.inviteExceptions.isNull);
+		isupport.insertToken(keyValuePair("INVEX"));
+		assert(isupport.inviteExceptions == 'I');
+		isupport.insertToken(keyValuePair("INVEX=q"));
+		assert(isupport.inviteExceptions == 'q');
+		isupport.insertToken(keyValuePair("INVEX=I"));
+		assert(isupport.inviteExceptions == 'I');
+		isupport.insertToken(keyValuePair("-INVEX"));
+		assert(isupport.inviteExceptions.isNull);
+	}
+	{
+		assert(isupport.kickLength == ulong.max);
+		isupport.insertToken(keyValuePair("KICKLEN=180"));
+		assert(isupport.kickLength == 180);
+		isupport.insertToken(keyValuePair("KICKLEN="));
+		assert(isupport.kickLength == ulong.max);
+		isupport.insertToken(keyValuePair("KICKLEN=2"));
+		isupport.insertToken(keyValuePair("-KICKLEN"));
+		assert(isupport.kickLength == ulong.max);
+	}
+	{
+		assert(!isupport.knock);
+		isupport.insertToken(keyValuePair("KNOCK"));
+		assert(isupport.knock);
+		isupport.insertToken(keyValuePair("-KNOCK"));
+		assert(!isupport.knock);
+	}
+	{
+		import std.algorithm.searching : canFind;
+		assert(isupport.languages.length == 0);
+		isupport.insertToken(keyValuePair("LANGUAGE=2,en,i-klingon"));
+		assert(isupport.languages.canFind("en"));
+		assert(isupport.languages.canFind("i-klingon"));
+		isupport.insertToken(keyValuePair("-LANGUAGE"));
+		assert(isupport.languages.length == 0);
+	}
+	{
+		assert(isupport.lineLength == 512);
+		isupport.insertToken(keyValuePair("LINELEN=2048"));
+		assert(isupport.lineLength == 2048);
+		isupport.insertToken(keyValuePair("LINELEN=512"));
+		assert(isupport.lineLength == 512);
+		isupport.insertToken(keyValuePair("LINELEN=2"));
+		assert(isupport.lineLength == 2);
+		isupport.insertToken(keyValuePair("-LINELEN"));
+		assert(isupport.lineLength == 512);
+	}
+	{
+		assert(!isupport.supportsMap);
+		isupport.insertToken(keyValuePair("MAP"));
+		assert(isupport.supportsMap);
+		isupport.insertToken(keyValuePair("-MAP"));
+		assert(!isupport.supportsMap);
+	}
+	{
+		assert('b' !in isupport.maxList);
+		isupport.insertToken(keyValuePair("MAXBANS=5"));
+		assert(isupport.maxList['b'] == 5);
+		isupport.insertToken(keyValuePair("-MAXBANS"));
+		assert('b' !in isupport.maxList);
+	}
+	{
+		assert('#' !in isupport.chanLimits);
+		isupport.insertToken(keyValuePair("MAXCHANNELS=25"));
+		assert(isupport.chanLimits['#'] == 25);
+		isupport.insertToken(keyValuePair("-MAXCHANNELS"));
+		assert('#' !in isupport.chanLimits);
+	}
+	{
+		assert(isupport.maxList.length == 0);
+		isupport.insertToken(keyValuePair("MAXLIST=beI:25"));
+		assert(isupport.maxList['b'] == 25);
+		assert(isupport.maxList['e'] == 25);
+		assert(isupport.maxList['I'] == 25);
+		isupport.insertToken(keyValuePair("MAXLIST=b:25,eI:50"));
+		assert(isupport.maxList['b'] == 25);
+		assert(isupport.maxList['e'] == 50);
+		assert(isupport.maxList['I'] == 50);
+		isupport.insertToken(keyValuePair("-MAXLIST"));
+		assert(isupport.maxList.length == 0);
+	}
+	{
+		assert(isupport.maximumParameters == 12);
+		isupport.insertToken(keyValuePair("MAXPARA=32"));
+		assert(isupport.maximumParameters == 32);
+		isupport.insertToken(keyValuePair("-MAXPARA"));
+		assert(isupport.maximumParameters == 12);
+	}
+	{
+		assert(isupport.maxTargets == ulong.max);
+		isupport.insertToken(keyValuePair("MAXTARGETS=8"));
+		assert(isupport.maxTargets == 8);
+		isupport.insertToken(keyValuePair("-MAXTARGETS"));
+		assert(isupport.maxTargets == ulong.max);
+	}
+	{
+		assert(isupport.metadata.isNull);
+		isupport.insertToken(keyValuePair("METADATA=30"));
+		assert(isupport.metadata == 30);
+		isupport.insertToken(keyValuePair("METADATA"));
+		assert(isupport.metadata == ulong.max);
+		isupport.insertToken(keyValuePair("-METADATA"));
+		assert(isupport.metadata.isNull);
+	}
+	{
+		//As specified in RFC1459, default number of "variable" modes is 3 per command.
+		assert(isupport.maxModesPerCommand == 3);
+		isupport.insertToken(keyValuePair("MODES"));
+		assert(isupport.maxModesPerCommand == ulong.max);
+		isupport.insertToken(keyValuePair("MODES=3"));
+		assert(isupport.maxModesPerCommand == 3);
+		isupport.insertToken(keyValuePair("MODES=5"));
+		assert(isupport.maxModesPerCommand == 5);
+		isupport.insertToken(keyValuePair("-MODES"));
+		assert(isupport.maxModesPerCommand == 3);
+	}
+	{
+		assert(isupport.monitorTargetLimit.isNull);
+		isupport.insertToken(keyValuePair("MONITOR=6"));
+		assert(isupport.monitorTargetLimit == 6);
+		isupport.insertToken(keyValuePair("MONITOR"));
+		assert(isupport.monitorTargetLimit == ulong.max);
+		isupport.insertToken(keyValuePair("-MONITOR"));
+		assert(isupport.monitorTargetLimit.isNull);
+	}
+	{
+		assert(!isupport.namesExtended);
+		isupport.insertToken(keyValuePair("NAMESX"));
+		assert(isupport.namesExtended);
+		isupport.insertToken(keyValuePair("-NAMESX"));
+		assert(!isupport.namesExtended);
+	}
+	{
+		assert(isupport.network == "");
+		isupport.insertToken(keyValuePair("NETWORK=EFNet"));
+		assert(isupport.network == "EFNet");
+		isupport.insertToken(keyValuePair("NETWORK=Rizon"));
+		assert(isupport.network == "Rizon");
+		isupport.insertToken(keyValuePair("-NETWORK"));
+		assert(isupport.network == "");
+	}
+	{
+		assert(isupport.nickLength == 9);
+		isupport.insertToken(keyValuePair("NICKLEN=32"));
+		assert(isupport.nickLength == 32);
+		isupport.insertToken(keyValuePair("NICKLEN=9"));
+		assert(isupport.nickLength == 9);
+		isupport.insertToken(keyValuePair("NICKLEN=32"));
+		isupport.insertToken(keyValuePair("-NICKLEN"));
+		assert(isupport.nickLength == 9);
+	}
+	{
+		assert(!isupport.noQuit);
+		isupport.insertToken(keyValuePair("NOQUIT"));
+		assert(isupport.noQuit);
+		isupport.insertToken(keyValuePair("-NOQUIT"));
+		assert(!isupport.noQuit);
+	}
+	{
+		assert(!isupport.allowsOperOverride);
+		isupport.insertToken(keyValuePair("OVERRIDE"));
+		assert(isupport.allowsOperOverride);
+		isupport.insertToken(keyValuePair("-OVERRIDE"));
+		assert(!isupport.allowsOperOverride);
+	}
+	{
+		assert(!isupport.penalty);
+		isupport.insertToken(keyValuePair("PENALTY"));
+		assert(isupport.penalty);
+		isupport.insertToken(keyValuePair("-PENALTY"));
+		assert(!isupport.penalty);
+	}
+	{
+		//assert(isupport.prefixes == ['o': '@', 'v': '+']);
+		isupport.insertToken(keyValuePair("PREFIX"));
+		assert(isupport.prefixes.length == 0);
+		isupport.insertToken(keyValuePair("PREFIX=(ov)@+"));
+		assert(isupport.prefixes == ['o': '@', 'v': '+']);
+		isupport.insertToken(keyValuePair("PREFIX=(qaohv)~&@%+"));
+		assert(isupport.prefixes == ['o': '@', 'v': '+', 'q': '~', 'a': '&', 'h': '%']);
+		isupport.insertToken(keyValuePair("-PREFIX"));
+		assert(isupport.prefixes == ['o': '@', 'v': '+']);
+	}
+	{
+		assert(!isupport.rfc2812);
+		isupport.insertToken(keyValuePair("RFC2812"));
+		assert(isupport.rfc2812);
+		isupport.insertToken(keyValuePair("-RFC2812"));
+		assert(!isupport.rfc2812);
+	}
+	{
+		assert(!isupport.safeList);
+		isupport.insertToken(keyValuePair("SAFELIST"));
+		assert(isupport.safeList);
+		isupport.insertToken(keyValuePair("-SAFELIST"));
+		assert(!isupport.safeList);
+	}
+	{
+		assert(!isupport.secureList);
+		isupport.insertToken(keyValuePair("SECURELIST"));
+		assert(isupport.secureList);
+		isupport.insertToken(keyValuePair("-SECURELIST"));
+		assert(!isupport.secureList);
+	}
+	{
+		assert(isupport.silence.isNull);
+		isupport.insertToken(keyValuePair("SILENCE=15"));
+		assert(isupport.silence == 15);
+		isupport.insertToken(keyValuePair("SILENCE"));
+		assert(isupport.silence == ulong.max);
+		isupport.insertToken(keyValuePair("-SILENCE"));
+		assert(isupport.silence.isNull);
+	}
+	{
+		assert(isupport.sslServer == "");
+		isupport.insertToken(keyValuePair("SSL=1.2.3.4:6668;4.3.2.1:6669;*:6660;"));
+		assert(isupport.sslServer == "1.2.3.4:6668;4.3.2.1:6669;*:6660;");
+		isupport.insertToken(keyValuePair("-SSL"));
+		assert(isupport.sslServer == "");
+	}
+	{
+		assert(!isupport.startTLS);
+		isupport.insertToken(keyValuePair("STARTTLS"));
+		assert(isupport.startTLS);
+		isupport.insertToken(keyValuePair("-STARTTLS"));
+		assert(!isupport.startTLS);
+	}
+	{
+		assert(isupport.statusMessage == "");
+		isupport.insertToken(keyValuePair("STATUSMSG=@+"));
+		assert(isupport.statusMessage == "@+");
+		isupport.insertToken(keyValuePair("-STATUSMSG"));
+		assert(isupport.statusMessage == "");
+	}
+	{
+		assert(isupport.standard.isNull);
+		isupport.insertToken(keyValuePair("STD=i-d"));
+		assert(isupport.standard == "i-d");
+		isupport.insertToken(keyValuePair("-STD"));
+		assert(isupport.standard.isNull);
+	}
+	{
+		assert(isupport.targetMaxByCommand.length == 0);
+		isupport.insertToken(keyValuePair("TARGMAX=PRIVMSG:3,WHOIS:1,JOIN:"));
+		assert(isupport.targetMaxByCommand["PRIVMSG"]== 3);
+		assert(isupport.targetMaxByCommand["WHOIS"]== 1);
+		assert(isupport.targetMaxByCommand["JOIN"]== ulong.max);
+		isupport.insertToken(keyValuePair("TARGMAX"));
+		assert(isupport.targetMaxByCommand.length == 0);
+		isupport.insertToken(keyValuePair("-TARGMAX"));
+		assert(isupport.targetMaxByCommand.length == 0);
+	}
+	{
+		assert(isupport.topicLength.isNull);
+		isupport.insertToken(keyValuePair("TOPICLEN=120"));
+		assert(isupport.topicLength == 120);
+		isupport.insertToken(keyValuePair("TOPICLEN="));
+		assert(isupport.topicLength == ulong.max);
+		isupport.insertToken(keyValuePair("-TOPICLEN"));
+		assert(isupport.topicLength.isNull);
+	}
+	{
+		assert(!isupport.userhostsInNames);
+		isupport.insertToken(keyValuePair("UHNAMES"));
+		assert(isupport.userhostsInNames);
+		isupport.insertToken(keyValuePair("-UHNAMES"));
+		assert(!isupport.userhostsInNames);
+	}
+	{
+		assert(!isupport.userIP);
+		isupport.insertToken(keyValuePair("USERIP"));
+		assert(isupport.userIP);
+		isupport.insertToken(keyValuePair("-USERIP"));
+		assert(!isupport.userIP);
+	}
+	{
+		assert(isupport.userLength.isNull);
+		isupport.insertToken(keyValuePair("USERLEN=12"));
+		assert(isupport.userLength == 12);
+		isupport.insertToken(keyValuePair("USERLEN="));
+		assert(isupport.userLength == ulong.max);
+		isupport.insertToken(keyValuePair("-USERLEN"));
+		assert(isupport.userLength.isNull);
+	}
+	{
+		assert(!isupport.variableBanList);
+		isupport.insertToken(keyValuePair("VBANLIST"));
+		assert(isupport.variableBanList);
+		isupport.insertToken(keyValuePair("-VBANLIST"));
+		assert(!isupport.variableBanList);
+	}
+	{
+		assert(!isupport.virtualChannels);
+		isupport.insertToken(keyValuePair("VCHANS"));
+		assert(isupport.virtualChannels);
+		isupport.insertToken(keyValuePair("-VCHANS"));
+		assert(!isupport.virtualChannels);
+	}
+	{
+		assert(!isupport.wAllChannelOps);
+		isupport.insertToken(keyValuePair("WALLCHOPS"));
+		assert(isupport.wAllChannelOps);
+		isupport.insertToken(keyValuePair("-WALLCHOPS"));
+		assert(!isupport.wAllChannelOps);
+	}
+	{
+		assert(!isupport.wAllChannelVoices);
+		isupport.insertToken(keyValuePair("WALLVOICES"));
+		assert(isupport.wAllChannelVoices);
+		isupport.insertToken(keyValuePair("-WALLVOICES"));
+		assert(!isupport.wAllChannelVoices);
+	}
+	{
+		assert(isupport.maximumWatches.isNull);
+		isupport.insertToken(keyValuePair("WATCH=100"));
+		assert(isupport.maximumWatches == 100);
+		isupport.insertToken(keyValuePair("WATCH"));
+		assert(isupport.maximumWatches == ulong.max);
+		isupport.insertToken(keyValuePair("-WATCH"));
+		assert(isupport.maximumWatches.isNull);
+	}
+	{
+		assert(!isupport.whoX);
+		isupport.insertToken(keyValuePair("WHOX"));
+		assert(isupport.whoX);
+		isupport.insertToken(keyValuePair("-WHOX"));
+		assert(!isupport.whoX);
+	}
+	{
+		assert(isupport.unknownTokens.length == 0);
+		isupport.insertToken(keyValuePair("WHOA"));
+		assert(isupport.unknownTokens["WHOA"] == "");
+		isupport.insertToken(keyValuePair("WHOA=AOHW"));
+		assert(isupport.unknownTokens["WHOA"] == "AOHW");
+		isupport.insertToken(keyValuePair("WHOA=0"));
+		isupport.insertToken(keyValuePair("WHOA2=1"));
+		assert(isupport.unknownTokens["WHOA"] == "0");
+		assert(isupport.unknownTokens["WHOA2"] == "1");
+		isupport.insertToken(keyValuePair("-WHOA"));
+		isupport.insertToken(keyValuePair("-WHOA2"));
+		assert(isupport.unknownTokens.length == 0);
 	}
 }
 /++
@@ -808,8 +1167,5 @@ auto parseNumeric(Numeric numeric: Numeric.RPL_ISUPPORT, T)(T input) {
 	}
 	{
 		assertNotThrown(parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone :are supported by this server")));
-	}
-	{
-		assertThrown(parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone WHATISTHIS :are supported by this server")));
 	}
 }
