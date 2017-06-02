@@ -132,13 +132,89 @@ enum ISupportToken {
 	///
 	whoX = "WHOX"
 }
-/++
-+
-+/
-class UnknownISupportTokenException : Exception {
-	package this(string token, string file = __FILE__, size_t line = __LINE__) @safe pure {
-		super("Unknown Token: "~ token, file, line);
+
+import std.typecons : Nullable;
+private void setToken(T : ulong)(ref T opt, Nullable!string value, T defaultIfNotPresent, T negateValue) {
+	import std.conv : parse;
+	if (value.isNull) {
+		opt = negateValue;
+	} else {
+		try {
+			opt = parse!T(value);
+		} catch (Exception) {
+			opt = defaultIfNotPresent;
+		}
 	}
+}
+private void setToken(T : ulong)(ref Nullable!T opt, Nullable!string value, T defaultIfNotPresent) {
+	import std.conv : parse;
+	if (value.isNull) {
+		opt.nullify();
+	} else {
+		if (value == "") {
+			opt = defaultIfNotPresent;
+		} else {
+			try {
+				opt = parse!T(value);
+			} catch (Exception) {
+				opt.nullify();
+			}
+		}
+	}
+}
+private void setToken(T: char)(ref Nullable!T opt, Nullable!string value, T defaultIfNotPresent) {
+	import std.utf : byCodeUnit;
+	if (value.isNull) {
+		opt.nullify();
+	} else {
+		if (value == "") {
+			opt = defaultIfNotPresent;
+		} else {
+			opt = value.byCodeUnit.front;
+		}
+	}
+}
+private void setToken(T : bool)(ref T opt, Nullable!string val, T = T.init) {
+	opt = !val.isNull;
+}
+private void setToken(T : string)(ref T opt, Nullable!string val, T defaultIfNotPresent = "") {
+	if (val.isNull) {
+		opt = defaultIfNotPresent;
+	} else {
+		opt = val.get;
+	}
+}
+private void setToken(T : string)(ref Nullable!T opt, Nullable!string val) {
+	if (!val.isNull) {
+		opt = val.get;
+	} else {
+		opt.nullify();
+	}
+}
+private void setToken(T)(ref Nullable!T opt, Nullable!string val) {
+	if (!val.isNull) {
+		try {
+			opt = val.to!T;
+		} catch (Exception) {
+			opt.nullify();
+		}
+	} else {
+		opt.nullify();
+	}
+}
+
+private struct TokenPair {
+	string key;
+	Nullable!string value;
+}
+/++
++ Extended bans supported by the server and what they look like.
++/
+struct BanExtension {
+	///Prefix character for the ban, if applicable
+	Nullable!char prefix;
+	///Types of extended bans supported by the server
+	string banTypes;
 }
 /++
 +
@@ -154,7 +230,7 @@ struct ISupport {
 	///
 	ModeType[char] channelModeTypes;
 	///
-	ulong maxModesPerCommand;
+	ulong maxModesPerCommand = 3;
 	///
 	ulong[char] chanLimits;
 	///
@@ -178,11 +254,11 @@ struct ISupport {
 	///
 	string extendedList;
 	///
-	ulong topicLength = 390;
+	Nullable!ulong topicLength;
 	///
-	ulong kickLength;
+	ulong kickLength = ulong.max;
 	///
-	ulong userLength;
+	Nullable!ulong userLength;
 	///
 	ulong channelLength = 200;
 	///
@@ -212,13 +288,13 @@ struct ISupport {
 	///
 	bool cNotice;
 	///
-	ulong maxTargets;
+	ulong maxTargets = ulong.max;
 	///
 	bool knock;
 	///
 	bool virtualChannels;
 	///
-	ulong maximumWatches;
+	Nullable!ulong maximumWatches;
 	///
 	bool whoX;
 	///
@@ -230,7 +306,7 @@ struct ISupport {
 	///
 	bool startTLS; //DANGEROUS!
 	///
-	string banExtensions;
+	Nullable!BanExtension banExtensions;
 	///
 	bool logsOperCommands;
 	///
@@ -256,13 +332,15 @@ struct ISupport {
 	///
 	Nullable!char deaf;
 	///
-	ulong metadata = 0;
+	Nullable!ulong metadata;
 	///
-	ulong monitorTargetLimit = 0;
+	Nullable!ulong monitorTargetLimit;
 	///
 	ulong[string] targetMaxByCommand;
 	///
 	string charSet;
+	///
+	string[string] unknownTokens;
 	///
 	void insertToken(string token, Nullable!string val) @safe pure {
 		import std.algorithm.iteration : splitter;
@@ -272,16 +350,15 @@ struct ISupport {
 		import std.range : empty, popFront, zip;
 		import std.string : toLower;
 		import std.utf : byCodeUnit;
-		string value;
-		if (!val.isNull) {
-			value = val.get;
-		}
-		const isEnabled = !val.isNull;
 		switch (cast(ISupportToken)token) {
 			case ISupportToken.chanModes:
-				if (isEnabled) {
-					auto splitModes = value.splitter(",");
+				channelModeTypes = channelModeTypes.init;
+				if (!val.isNull) {
+					auto splitModes = val.get.splitter(",");
 					foreach (modeType; AliasSeq!(ModeType.a, ModeType.b, ModeType.c, ModeType.d)) {
+						if (splitModes.empty) {
+							break;
+						}
 						foreach (modeChar; splitModes.front) {
 							channelModeTypes[modeChar] = modeType;
 						}
@@ -292,132 +369,145 @@ struct ISupport {
 				}
 				break;
 			case ISupportToken.prefix:
-				auto split = value.findSplit(")");
-				split[0].popFront();
-				foreach (modeChar, prefix; zip(split[0].byCodeUnit, split[2].byCodeUnit)) {
-					prefixes[modeChar] = prefix;
-					if (modeChar !in channelModeTypes) {
-						channelModeTypes[modeChar] = ModeType.d;
+				if (!val.isNull) {
+					if (val == "") {
+						prefixes = prefixes.init;
+					} else {
+						auto split = val.get.findSplit(")");
+						split[0].popFront();
+						foreach (modeChar, prefix; zip(split[0].byCodeUnit, split[2].byCodeUnit)) {
+							prefixes[modeChar] = prefix;
+							if (modeChar !in channelModeTypes) {
+								channelModeTypes[modeChar] = ModeType.d;
+							}
+						}
 					}
+				} else {
+					prefixes = ['o': '@', 'v': '+'];
 				}
 				break;
 			case ISupportToken.chanTypes:
-				channelTypes = value;
+				setToken(channelTypes, val, "#&!+");
 				break;
 			case ISupportToken.wallChOps:
-				wAllChannelOps = isEnabled;
+				setToken(wAllChannelOps, val);
 				break;
 			case ISupportToken.wallVoices:
-				wAllChannelVoices = isEnabled;
+				setToken(wAllChannelVoices, val);
 				break;
 			case ISupportToken.statusMsg:
-				statusMessage = value;
+				setToken(statusMessage, val);
 				break;
 			case ISupportToken.extBan:
-				banExtensions = value;
+				if (val.isNull) {
+					banExtensions.nullify();
+				} else {
+					banExtensions = BanExtension();
+					auto split = val.get.findSplit(",");
+					if (split[1] == ",") {
+						if (!split[0].empty) {
+							banExtensions.prefix = split[0].byCodeUnit.front;
+						}
+						banExtensions.banTypes = split[2];
+					} else {
+						banExtensions.nullify();
+					}
+				}
 				break;
 			case ISupportToken.fnc:
-				forcedNickChanges = isEnabled;
+				setToken(forcedNickChanges, val);
 				break;
 			case ISupportToken.userIP:
-				userIP = isEnabled;
+				setToken(userIP, val);
 				break;
 			case ISupportToken.cPrivmsg:
-				cPrivmsg = isEnabled;
+				setToken(cPrivmsg, val);
 				break;
 			case ISupportToken.cNotice:
-				cNotice = isEnabled;
+				setToken(cNotice, val);
 				break;
 			case ISupportToken.knock:
-				knock = isEnabled;
+				setToken(knock, val);
 				break;
 			case ISupportToken.vChans:
-				virtualChannels = isEnabled;
+				setToken(virtualChannels, val);
 				break;
 			case ISupportToken.whoX:
-				whoX = isEnabled;
+				setToken(whoX, val);
 				break;
 			case ISupportToken.awayLen:
-				try {
-					awayLength = parse!ulong(value);
-				} catch (Exception) {
-					awayLength = ulong.max;
-				}
+				setToken(awayLength, val, ulong.max, ulong.max);
 				break;
 			case ISupportToken.nickLen:
-				nickLength = parse!ulong(value);
+				setToken(nickLength, val, 9, 9);
 				break;
 			case ISupportToken.lineLen:
-				lineLength = parse!ulong(value);
+				setToken(lineLength, val, 512, 512);
 				break;
 			case ISupportToken.channelLen:
-				channelLength = parse!ulong(value);
+				setToken(channelLength, val, ulong.max, 200);
 				break;
 			case ISupportToken.kickLen:
-				kickLength = parse!ulong(value);
+				setToken(kickLength, val, ulong.max, ulong.max);
 				break;
 			case ISupportToken.userLen:
-				if (value == value.init) {
-					userLength = ulong.max;
-				} else {
-					userLength = parse!ulong(value);
-				}
+				setToken(userLength, val, ulong.max);
 				break;
 			case ISupportToken.topicLen:
-				if (value == "") {
-					topicLength = ulong.max;
-				} else {
-					topicLength = parse!ulong(value);
-				}
+				setToken(topicLength, val, ulong.max);
 				break;
 			case ISupportToken.maxBans:
-				maxList['b'] = parse!ulong(value);
+				if (val.isNull) {
+					maxList.remove('b');
+				} else {
+					maxList['b'] = 0;
+					setToken(maxList['b'], val, ulong.max, ulong.max);
+				}
 				break;
 			case ISupportToken.modes:
-				maxModesPerCommand = parse!ulong(value);
+				setToken(maxModesPerCommand, val, ulong.max, 3);
 				break;
 			case ISupportToken.watch:
-				maximumWatches = parse!ulong(value);
+				setToken(maximumWatches, val, ulong.max);
 				break;
 			case ISupportToken.metadata:
-				if (value == value.init) {
-					metadata = ulong.max;
-				} else {
-					metadata = parse!ulong(value);
-				}
+				setToken(metadata, val, ulong.max);
 				break;
 			case ISupportToken.monitor:
-				if (value == value.init) {
-					monitorTargetLimit = ulong.max;
-				} else {
-					monitorTargetLimit = parse!ulong(value);
-				}
+				setToken(monitorTargetLimit, val, ulong.max);
 				break;
 			case ISupportToken.maxList:
-				auto splitModes = value.splitter(",");
-				foreach (listEntry; splitModes) {
-					auto splitArgs = listEntry.findSplit(":");
-					immutable limit = parse!ulong(splitArgs[2]);
-					foreach (modeChar; splitArgs[0]) {
-						maxList[modeChar] = limit;
+				if (val.isNull) {
+					maxList = maxList.init;
+				} else {
+					auto splitModes = val.get.splitter(",");
+					foreach (listEntry; splitModes) {
+						auto splitArgs = listEntry.findSplit(":");
+						immutable limit = parse!ulong(splitArgs[2]);
+						foreach (modeChar; splitArgs[0]) {
+							maxList[modeChar] = limit;
+						}
 					}
 				}
 				break;
 			case ISupportToken.targMax:
-				auto splitCmd = value.splitter(",");
-				foreach (listEntry; splitCmd) {
-					auto splitArgs = listEntry.findSplit(":");
-					if (splitArgs[2].empty) {
-						targetMaxByCommand[splitArgs[0]] = ulong.max;
-					} else {
-						immutable limit = parse!ulong(splitArgs[2]);
-						targetMaxByCommand[splitArgs[0]] = limit;
+				targetMaxByCommand = targetMaxByCommand.init;
+				if (!val.isNull) {
+					auto splitCmd = val.get.splitter(",");
+					foreach (listEntry; splitCmd) {
+						auto splitArgs = listEntry.findSplit(":");
+						if (splitArgs[2].empty) {
+							targetMaxByCommand[splitArgs[0]] = ulong.max;
+						} else {
+							immutable limit = parse!ulong(splitArgs[2]);
+							targetMaxByCommand[splitArgs[0]] = limit;
+						}
 					}
 				}
 				break;
 			case ISupportToken.chanLimit:
-				if (isEnabled) {
-					auto splitPrefix = value.splitter(",");
+				if (!val.isNull) {
+					auto splitPrefix = val.get.splitter(",");
 					foreach (listEntry; splitPrefix) {
 						auto splitArgs = listEntry.findSplit(":");
 						if (splitArgs[1] != ":") {
@@ -445,141 +535,160 @@ struct ISupport {
 				}
 				break;
 			case ISupportToken.maxTargets:
-				maxTargets = parse!ulong(value);
+				setToken(maxTargets, val, ulong.max, ulong.max);
 				break;
 			case ISupportToken.maxChannels:
-				chanLimits['#'] = parse!ulong(value);
-				break;
-			case ISupportToken.maxPara:
-				maximumParameters = parse!ulong(value);
-				break;
-			case ISupportToken.startTLS:
-				startTLS = isEnabled;
-				break;
-			case ISupportToken.ssl:
-				sslServer = value;
-				break;
-			case ISupportToken.operLog:
-				logsOperCommands = isEnabled;
-				break;
-			case ISupportToken.silence:
-				if (value.empty || !isEnabled) {
-					silence.nullify();
+				if (val.isNull) {
+					chanLimits.remove('#');
 				} else {
-					silence = value.parse!ulong;
+					chanLimits['#'] = 0;
+					setToken(chanLimits['#'], val, ulong.max, ulong.max);
 				}
 				break;
+			case ISupportToken.maxPara:
+				setToken(maximumParameters, val, 12, 12);
+				break;
+			case ISupportToken.startTLS:
+				setToken(startTLS, val);
+				break;
+			case ISupportToken.ssl:
+				setToken(sslServer, val, "");
+				break;
+			case ISupportToken.operLog:
+				setToken(logsOperCommands, val);
+				break;
+			case ISupportToken.silence:
+				setToken(silence, val, ulong.max);
+				break;
 			case ISupportToken.network:
-				network = value;
+				setToken(network, val);
 				break;
 			case ISupportToken.caseMapping:
-				switch (value.toLower()) {
-					case CaseMapping.rfc1459:
-						caseMapping = CaseMapping.rfc1459;
-						break;
-					case CaseMapping.rfc3454:
-						caseMapping = CaseMapping.rfc3454;
-						break;
-					case CaseMapping.strictRFC1459:
-						caseMapping = CaseMapping.strictRFC1459;
-						break;
-					case CaseMapping.ascii:
-						caseMapping = CaseMapping.ascii;
-						break;
-					default:
-						caseMapping = CaseMapping.unknown;
-						break;
+				if (val.isNull) {
+					caseMapping = CaseMapping.unknown;
+				} else {
+					switch (val.get.toLower()) {
+						case CaseMapping.rfc1459:
+							caseMapping = CaseMapping.rfc1459;
+							break;
+						case CaseMapping.rfc3454:
+							caseMapping = CaseMapping.rfc3454;
+							break;
+						case CaseMapping.strictRFC1459:
+							caseMapping = CaseMapping.strictRFC1459;
+							break;
+						case CaseMapping.ascii:
+							caseMapping = CaseMapping.ascii;
+							break;
+						default:
+							caseMapping = CaseMapping.unknown;
+							break;
+					}
 				}
 				break;
 			case ISupportToken.charSet:
 				//Has serious issues and has been removed from drafts
 				//So we leave this one unparsed
-				charSet = value;
+				setToken(charSet, val, "");
 				break;
 			case ISupportToken.uhNames:
-				userhostsInNames = isEnabled;
+				setToken(userhostsInNames, val);
 				break;
 			case ISupportToken.namesX:
-				userhostsInNames = isEnabled;
+				setToken(namesExtended, val);
 				break;
 			case ISupportToken.invEx:
-				inviteExceptions = value.byCodeUnit.front;
+				setToken(inviteExceptions, val, 'I');
 				break;
 			case ISupportToken.excepts:
-				banExceptions = value.byCodeUnit.front;
+				setToken(banExceptions, val, 'e');
 				break;
 			case ISupportToken.callerID, ISupportToken.accept:
-				//value is required, but not all implementations support it
-				if (value == value.init) {
-					callerID = 'g';
-				} else {
-					callerID = value.byCodeUnit.front;
-				}
+				setToken(callerID, val, 'g');
 				break;
 			case ISupportToken.deaf:
-				if (value == value.init) {
-					deaf = 'd';
-				} else {
-					deaf = value.byCodeUnit.front;
-				}
+				setToken(deaf, val, 'd');
 				break;
 			case ISupportToken.eList:
-				extendedList = value;
+				setToken(extendedList, val, "");
 				break;
 			case ISupportToken.secureList:
-				secureList = isEnabled;
+				setToken(secureList, val);
 				break;
 			case ISupportToken.noQuit:
-				noQuit = isEnabled;
+				setToken(noQuit, val);
 				break;
 			case ISupportToken.remove:
-				supportsRemove = isEnabled;
+				setToken(supportsRemove, val);
 				break;
 			case ISupportToken.eSilence:
-				extendedSilence = isEnabled;
+				setToken(extendedSilence, val);
 				break;
 			case ISupportToken.override_:
-				allowsOperOverride = isEnabled;
+				setToken(allowsOperOverride, val);
 				break;
 			case ISupportToken.vBanList:
-				variableBanList = isEnabled;
+				setToken(variableBanList, val);
 				break;
 			case ISupportToken.map:
-				supportsMap = isEnabled;
+				setToken(supportsMap, val);
 				break;
 			case ISupportToken.safeList:
-				safeList = isEnabled;
+				setToken(safeList, val);
 				break;
 			case ISupportToken.chIdLen:
-				channelIDLengths['!'] = parse!ulong(value);
+				if (val.isNull) {
+					channelIDLengths.remove('!');
+				} else {
+					channelIDLengths['!'] = 0;
+					setToken(channelIDLengths['!'], val, ulong.max, ulong.max);
+				}
+				//channelIDLengths['!'] = parse!ulong(value);
 				break;
 			case ISupportToken.idChan:
-				auto splitPrefix = value.splitter(",");
-				foreach (listEntry; splitPrefix) {
-					auto splitArgs = listEntry.findSplit(":");
-					immutable limit = parse!ulong(splitArgs[2]);
-					foreach (prefix; splitArgs[0]) {
-						channelIDLengths[prefix] = limit;
+				if (val.isNull) {
+					channelIDLengths = channelIDLengths.init;
+				} else {
+					auto splitPrefix = val.get.splitter(",");
+					foreach (listEntry; splitPrefix) {
+						auto splitArgs = listEntry.findSplit(":");
+						immutable limit = parse!ulong(splitArgs[2]);
+						foreach (prefix; splitArgs[0]) {
+							channelIDLengths[prefix] = limit;
+						}
 					}
 				}
 				break;
 			case ISupportToken.std:
-				standard = value;
+				setToken(standard, val);
 				break;
 			case ISupportToken.rfc2812:
-				rfc2812 = isEnabled;
+				setToken(rfc2812, val);
 				break;
 			case ISupportToken.penalty:
-				penalty = isEnabled;
+				setToken(penalty, val);
 				break;
 			case ISupportToken.language:
-				auto splitLangs = value.splitter(",");
-				maxLanguages = to!ulong(splitLangs.front);
-				splitLangs.popFront();
-				foreach (lang; splitLangs)
-					languages ~= lang;
+				if (val.isNull) {
+					languages = languages.init;
+					maxLanguages = 0;
+				} else {
+					auto splitLangs = val.get.splitter(",");
+					maxLanguages = to!ulong(splitLangs.front);
+					splitLangs.popFront();
+					foreach (lang; splitLangs)
+						languages ~= lang;
+				}
 				break;
-			default: throw new UnknownISupportTokenException(token);
+			default:
+				if (val.isNull) {
+					if (token in unknownTokens) {
+						unknownTokens.remove(token);
+					}
+				} else {
+					unknownTokens[token] = val.get;
+				}
+				break;
 		}
 	}
 	private void insertToken(TokenPair pair) pure @safe {
@@ -862,6 +971,8 @@ struct ISupport {
 		assert(isupport.metadata.isNull);
 		isupport.insertToken(keyValuePair("METADATA=30"));
 		assert(isupport.metadata == 30);
+		isupport.insertToken(keyValuePair("METADATA=x"));
+		assert(isupport.metadata.isNull);
 		isupport.insertToken(keyValuePair("METADATA"));
 		assert(isupport.metadata == ulong.max);
 		isupport.insertToken(keyValuePair("-METADATA"));
@@ -1160,7 +1271,7 @@ auto parseNumeric(Numeric numeric: Numeric.RPL_ISUPPORT, T)(T input) {
 		auto support = parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone SILENCE=4 :are supported by this server"));
 		assert(support.silence == 4);
 		parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone SILENCE :are supported by this server"), support);
-		assert(support.silence.isNull);
+		assert(support.silence == ulong.max);
 		parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone SILENCE=6 :are supported by this server"), support);
 		parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone -SILENCE :are supported by this server"), support);
 		assert(support.silence.isNull);
