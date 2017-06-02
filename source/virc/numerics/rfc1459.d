@@ -197,15 +197,51 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LIST, T)(T input, ModeType[char]
 	}
 }
 /++
++ Parser for RPL_TOPIC.
 +
++ Format is `332 <client><channel> :<topic>`
 +/
-//332 <channel> :<topic>
 auto parseNumeric(Numeric numeric : Numeric.RPL_TOPIC, T)(T input) {
-	return "";
+	import std.typecons : Nullable, Tuple;
+	Nullable!(Tuple!(string, "channel", string, "topic")) output = Tuple!(string, "channel", string, "topic")();
+	if (input.empty) {
+		output.nullify;
+		return output;
+	}
+	input.popFront();
+	if (input.empty) {
+		output.nullify;
+		return output;
+	}
+	output.channel = input.front;
+	input.popFront();
+	if (input.empty) {
+		output.nullify;
+		return output;
+	}
+	output.topic = input.front;
+	return output;
 }
 ///
-unittest {
-
+@safe pure nothrow @nogc unittest {
+	import std.range : only, takeNone;
+	{
+		immutable topic = parseNumeric!(Numeric.RPL_TOPIC)(only("someone", "#channel", "This is the topic!"));
+		assert(topic.channel == "#channel");
+		assert(topic.topic == "This is the topic!");
+	}
+	{
+		immutable topic = parseNumeric!(Numeric.RPL_TOPIC)(takeNone(only("")));
+		assert(topic.isNull);
+	}
+	{
+		immutable topic = parseNumeric!(Numeric.RPL_TOPIC)(only("someone"));
+		assert(topic.isNull);
+	}
+	{
+		immutable topic = parseNumeric!(Numeric.RPL_TOPIC)(only("someone", "#channel"));
+		assert(topic.isNull);
+	}
 }
 
 /++
