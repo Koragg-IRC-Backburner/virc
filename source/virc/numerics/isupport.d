@@ -582,71 +582,193 @@ struct ISupport {
 			default: throw new UnknownISupportTokenException(token);
 		}
 	}
+	private void insertToken(TokenPair pair) pure @safe {
+		insertToken(pair.key, pair.value);
+	}
 }
 ///
 @safe pure unittest {
-	import std.typecons : Nullable;
 	import virc.casemapping : CaseMapping;
+	import virc.modes : ModeType;
 	auto isupport = ISupport();
 	{
 		assert(isupport.awayLength == ulong.max);
-		isupport.insertToken("AWAYLEN", Nullable!string("8"));
+		isupport.insertToken(keyValuePair("AWAYLEN=8"));
 		assert(isupport.awayLength == 8);
-		isupport.insertToken("AWAYLEN", Nullable!string.init);
+		isupport.insertToken(keyValuePair("AWAYLEN="));
+		assert(isupport.awayLength == ulong.max);
+		isupport.insertToken(keyValuePair("AWAYLEN=8"));
+		assert(isupport.awayLength == 8);
+		isupport.insertToken(keyValuePair("-AWAYLEN"));
 		assert(isupport.awayLength == ulong.max);
 	}
 	{
 		assert(isupport.callerID.isNull);
-		isupport.insertToken("CALLERID", Nullable!string("h"));
+		isupport.insertToken(keyValuePair("CALLERID=h"));
 		assert(isupport.callerID == 'h');
-		isupport.insertToken("CALLERID", Nullable!string.init);
+		isupport.insertToken(keyValuePair("CALLERID"));
 		assert(isupport.callerID == 'g');
+		//isupport.insertToken(keyValuePair("CALLERID"));
+		//assert(isupport.callerID.isNull);
 	}
 	{
 		assert(isupport.caseMapping == CaseMapping.unknown);
-		isupport.insertToken("CASEMAPPING", Nullable!string("rfc1459"));
+		isupport.insertToken(keyValuePair("CASEMAPPING=rfc1459"));
 		assert(isupport.caseMapping == CaseMapping.rfc1459);
-		isupport.insertToken("CASEMAPPING", Nullable!string("ascii"));
+		isupport.insertToken(keyValuePair("CASEMAPPING=ascii"));
 		assert(isupport.caseMapping == CaseMapping.ascii);
-		isupport.insertToken("CASEMAPPING", Nullable!string("rfc3454"));
+		isupport.insertToken(keyValuePair("CASEMAPPING=rfc3454"));
 		assert(isupport.caseMapping == CaseMapping.rfc3454);
-		isupport.insertToken("CASEMAPPING", Nullable!string("strict-rfc1459"));
+		isupport.insertToken(keyValuePair("CASEMAPPING=strict-rfc1459"));
 		assert(isupport.caseMapping == CaseMapping.strictRFC1459);
-		isupport.insertToken("CASEMAPPING", Nullable!string.init);
+		isupport.insertToken(keyValuePair("-CASEMAPPING"));
+		assert(isupport.caseMapping == CaseMapping.unknown);
+		isupport.insertToken(keyValuePair("CASEMAPPING=something"));
 		assert(isupport.caseMapping == CaseMapping.unknown);
 	}
 	{
 		assert(isupport.chanLimits.length == 0);
-		isupport.insertToken("CHANLIMIT", Nullable!string("#+:25,&:"));
+		isupport.insertToken(keyValuePair("CHANLIMIT=#+:25,&:"));
 		assert(isupport.chanLimits['#'] == 25);
 		assert(isupport.chanLimits['+'] == 25);
 		assert(isupport.chanLimits['&'] == ulong.max);
-		isupport.insertToken("CHANLIMIT", Nullable!string.init);
+		isupport.insertToken(keyValuePair("-CHANLIMIT"));
 		assert(isupport.chanLimits.length == 0);
-		isupport.insertToken("CHANLIMIT", Nullable!string("q"));
+		isupport.insertToken(keyValuePair("CHANLIMIT=q"));
 		assert(isupport.chanLimits.length == 0);
-		isupport.insertToken("CHANLIMIT", Nullable!string("!:f"));
+		isupport.insertToken(keyValuePair("CHANLIMIT=!:f"));
 		assert(isupport.chanLimits.length == 0);
 	}
+	{
+		assert(isupport.channelModeTypes.length == 0);
+		isupport.insertToken(keyValuePair("CHANMODES=b,k,l,imnpst"));
+		assert(isupport.channelModeTypes['b'] == ModeType.a);
+		assert(isupport.channelModeTypes['k'] == ModeType.b);
+		assert(isupport.channelModeTypes['l'] == ModeType.c);
+		assert(isupport.channelModeTypes['i'] == ModeType.d);
+		assert(isupport.channelModeTypes['t'] == ModeType.d);
+		isupport.insertToken(keyValuePair("CHANMODES=beI,k,l,BCMNORScimnpstz"));
+		assert(isupport.channelModeTypes['e'] == ModeType.a);
+		isupport.insertToken(keyValuePair("CHANMODES"));
+		assert(isupport.channelModeTypes.length == 0);
+		isupport.insertToken(keyValuePair("CHANMODES=w,,,"));
+		assert(isupport.channelModeTypes['w'] == ModeType.a);
+		assert('b' !in isupport.channelModeTypes);
+		isupport.insertToken(keyValuePair("-CHANMODES"));
+		assert(isupport.channelModeTypes.length == 0);
+	}
+	{
+		assert(isupport.channelLength == 200);
+		isupport.insertToken(keyValuePair("CHANNELLEN=50"));
+		assert(isupport.channelLength == 50);
+		isupport.insertToken(keyValuePair("CHANNELLEN="));
+		assert(isupport.channelLength == ulong.max);
+		isupport.insertToken(keyValuePair("-CHANNELLEN"));
+		assert(isupport.channelLength == 200);
+	}
+	{
+		assert(isupport.channelTypes == "#&!+");
+		isupport.insertToken(keyValuePair("CHANTYPES=&#"));
+		assert(isupport.channelTypes == "&#");
+		isupport.insertToken(keyValuePair("CHANTYPES"));
+		assert(isupport.channelTypes == "");
+		isupport.insertToken(keyValuePair("-CHANTYPES"));
+		assert(isupport.channelTypes == "#&!+");
+	}
+	{
+		assert(isupport.charSet == "");
+		isupport.insertToken(keyValuePair("CHARSET=ascii"));
+		assert(isupport.charSet == "ascii");
+		isupport.insertToken(keyValuePair("CHARSET"));
+		assert(isupport.charSet == "");
+		isupport.insertToken(keyValuePair("-CHARSET"));
+		assert(isupport.charSet == "");
+	}
+	{
+		assert(!isupport.cNotice);
+		isupport.insertToken(keyValuePair("CNOTICE"));
+		assert(isupport.cNotice);
+		isupport.insertToken(keyValuePair("-CNOTICE"));
+		assert(!isupport.cNotice);
+	}
+	{
+		assert(!isupport.cPrivmsg);
+		isupport.insertToken(keyValuePair("CPRIVMSG"));
+		assert(isupport.cPrivmsg);
+		isupport.insertToken(keyValuePair("-CPRIVMSG"));
+		assert(!isupport.cPrivmsg);
+	}
+	{
+		assert(isupport.deaf.isNull);
+		isupport.insertToken(keyValuePair("DEAF=D"));
+		assert(isupport.deaf == 'D');
+		isupport.insertToken(keyValuePair("DEAF"));
+		assert(isupport.deaf == 'd');
+		isupport.insertToken(keyValuePair("-DEAF"));
+		assert(isupport.deaf.isNull);
+	}
+	{
+		assert(isupport.extendedList == "");
+		isupport.insertToken(keyValuePair("ELIST=CMNTU"));
+		assert(isupport.extendedList == "CMNTU");
+		isupport.insertToken(keyValuePair("-ELIST"));
+		assert(isupport.extendedList == "");
+	}
+	{
+		assert(isupport.banExceptions.isNull);
+		isupport.insertToken(keyValuePair("EXCEPTS"));
+		assert(isupport.banExceptions == 'e');
+		isupport.insertToken(keyValuePair("EXCEPTS=f"));
+		assert(isupport.banExceptions == 'f');
+		isupport.insertToken(keyValuePair("EXCEPTS=e"));
+		assert(isupport.banExceptions == 'e');
+		isupport.insertToken(keyValuePair("-EXCEPTS"));
+		assert(isupport.banExceptions.isNull);
+	}
+	{
+		assert(isupport.banExtensions.isNull);
+		isupport.insertToken(keyValuePair("EXTBAN=~,cqnr"));
+		assert(isupport.banExtensions.prefix == '~');
+		assert(isupport.banExtensions.banTypes == "cqnr");
+		isupport.insertToken(keyValuePair("EXTBAN=,ABCNOQRSTUcjmprsz"));
+		assert(isupport.banExtensions.prefix.isNull);
+		assert(isupport.banExtensions.banTypes == "ABCNOQRSTUcjmprsz");
+		isupport.insertToken(keyValuePair("EXTBAN=~,qjncrRa"));
+		assert(isupport.banExtensions.prefix == '~');
+		assert(isupport.banExtensions.banTypes == "qjncrRa");
+		isupport.insertToken(keyValuePair("-EXTBAN"));
+		assert(isupport.banExtensions.isNull);
+	}
+	{
+		assert(isupport.forcedNickChanges == false);
+		isupport.insertToken(keyValuePair("FNC"));
+		assert(isupport.forcedNickChanges == true);
+		isupport.insertToken(keyValuePair("-FNC"));
+		assert(isupport.forcedNickChanges == false);
+	}
 }
-
+/++
++ Parses an ISUPPORT token.
++/
+private auto keyValuePair(string token) pure @safe {
+	import std.algorithm : findSplit, skipOver;
+	immutable isDisabled = token.skipOver('-');
+	auto splitParams = token.findSplit("=");
+	Nullable!string param;
+	if (!isDisabled) {
+		param = splitParams[2];
+	}
+	return TokenPair(splitParams[0], param);
+}
 /++
 +
 +/
 void parseNumeric(Numeric numeric: Numeric.RPL_ISUPPORT, T)(T input, ref ISupport iSupport) {
-	import std.algorithm : findSplit, skipOver;
 	import std.typecons : Nullable;
 	immutable username = input.front;
 	input.popFront();
 	while (!input.empty && !input.isColonParameter) {
-		auto token = input.front;
-		immutable isDisabled = token.skipOver('-');
-		auto splitParams = token.findSplit("=");
-		Nullable!string param;
-		if (!isDisabled) {
-			param = splitParams[2];
-		}
-		iSupport.insertToken(splitParams[0], param);
+		iSupport.insertToken(keyValuePair(input.front));
 		input.popFront();
 	}
 }
@@ -672,7 +794,7 @@ auto parseNumeric(Numeric numeric: Numeric.RPL_ISUPPORT, T)(T input) {
 		parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone -STATUSMSG -CHANLIMIT -CHANMODES -CHANTYPES :are supported by this server"), support);
 		assert(support.statusMessage == support.statusMessage.init);
 		assert(support.chanLimits == support.chanLimits.init);
-		assert(support.channelTypes == support.channelTypes.init);
+		assert(support.channelTypes == "#&!+");
 		assert(support.channelModeTypes == support.channelModeTypes.init);
 	}
 	{
