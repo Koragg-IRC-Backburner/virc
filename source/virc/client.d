@@ -999,6 +999,8 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		assert(lineReceived == false);
 		client.put("\r\n");
 		assert(lineReceived == false);
+		client.put("hello");
+		assert(lineReceived == true);
 	}
 	//Request capabilities (IRC v3.2)
 	{
