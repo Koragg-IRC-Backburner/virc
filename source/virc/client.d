@@ -300,12 +300,8 @@ struct Message {
 		return (msg.startsWith("\x01")) && (msg.endsWith("\x01"));
 	}
 	///
-	auto isNotice() const {
-		return type == MessageType.notice;
-	}
-	///
-	auto isPrivmsg() const {
-		return type == MessageType.privmsg;
+	auto isReplyable() const {
+		return type != MessageType.notice;
 	}
 	///
 	auto ctcpCommand() const in {
@@ -319,6 +315,24 @@ struct Message {
 		assert(isCTCP, "This is not a CTCP message!");
 	} body {
 		return msg.find(" ")[1..$-1];
+	}
+}
+///
+@safe pure nothrow @nogc unittest {
+	{
+		auto msg = Message("Hello!", MessageType.notice);
+		assert(!msg.isCTCP);
+		assert(!msg.isReplyable);
+	}
+	{
+		auto msg = Message("Hello!", MessageType.privmsg);
+		assert(msg.isReplyable);
+	}
+	{
+		auto msg = Message("\x01ACTION does a thing\x01", MessageType.privmsg);
+		assert(msg.isCTCP);
+		assert(msg.ctcpCommand == "ACTION");
+		assert(msg.ctcpArgs == "does a thing");
 	}
 }
 /++
