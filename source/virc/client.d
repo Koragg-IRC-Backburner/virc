@@ -192,28 +192,75 @@ struct Capability {
 
 	///
 	this(string str) @safe pure @nogc {
-		switch (str[0]) {
+		import std.algorithm.searching : findSplit;
+		import std.range : front, popFront;
+		assert(!str.empty);
+		auto prefix = str.byCodeUnit.front;
+		switch (prefix) {
 			case '~':
 				isAcked = true;
-				name = str[1..$];
 				break;
 			case '=':
 				isSticky = true;
-				name = str[1..$];
 				break;
 			case '-':
 				isDisabled = true;
-				name = str[1..$];
 				break;
 			default:
-				name = str;
 				break;
 		}
+		if (prefix.among('~', '=', '-')) {
+			str.popFront();
+		}
+		auto split = str.findSplit("=");
+		name = split[0];
+		value = split[2];
 		isVendorSpecific = name.byCodeUnit.canFind('/');
 	}
 	///
-	string toString() const {
+	string toString() const pure @safe {
 		return name~(value.empty ? "" : "=")~value;
+	}
+}
+///
+@safe pure @nogc unittest {
+	{
+		auto cap = Capability("~account-notify");
+		assert(cap.name == "account-notify");
+		assert(cap.isAcked);
+	}
+	{
+		auto cap = Capability("=account-notify");
+		assert(cap.name == "account-notify");
+		assert(cap.isSticky);
+	}
+	{
+		auto cap = Capability("-account-notify");
+		assert(cap.name == "account-notify");
+		assert(cap.isDisabled);
+	}
+	{
+		auto cap = Capability("example.com/cap");
+		assert(cap.name == "example.com/cap");
+		assert(cap.isVendorSpecific);
+	}
+	{
+		auto cap = Capability("cap=value");
+		assert(cap.name == "cap");
+		assert(cap.value == "value");
+	}
+	{
+		auto cap = Capability("cap=value/notvendor");
+		assert(cap.name == "cap");
+		assert(cap.value == "value/notvendor");
+		assert(!cap.isVendorSpecific);
+	}
+}
+@system pure unittest {
+	import core.exception : AssertError;
+	import std.exception : assertThrown;
+	{
+		assertThrown!AssertError(Capability(""));
 	}
 }
 /++
