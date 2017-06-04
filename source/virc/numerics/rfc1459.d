@@ -243,18 +243,84 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_TOPIC, T)(T input) {
 		assert(topic.isNull);
 	}
 }
-
 /++
 +
 +/
-//353 =/*/@ <channel> :<prefix[es]><usermask>[ <prefix[es]><usermask>...]
+enum NamReplyFlag {
+	///Channel will never be shown to users that aren't in it
+	Secret = "@",
+	///Channel will have its name replaced for users that aren't in it
+	Private = "*",
+	///Non-private and non-secret channel.
+	Public = "=",
+	///ditto
+	Other = Public
+}
+
+/++
++ Parser for RPL_NAMREPLY
++
++ Format is `353 <client> =/*/@ <channel> :<prefix[es]><usermask>[ <prefix[es]><usermask>...]`
++/
 auto parseNumeric(Numeric numeric : Numeric.RPL_NAMREPLY, T)(T input) {
-	auto chanFlag = input.front;
+	import std.algorithm : splitter;
+	import std.traits : ReturnType;
+	import std.typecons : Nullable, Tuple;
+	alias OutputType = Tuple!(NamReplyFlag, "chanFlag", string, "channel", ReturnType!(splitter!("a == b", string, string)), "users");
+	Nullable!OutputType output = OutputType();
+	if (input.empty) {
+		output.nullify();
+		return output;
+	}
 	input.popFront();
-	auto channel = input.front;
-	return "";
+	if (input.empty) {
+		output.nullify();
+		return output;
+	}
+	output.chanFlag = cast(NamReplyFlag)input.front;
+	input.popFront();
+	if (input.empty) {
+		output.nullify();
+		return output;
+	}
+	output.channel = input.front;
+	input.popFront();
+	if (input.empty) {
+		output.nullify();
+		return output;
+	}
+	output.users = input.front.splitter(" ");
+	return output;
 }
 ///
-unittest {
-
+@safe pure nothrow unittest {
+	import std.algorithm.searching : canFind;
+	import std.array : array;
+	import std.range : only, takeNone;
+	import virc.ircsplitter : IRCSplitter;
+	{
+		auto namReply = parseNumeric!(Numeric.RPL_NAMREPLY)(IRCSplitter("someone = #channel :User1 User2 @User3 +User4"));
+		assert(namReply.chanFlag == NamReplyFlag.Public);
+		assert(namReply.channel == "#channel");
+		assert(namReply.users.array.canFind("User1"));
+		assert(namReply.users.array.canFind("User2"));
+		assert(namReply.users.array.canFind("@User3"));
+		assert(namReply.users.array.canFind("+User4"));
+	}
+	{
+		immutable namReply = parseNumeric!(Numeric.RPL_NAMREPLY)(IRCSplitter("someone = #channel"));
+		assert(namReply.isNull);
+	}
+	{
+		immutable namReply = parseNumeric!(Numeric.RPL_NAMREPLY)(IRCSplitter("someone ="));
+		assert(namReply.isNull);
+	}
+	{
+		immutable namReply = parseNumeric!(Numeric.RPL_NAMREPLY)(IRCSplitter("someone"));
+		assert(namReply.isNull);
+	}
+	{
+		immutable namReply = parseNumeric!(Numeric.RPL_NAMREPLY)(takeNone(only("")));
+		assert(namReply.isNull);
+	}
 }
