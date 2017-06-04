@@ -513,7 +513,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 	public void put(string line) {
 		//Chops off terminating \r\n. Everything after is ignored, according to spec.
 		line = findSplitBefore(line, "\r\n")[0];
-		debug(verbose) writeln("I: ", line);
+		debug(verboseirc) writeln("I: ", line);
 		assert(!invalid);
 		if (line.empty) {
 			return;
@@ -891,16 +891,16 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		write!"PRIVMSG %s :%s"(target, msg);
 	}
 	private void recUnknownCommand(const string cmd, const MessageMetadata metadata) {
-		debug import std.stdio : writeln;
+		debug(verboseirc) import std.stdio : writeln;
 		if (cmd.filter!(x => !x.isDigit).empty) {
 			recUnknownNumeric(cmd, metadata);
 		} else {
-			debug writeln(metadata.time, " Unknown command - ", metadata.original);
+			debug(verboseirc) writeln(metadata.time, " Unknown command - ", metadata.original);
 		}
 	}
 	private void recUnknownNumeric(const string cmd, const MessageMetadata metadata) {
-		debug import std.stdio : writeln;
-		debug writeln(metadata.time, " Unhandled numeric: ", cast(Numeric)cmd, " ", metadata.original);
+		debug(verboseirc) import std.stdio : writeln;
+		debug(verboseirc) writeln(metadata.time, " Unhandled numeric: ", cast(Numeric)cmd, " ", metadata.original);
 	}
 	private void register() {
 		if (isRegistered) {
@@ -914,7 +914,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 	}
 	private void write(string fmt, T...)(T args) {
 		import std.range : put;
-		debug(verbose) writefln!("O: "~fmt)(args);
+		debug(verboseirc) writefln!("O: "~fmt)(args);
 		formattedWrite!fmt(output, args);
 		put(output, "\r\n");
 		debug {
@@ -925,7 +925,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		}
 	}
 	private void write(T...)(const string fmt, T args) {
-		debug(verbose) writefln("O: "~fmt, args);
+		debug(verboseirc) writefln("O: "~fmt, args);
 		formattedWrite(output, fmt, args);
 		std.range.put(output, "\r\n");
 		debug {
