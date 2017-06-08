@@ -1010,9 +1010,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		debug(verboseirc) writeln(metadata.time, " Unhandled numeric: ", cast(Numeric)cmd, " ", metadata.original);
 	}
 	private void register() {
-		if (isRegistered) {
-			return;
-		}
+		assert(!isRegistered);
 		if (!password.isNull) {
 			write!"PASS :%s"(password);
 		}
