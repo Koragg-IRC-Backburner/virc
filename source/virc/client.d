@@ -1792,15 +1792,3 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		assert(errorReceived);
 	}
 }
-/++
-+
-+/
-auto ircChunks(T)(const string, T range, const string inSeparator) {
-	return cumulativeFold!((a, b) => a + b)(range.map!(a => a.length+inSeparator.length)).map!(x => x - inSeparator.length);
-}
-///
-@safe pure nothrow /+@nogc+/ unittest {
-	import std.algorithm : equal;
-	import std.range : only;
-	assert(ircChunks("test", only("test2", "test3", "test4"), ",").equal(only(5, 11, 17)));
-}
