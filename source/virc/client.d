@@ -277,10 +277,6 @@ struct MessageMetadata {
 	Nullable!Numeric messageNumeric;
 	///
 	string original;
-	///
-	auto toString() const {
-		return original;
-	}
 }
 /++
 +
