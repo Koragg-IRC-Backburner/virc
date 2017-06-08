@@ -33,13 +33,13 @@ struct LUserMe {
 +/
 struct LUserChannels {
 	///
-	ulong numChans;
+	ulong numChannels;
 	///
 	string message;
 	///
 	this(string chans, string msg) pure @safe {
 		import std.conv : to;
-		numChans = chans.to!ulong;
+		numChannels = chans.to!ulong;
 		message = msg;
 	}
 }
@@ -48,13 +48,13 @@ struct LUserChannels {
 +/
 struct LUserOp {
 	///
-	ulong numOpers;
+	ulong numOperators;
 	///
 	string message;
 	///
 	this(string ops, string msg) pure @safe {
 		import std.conv : to;
-		numOpers = ops.to!ulong;
+		numOperators = ops.to!ulong;
 		message = msg;
 	}
 }
