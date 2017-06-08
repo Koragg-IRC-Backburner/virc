@@ -532,6 +532,9 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		void delegate(const LUserOp, const MessageMetadata) onLUserOp;
 		void delegate(const LUserChannels, const MessageMetadata) onLUserChannels;
 		void delegate(const LUserMe, const MessageMetadata) onLUserMe;
+		void delegate(const NamesReply, const MessageMetadata) onNamesReply;
+		void delegate(const TopicReply, const MessageMetadata) onTopicReply;
+		void delegate(const TopicWhoTime, const MessageMetadata) onTopicWhoTimeReply;
 		void delegate(const MessageMetadata) onError;
 		void delegate(const MessageMetadata) onRaw;
 		void delegate() onConnect;
@@ -553,8 +556,14 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 	public void ping() {
 
 	}
+	public void names() {
+		write("NAMES");
+	}
 	public void ping(string nonce) {
 		write!"PING :%s"(nonce);
+	}
+	public void lUsers() {
+		write!"LUSERS";
 	}
 	private void pong(string nonce) {
 		write!"PONG :%s"(nonce);
@@ -746,16 +755,22 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 				tryCall!"onLUserMe"(parseNumeric!(Numeric.RPL_LUSERME)(split), metadata);
 				break;
 			case Numeric.RPL_TOPIC:
-				//auto channel = Channel(split.front);
-				//split.popFront();
-				//channel.topic = split.front;
-				//recTopic(channel, metadata);
+				auto reply = parseNumeric!(Numeric.RPL_TOPIC)(split);
+				if (!reply.isNull) {
+					recTopic(reply.get, metadata);
+				}
 				break;
 			case Numeric.RPL_NAMREPLY:
 				auto reply = parseNumeric!(Numeric.RPL_NAMREPLY)(split);
+				if (!reply.isNull) {
+					recRPLNamReply(reply.get, metadata);
+				}
 				break;
 			case Numeric.RPL_TOPICWHOTIME:
 				auto reply = parseNumeric!(Numeric.RPL_TOPICWHOTIME)(split);
+				if (!reply.isNull) {
+					recRPLTopicWhoTime(reply.get, metadata);
+				}
 				break;
 			default: recUnknownCommand(firstToken, metadata); break;
 		}
@@ -885,6 +900,12 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 	private void recChgHost(const User user, const User target, const MessageMetadata metadata) {
 		tryCall!"onChgHost"(user, target, metadata);
 	}
+	private void recRPLTopicWhoTime(const TopicWhoTime twt, const MessageMetadata metadata) {
+		tryCall!"onTopicWhoTimeReply"(twt, metadata);
+	}
+	private void recTopic(const TopicReply tr, const MessageMetadata metadata) {
+		tryCall!"onTopicReply"(tr, metadata);
+	}
 	private void endRegistration() {
 		write("CAP END");
 	}
@@ -947,6 +968,9 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		} else {
 			debug(verboseirc) writeln(metadata.time, " Unknown command - ", metadata.original);
 		}
+	}
+	private void recRPLNamReply(const NamesReply x, const MessageMetadata metadata) {
+		tryCall!"onNamesReply"(x, metadata);
 	}
 	private void recUnknownNumeric(const string cmd, const MessageMetadata metadata) {
 		debug(verboseirc) import std.stdio : writeln;
