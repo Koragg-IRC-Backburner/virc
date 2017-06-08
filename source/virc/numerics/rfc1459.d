@@ -65,6 +65,7 @@ struct LUserOp {
 //251 :There are <users> users and <services> services on <servers> servers
 //TODO: Find out if this is safe to parse
 auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERCLIENT, T)(T input) {
+	input.popFront();
 	return LUserClient(input.front);
 }
 ///
@@ -80,6 +81,7 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERCLIENT, T)(T input) {
 +/
 //252 <opers> :operator(s) online
 auto parseNumeric(Numeric numeric : Numeric.RPL_LUSEROP, T)(T input) {
+	input.popFront();
 	auto ops = input.front;
 	input.popFront();
 	auto msg = input.front;
@@ -101,6 +103,7 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LUSEROP, T)(T input) {
 +/
 //254 <channels> :channels formed
 auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERCHANNELS, T)(T input) {
+	input.popFront();
 	auto chans = input.front;
 	input.popFront();
 	auto msg = input.front;
@@ -122,6 +125,7 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERCHANNELS, T)(T input) {
 //255 :I have <clients> clients and <servers> servers
 //TODO: Find out if this is safe to parse
 auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERME, T)(T input) {
+	input.popFront();
 	return LUserMe(input.front);
 }
 ///
