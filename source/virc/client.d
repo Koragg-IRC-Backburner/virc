@@ -625,33 +625,30 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 				recCap(split, metadata);
 				break;
 			case RFC1459Commands.join:
-				User user = source;
 				Channel channel;
 				channel.name = split.front;
 				split.popFront();
 				if (isEnabled(Capability("extended-join"))) {
 					if (split.front != "*") {
-						user.account = split.front;
+						source.account = split.front;
 					}
 					split.popFront();
-					user.realName = split.front;
+					source.realName = split.front;
 					split.popFront();
 				}
-				recJoin(user, channel, metadata);
+				recJoin(source, channel, metadata);
 				break;
 			case RFC1459Commands.part:
-				User user = source;
 				Channel channel;
 				channel.name = split.front;
 				split.popFront();
 				auto msg = split.front;
-				recPart(user, channel, msg, metadata);
+				recPart(source, channel, msg, metadata);
 				break;
 			case RFC1459Commands.ping:
 				recPing(split.front, metadata);
 				break;
 			case RFC1459Commands.notice:
-				User user = source;
 				Target target;
 				if (server.iSupport.channelTypes.canFind(split.front.front)) {
 					target.channel = Channel(split.front);
@@ -661,10 +658,9 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 				}
 				split.popFront();
 				auto message = Message(split.front, MessageType.notice);
-				recNotice(user, target, message, metadata);
+				recNotice(source, target, message, metadata);
 				break;
 			case RFC1459Commands.privmsg:
-				User user = source;
 				Target target;
 				if (server.iSupport.channelTypes.canFind(split.front.front)) {
 					target.channel = Channel(split.front);
@@ -674,7 +670,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 				}
 				split.popFront();
 				auto message = Message(split.front, MessageType.privmsg);
-				recNotice(user, target, message, metadata);
+				recPrivmsg(source, target, message, metadata);
 				break;
 			case RFC1459Commands.mode:
 				Target target;
@@ -685,13 +681,12 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 					target.user.mask.nickname = split.front;
 				}
 				split.popFront();
-				auto modes = parseModeString(split.front, server.iSupport.channelModeTypes);
+				auto modes = parseModeString(split, server.iSupport.channelModeTypes);
 				recMode(source, target, modes, metadata);
 				break;
 			case IRCV3Commands.chghost:
-				User user = source;
 				User target;
-				target.mask.nickname = user.nickname;
+				target.mask.nickname = source.nickname;
 				target.mask.ident = split.front;
 				split.popFront();
 				target.mask.host = split.front;
