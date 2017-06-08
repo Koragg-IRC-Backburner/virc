@@ -314,6 +314,12 @@ struct Message {
 	} body {
 		return msg.find(" ")[1..$-1];
 	}
+	bool opEquals(string str) @safe pure nothrow @nogc const {
+		return str == msg;
+	}
+	string toString() @safe pure nothrow @nogc const {
+		return msg;
+	}
 }
 ///
 @safe pure nothrow @nogc unittest {
