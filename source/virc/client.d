@@ -15,7 +15,7 @@ import std.format : format, formattedWrite;
 import std.meta : AliasSeq;
 import std.range.primitives : ElementType, isInputRange, isOutputRange;
 import std.range : chain, empty, front, put, walkLength;
-import std.traits : Parameters;
+import std.traits : Parameters, Unqual;
 import std.typecons : Nullable;
 import std.utf : byCodeUnit;
 
@@ -868,24 +868,24 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		write("LIST");
 	}
 	public void monitorClear() {
-		enforce(monitorIsEnabled);
+		assert(monitorIsEnabled);
 		write("MONITOR C");
 	}
 	public void monitorList() {
-		enforce(monitorIsEnabled);
+		assert(monitorIsEnabled);
 		write("MONITOR L");
 	}
 	public void monitorStatus() {
-		enforce(monitorIsEnabled);
+		assert(monitorIsEnabled);
 		write("MONITOR S");
 	}
 	public void monitorAdd(T)(T users) if (isInputRange!T && is(ElementType!T == User)) {
-		enforce(monitorIsEnabled);
-		writeList("MONITOR +", ",", users.map!(x => x.nickname));
+		assert(monitorIsEnabled);
+		writeList!("MONITOR + ", ",")(users.map!(x => x.nickname));
 	}
 	public void monitorRemove(T)(T users) if (isInputRange!T && is(ElementType!T == User)) {
-		enforce(monitorIsEnabled);
-		writeList("MONITOR -", ",", users.map!(x => x.nickname));
+		assert(monitorIsEnabled);
+		writeList!("MONITOR - ", ",")(users.map!(x => x.nickname));
 	}
 	public bool monitorIsEnabled() {
 		return capsEnabled.canFind("MONITOR");
@@ -961,10 +961,8 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 	private void write(const string text) {
 		write!"%s"(text);
 	}
-	private void writeList(T)(const string begin, const string separator, T range) {
-		foreach (chunk; ircChunks(begin, range, server.iSupport.lineLength, separator)) {
-			write!"%s :%-(%s%s%)"(begin, chunk, separator);
-		}
+	private void writeList(string prefix, string separator, T)(T range) if (isInputRange!T && is(Unqual!(ElementType!T) == string)) {
+		write!(prefix~"%-(%s"~separator~"%)")(range);
 	}
 	private bool isEnabled(const Capability cap) {
 		return capsEnabled.canFind(cap);
