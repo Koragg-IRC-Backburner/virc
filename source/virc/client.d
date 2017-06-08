@@ -964,8 +964,17 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 	public void join(string chan) {
 		write!"JOIN %s"(chan);
 	}
-	public void msg(string target, string msg) {
-		write!"PRIVMSG %s :%s"(target, msg);
+	public void msg(string target, string message) {
+		write!"PRIVMSG %s :%s"(target, message);
+	}
+	public void msg(Target target, Message message) {
+		msg(target.text, message.text);
+	}
+	public void notice(string target, string message) {
+		write!"NOTICE %s :%s"(target, message);
+	}
+	public void notice(Target target, Message message) {
+		notice(target.text, message.text);
 	}
 	private void recUnknownCommand(const string cmd, const MessageMetadata metadata) {
 		debug(verboseirc) import std.stdio : writeln;
