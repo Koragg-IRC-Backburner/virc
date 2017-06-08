@@ -562,6 +562,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 	public void put(string line) {
 		//Chops off terminating \r\n. Everything after is ignored, according to spec.
 		line = findSplitBefore(line, "\r\n")[0];
+		debug(verboseirc) import std.stdio : writeln;
 		debug(verboseirc) writeln("I: ", line);
 		assert(!invalid);
 		if (line.empty) {
@@ -963,6 +964,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 	}
 	private void write(string fmt, T...)(T args) {
 		import std.range : put;
+		debug(verboseirc) import std.stdio : writefln;
 		debug(verboseirc) writefln!("O: "~fmt)(args);
 		formattedWrite!fmt(output, args);
 		put(output, "\r\n");
