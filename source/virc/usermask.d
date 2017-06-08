@@ -70,3 +70,18 @@ struct UserMask {
 		assert(host == "ex@mple!!!.net");
 	}
 }
+@safe pure unittest {
+	import std.conv : text;
+	{
+		UserMask mask;
+		mask.nickname = "Nick";
+		assert(mask.text == "Nick");
+	}
+	{
+		UserMask mask;
+		mask.nickname = "Nick";
+		mask.ident = "user";
+		mask.host = "domain";
+		assert(mask.text == "Nick!user@domain");
+	}
+}
