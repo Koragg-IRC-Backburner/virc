@@ -113,6 +113,12 @@ struct User {
 	compUser.account = "Tototo";
 	assert(user != compUser);
 }
+@safe pure unittest {
+	import std.conv : text;
+	auto user = User("Test!Testo@Testy");
+	user.account = "Tester";
+	assert(user.text == "Test!Testo@Testy (Tester)");
+}
 @system pure nothrow /+@nogc+/ unittest {
 	immutable user = User("Test!Testo@Testy");
 	immutable compUser = User("Test!Testo@Testy");

@@ -145,6 +145,11 @@ auto parseModeString(string input, ModeType[char] channelModeTypes) {
 		assert(testParsed.filter!(x => x.change == Change.unset).map!(x => x.mode).canFind(Mode(ModeType.d, 's')));
 	}
 	{
+		const testParsed = parseModeString("+kp secret", ['k': ModeType.b]);
+		assert(testParsed.filter!(x => x.change == Change.set).map!(x => x.mode).canFind(Mode(ModeType.d, 'p')));
+		assert(testParsed.filter!(x => x.change == Change.set).map!(x => x.mode).canFind(Mode(ModeType.b, 'k', Nullable!string("secret"))));
+	}
+	{
 		const testParsed = parseModeString("-s+nk secret", ['k': ModeType.b]);
 		assert(testParsed.filter!(x => x.change == Change.set).map!(x => x.mode).canFind(Mode(ModeType.d, 'n')));
 		assert(testParsed.filter!(x => x.change == Change.set).map!(x => x.mode).canFind(Mode(ModeType.b, 'k', Nullable!string("secret"))));

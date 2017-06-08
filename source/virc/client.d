@@ -360,6 +360,29 @@ struct Target {
 		}
 	}
 }
+unittest {
+	{
+		Target target;
+		target.channel = Channel("#hello");
+		assert(target == Channel("#hello"));
+		assert(target != User("test"));
+		assert(target == "#hello");
+	}
+	{
+		Target target;
+		target.user = User("test");
+		assert(target != Channel("#hello"));
+		assert(target == User("test"));
+		assert(target == "test");
+	}
+	{
+		Target target;
+		assert(target != Channel("#hello"));
+		assert(target != User("test"));
+		assert(target != "test");
+		assert(target != "#hello");
+	}
+}
 /++
 +
 +/
@@ -959,12 +982,12 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 }
 ///
 @system unittest {
-	import std.algorithm : equal, sort;
+	import std.algorithm : equal, sort, until;
 	import std.array : appender, array;
-	import std.range: empty, tail;
+	import std.range: drop, empty, tail;
 	import std.stdio : writeln;
-	import std.string : lineSplitter;
-
+	import std.string : lineSplitter, representation;
+	import std.typecons : Tuple, tuple;
 
 	enum testUser = NickInfo("nick", "ident", "real name!");
 	void initialize(T)(ref T client) {
@@ -988,7 +1011,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		}
 		initialize(client);
 	}
-	{
+	{ //some really basic stuff
 		auto buffer = appender!string;
 		auto client = ircClient(buffer, testUser);
 		bool lineReceived;
@@ -999,8 +1022,21 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		assert(lineReceived == false);
 		client.put("\r\n");
 		assert(lineReceived == false);
+		client.put("\r\n".representation);
+		assert(lineReceived == false);
 		client.put("hello");
 		assert(lineReceived == true);
+		assert(!client.isRegistered);
+		client.put(":localhost 001 someone :words");
+		assert(client.isRegistered);
+		client.put(":localhost 001 someone :words");
+		assert(client.isRegistered);
+	}
+	{ //password test
+		auto buffer = appender!string;
+		auto client = ircClient(buffer, testUser, "Example");
+
+		assert(buffer.data.lineSplitter.until!(x => x.startsWith("USER")).canFind("PASS :Example"));
 	}
 	//Request capabilities (IRC v3.2)
 	{
@@ -1020,6 +1056,34 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		lineByLine.popFront();
 		assert(!lineByLine.empty);
 		assert(lineByLine.front == "CAP END");
+	}
+	//Request capabilities NAK (IRC v3.2)
+	{
+		auto buffer = appender!(string);
+		auto client = ircClient(buffer, testUser);
+		Capability[] capabilities;
+		client.onReceiveCapNak = (const Capability cap, const MessageMetadata) {
+			capabilities ~= cap;
+		};
+		client.put(":localhost CAP * LS :multi-prefix sasl=EXTERNAL");
+		client.put(":localhost CAP * NAK :multi-prefix");
+
+
+		auto lineByLine = buffer.data.lineSplitter;
+
+		assert(lineByLine.front == "CAP LS 302");
+		lineByLine.popFront();
+		lineByLine.popFront();
+		lineByLine.popFront();
+		//sasl not yet supported
+		assert(lineByLine.front == "CAP REQ :multi-prefix");
+		lineByLine.popFront();
+		assert(!lineByLine.empty);
+		assert(lineByLine.front == "CAP END");
+
+		assert(!client.capsEnabled.canFind("multi-prefix"));
+		assert(capabilities.length == 1);
+		assert(capabilities[0] == Capability("multi-prefix"));
 	}
 	//Request capabilities, multiline (IRC v3.2)
 	{
@@ -1064,7 +1128,57 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 				]
 		));
 	}
+	//CAP NEW, DEL (IRCv3.2 - cap-notify)
 	{
+		auto buffer = appender!(string);
+		auto client = ircClient(buffer, testUser);
+		Capability[] capabilitiesNew;
+		Capability[] capabilitiesDeleted;
+		client.onReceiveCapNew = (const Capability cap, const MessageMetadata) {
+			capabilitiesNew ~= cap;
+		};
+		client.onReceiveCapDel = (const Capability cap, const MessageMetadata) {
+			capabilitiesDeleted ~= cap;
+		};
+		initializeWithCaps(client, [Capability("cap-notify"), Capability("userhost-in-names"), Capability("multi-prefix"), Capability("away-notify")]);
+
+		assert(client.capsEnabled.length == 4);
+
+		client.put(":irc.example.com CAP modernclient NEW :batch");
+		assert(capabilitiesNew == [Capability("batch")]);
+		client.put(":irc.example.com CAP modernclient ACK :batch");
+		assert(
+			client.capsEnabled.sort().equal(
+				[
+					Capability("away-notify"),
+					Capability("batch"),
+					Capability("cap-notify"),
+					Capability("multi-prefix"),
+					Capability("userhost-in-names")
+				]
+		));
+
+		client.put(":irc.example.com CAP modernclient DEL :userhost-in-names multi-prefix away-notify");
+		assert(
+			capabilitiesDeleted.array.sort().equal(
+				[
+					Capability("away-notify"),
+					Capability("multi-prefix"),
+					Capability("userhost-in-names")
+				]
+		));
+		assert(
+			client.capsEnabled.sort().equal(
+				[
+					Capability("batch"),
+					Capability("cap-notify")
+				]
+		));
+		client.put(":irc.example.com CAP modernclient NEW :account-notify");
+		auto lineByLine = buffer.data.lineSplitter();
+		assert(lineByLine.array[$-1] == "CAP REQ :account-notify");
+	}
+	{ //JOIN
 		auto buffer = appender!(string);
 		auto client = ircClient(buffer, testUser);
 		User[] users;
@@ -1073,12 +1187,49 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 			users ~= user;
 			channels ~= chan;
 		};
+		TopicWhoTime topicWhoTime;
+		bool topicWhoTimeReceived;
+		client.onTopicWhoTimeReply = (const TopicWhoTime twt, const MessageMetadata) {
+			assert(!topicWhoTimeReceived);
+			topicWhoTimeReceived = true;
+			topicWhoTime = twt;
+		};
+		TopicReply topicReply;
+		bool topicReplyReceived;
+		client.onTopicReply = (const TopicReply tr, const MessageMetadata) {
+			assert(!topicReplyReceived);
+			topicReplyReceived = true;
+			topicReply = tr;
+		};
 		initialize(client);
-		client.put (":someone!ident@hostmask JOIN :#test");
+		client.join("#test");
+		client.put(":someone!ident@hostmask JOIN :#test");
+		client.put(":localhost 332 someone #test :a topic");
+		client.put(":localhost 333 someone #test someoneElse :1496821983");
+		client.put(":localhost 353 someone = #test :someone!ident@hostmask another!user@somewhere");
+		client.put(":localhost 366 someone #test :End of /NAMES list.");
+		client.put(":localhost 324 someone #test :+nt");
+		client.put(":localhost 329 someone #test :1496821983");
 		assert(users.length == 1);
 		assert(users[0].nickname == "someone");
 		assert(channels.length == 1);
 		assert(channels[0].name == "#test");
+		assert(topicWhoTimeReceived);
+		assert(topicReplyReceived);
+
+		with(topicReply) {
+			assert(channel == "#test");
+			assert(topic == "a topic");
+		}
+
+		with (topicWhoTime) {
+			assert(channel == "#test");
+			assert(setter == User("someoneElse"));
+			assert(timestamp == SysTime(DateTime(2017, 06, 07, 07, 53, 03), UTC()));
+		}
+		//Add 366, 324, 329 tests
+		auto lineByLine = buffer.data.lineSplitter();
+		assert(lineByLine.array[$-1] == "JOIN #test");
 	}
 	{
 		auto buffer = appender!(string);
@@ -1148,12 +1299,16 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		initialize(client);
 		client.put(":localhost 730 someone :John!test@example.net,Bob!test2@example.com");
 		assert(users.length == 2);
-		assert(users[0].nickname == "John");
-		assert(users[0].ident == "test");
-		assert(users[0].host == "example.net");
-		assert(users[1].nickname == "Bob");
-		assert(users[1].ident == "test2");
-		assert(users[1].host == "example.com");
+		with (users[0]) {
+			assert(nickname == "John");
+			assert(ident == "test");
+			assert(host == "example.net");
+		}
+		with (users[1]) {
+			assert(nickname == "Bob");
+			assert(ident == "test2");
+			assert(host == "example.com");
+		}
 
 		users.length = 0;
 
@@ -1261,6 +1416,292 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		assert(lineByLine.array[$-1] == "QUIT :I'm out");
 		assert(client.invalid);
 		assertThrown!AssertError(client.put("PING :hahahaha"));
+	}
+	{ //NAMES
+		auto buffer = appender!(string);
+		auto client = ircClient(buffer, testUser);
+		NamesReply[] replies;
+		client.onNamesReply = (const NamesReply reply, const MessageMetadata) {
+			replies ~= reply;
+		};
+
+		initialize(client);
+
+		client.names();
+		client.put(":localhost 353 someone = #channel :User1 User2 @User3 +User4");
+		client.put(":localhost 353 someone @ #channel2 :User5 User2 @User6 +User7");
+		client.put(":localhost 353 someone * #channel3 :User1 User2 @User3 +User4");
+		client.put(":localhost 366 someone :End of NAMES list");
+		assert(replies.length == 3);
+		assert(replies[0].chanFlag == NamReplyFlag.public_);
+		assert(replies[1].chanFlag == NamReplyFlag.secret);
+		assert(replies[2].chanFlag == NamReplyFlag.private_);
+	}
+	{ //WATCH stuff
+		auto buffer = appender!string;
+		auto client = ircClient(buffer, testUser);
+		User[] users;
+		SysTime[] times;
+		client.onUserOnline = (const User user, const SysTime time, const MessageMetadata) {
+			users ~= user;
+			times ~= time;
+		};
+		initialize(client);
+		client.put(":localhost 600 someone someoneElse someIdent example.net 911248013 :logged on");
+
+		assert(users.length == 1);
+		assert(users[0] == User("someoneElse!someIdent@example.net"));
+		assert(times.length == 1);
+		assert(times[0] == SysTime(DateTime(1998, 11, 16, 20, 26, 53), UTC()));
+	}
+	{ //LUSER stuff
+		auto buffer = appender!string;
+		auto client = ircClient(buffer, testUser);
+		bool lUserMeReceived;
+		bool lUserChannelsReceived;
+		bool lUserOpReceived;
+		bool lUserClientReceived;
+		LUserMe lUserMe;
+		LUserClient lUserClient;
+		LUserOp lUserOp;
+		LUserChannels lUserChannels;
+		client.onLUserMe = (const LUserMe param, const MessageMetadata) {
+			assert(!lUserMeReceived);
+			lUserMeReceived = true;
+			lUserMe = param;
+		};
+		client.onLUserChannels = (const LUserChannels param, const MessageMetadata) {
+			assert(!lUserChannelsReceived);
+			lUserChannelsReceived = true;
+			lUserChannels = param;
+		};
+		client.onLUserOp = (const LUserOp param, const MessageMetadata) {
+			assert(!lUserOpReceived);
+			lUserOpReceived = true;
+			lUserOp = param;
+		};
+		client.onLUserClient = (const LUserClient param, const MessageMetadata) {
+			assert(!lUserClientReceived);
+			lUserClientReceived = true;
+			lUserClient = param;
+		};
+		initialize(client);
+		client.lUsers();
+		client.put(":localhost 251 someone :There are 8 users and 0 invisible on 2 servers");
+		client.put(":localhost 252 someone 1 :operator(s) online");
+		client.put(":localhost 254 someone 1 :channels formed");
+		client.put(":localhost 255 someone :I have 1 clients and 1 servers");
+
+		assert(lUserMeReceived);
+		assert(lUserChannelsReceived);
+		assert(lUserOpReceived);
+		assert(lUserClientReceived);
+
+		assert(lUserMe.message == "I have 1 clients and 1 servers");
+		assert(lUserClient.message == "There are 8 users and 0 invisible on 2 servers");
+		assert(lUserOp.numOperators == 1);
+		assert(lUserOp.message == "operator(s) online");
+		assert(lUserChannels.numChannels == 1);
+		assert(lUserChannels.message == "channels formed");
+	}
+	{ //PRIVMSG and NOTICE stuff
+		auto buffer = appender!string;
+		auto client = ircClient(buffer, testUser);
+		Tuple!(const User, "user", const Target, "target", const Message, "message")[] messages;
+		client.onMessage = (const User user, const Target target, const Message msg, const MessageMetadata) {
+			messages ~= tuple!("user", "target", "message")(user, target, msg);
+		};
+
+		initialize(client);
+
+		client.put(":someoneElse!somebody@somewhere PRIVMSG someone :words go here");
+		assert(messages.length == 1);
+		with (messages[0]) {
+			assert(user == User("someoneElse!somebody@somewhere"));
+			assert(!target.isChannel);
+			assert(target.isNickname);
+			assert(target == User("someone"));
+			assert(message == "words go here");
+			assert(message.isReplyable);
+		}
+		client.put(":ohno!it's@me PRIVMSG #someplace :more words go here");
+		assert(messages.length == 2);
+		with (messages[1]) {
+			assert(user == User("ohno!it's@me"));
+			assert(target.isChannel);
+			assert(!target.isNickname);
+			assert(target == Channel("#someplace"));
+			assert(message == "more words go here");
+			assert(message.isReplyable);
+		}
+
+		client.put(":someoneElse2!somebody2@somewhere2 NOTICE someone :words don't go here");
+		assert(messages.length == 3);
+		with(messages[2]) {
+			assert(user == User("someoneElse2!somebody2@somewhere2"));
+			assert(!target.isChannel);
+			assert(target.isNickname);
+			assert(target == User("someone"));
+			assert(message == "words don't go here");
+			assert(!message.isReplyable);
+		}
+
+		client.put(":ohno2!it's2@me4 NOTICE #someplaceelse :more words might go here");
+		assert(messages.length == 4);
+		with(messages[3]) {
+			assert(user == User("ohno2!it's2@me4"));
+			assert(target.isChannel);
+			assert(!target.isNickname);
+			assert(target == Channel("#someplaceelse"));
+			assert(message == "more words might go here");
+			assert(!message.isReplyable);
+		}
+
+		client.put(":someoneElse2!somebody2@somewhere2 NOTICE someone :\x01ACTION did the thing\x01");
+		assert(messages.length == 5);
+		with(messages[4]) {
+			assert(user == User("someoneElse2!somebody2@somewhere2"));
+			assert(!target.isChannel);
+			assert(target.isNickname);
+			assert(target == User("someone"));
+			assert(message.isCTCP);
+			assert(message.ctcpArgs == "did the thing");
+			assert(message.ctcpCommand == "ACTION");
+			assert(!message.isReplyable);
+		}
+
+		client.put(":ohno2!it's2@me4 NOTICE #someplaceelse :\x01ACTION did not do the thing\x01");
+		assert(messages.length == 6);
+		with(messages[5]) {
+			assert(user == User("ohno2!it's2@me4"));
+			assert(target.isChannel);
+			assert(!target.isNickname);
+			assert(target == Channel("#someplaceelse"));
+			assert(message.isCTCP);
+			assert(message.ctcpArgs == "did not do the thing");
+			assert(message.ctcpCommand == "ACTION");
+			assert(!message.isReplyable);
+		}
+
+		client.msg("#channel", "ohai");
+		client.notice("#channel", "ohi");
+		client.msg("someoneElse", "ohay");
+		client.notice("someoneElse", "ohello");
+		Target channelTarget;
+		channelTarget.channel = Channel("#channel");
+		Target userTarget;
+		userTarget.user = User("someoneElse");
+		client.msg(channelTarget, Message("ohai"));
+		client.notice(channelTarget, Message("ohi"));
+		client.msg(userTarget, Message("ohay"));
+		client.notice(userTarget, Message("ohello"));
+		auto lineByLine = buffer.data.lineSplitter();
+		foreach (i; 0..5) //skip the initial handshake
+			lineByLine.popFront();
+		assert(lineByLine.array == ["PRIVMSG #channel :ohai", "NOTICE #channel :ohi", "PRIVMSG someoneElse :ohay", "NOTICE someoneElse :ohello", "PRIVMSG #channel :ohai", "NOTICE #channel :ohi", "PRIVMSG someoneElse :ohay", "NOTICE someoneElse :ohello"]);
+	}
+	{ //PING? PONG!
+		auto buffer = appender!(string);
+		auto client = ircClient(buffer, testUser);
+
+		initialize(client);
+		client.ping("hooray");
+		client.put(":localhost PONG localhost :hooray");
+		auto lineByLine = buffer.data.lineSplitter();
+		assert(lineByLine.array[$-1] == "PING :hooray");
+	}
+	{
+		auto buffer = appender!(string);
+		auto client = ircClient(buffer, testUser);
+		Tuple!(const User, "user", const Target, "target", const ModeChange, "change")[] changes;
+
+		client.onMode = (const User user, const Target target, const ModeChange mode, const MessageMetadata) {
+			changes ~= tuple!("user", "target", "change")(user, target, mode);
+		};
+
+		initialize(client);
+		client.put(":someone!ident@host JOIN #test");
+		client.put(":someoneElse!user@host2 MODE #test +s");
+		client.put(":someoneElse!user@host2 MODE #test -s");
+		client.put(":someoneElse!user@host2 MODE #test +kp 2");
+		client.put(":someoneElse!user@host2 MODE someone +r");
+
+		assert(changes.length == 5);
+		with (changes[0]) {
+			assert(target == Channel("#test"));
+			assert(user == User("someoneElse!user@host2"));
+		}
+		with (changes[1]) {
+			assert(target == Channel("#test"));
+			assert(user == User("someoneElse!user@host2"));
+		}
+		with (changes[2]) {
+			assert(target == Channel("#test"));
+			assert(user == User("someoneElse!user@host2"));
+
+		}
+		with (changes[3]) {
+			assert(target == Channel("#test"));
+			assert(user == User("someoneElse!user@host2"));
+
+		}
+		with (changes[4]) {
+			assert(target == User("someone"));
+			assert(user == User("someoneElse!user@host2"));
+
+		}
+	}
+	{ //account-tag examples from http://ircv3.net/specs/extensions/account-tag-3.2.html
+		auto buffer = appender!(string);
+		auto client = ircClient(buffer, testUser);
+		User[] privmsgUsers;
+		client.onMessage = (const User user, const Target target, const Message msg, const MessageMetadata) {
+			privmsgUsers ~= user;
+		};
+		initialize(client);
+
+		client.put(":user PRIVMSG #atheme :Hello everyone.");
+		client.put(":user ACCOUNT hax0r");
+		client.put("@account=hax0r :user PRIVMSG #atheme :Now I'm logged in.");
+		client.put("@account=hax0r :user ACCOUNT bob");
+		client.put("@account=bob :user PRIVMSG #atheme :I switched accounts.");
+		with(privmsgUsers[0]) {
+			assert(account.isNull);
+		}
+		with(privmsgUsers[1]) {
+			assert(account == "hax0r");
+		}
+		with(privmsgUsers[2]) {
+			assert(account == "bob");
+		}
+	}
+	{ //monitor - http://ircv3.net/specs/core/monitor-3.2.html
+		auto buffer = appender!(string);
+		auto client = ircClient(buffer, testUser);
+		initializeWithCaps(client, [Capability("MONITOR")]);
+
+		assert(client.monitorIsEnabled);
+
+		client.monitorAdd([User("Someone")]);
+		client.monitorRemove([User("Someone")]);
+		client.monitorClear();
+		client.monitorList();
+		client.monitorStatus();
+
+		auto lineByLine = buffer.data.lineSplitter().drop(5);
+		assert(lineByLine.array == ["MONITOR + Someone", "MONITOR - Someone", "MONITOR C", "MONITOR L", "MONITOR S"]);
+	}
+	{
+		auto buffer = appender!(string);
+		auto client = ircClient(buffer, testUser);
+		bool errorReceived;
+		client.onError = (const MessageMetadata) {
+			assert(!errorReceived);
+			errorReceived = true;
+		};
+		initialize(client);
+		client.put("422 someone :MOTD File is missing");
+		assert(errorReceived);
 	}
 }
 /++

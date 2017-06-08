@@ -71,7 +71,7 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERCLIENT, T)(T input) {
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LUSERCLIENT
 	import std.range : only;
 	{
-		immutable luser = parseNumeric!(Numeric.RPL_LUSERCLIENT)(only("There are 42 users and 43 services on 44 servers"));
+		immutable luser = parseNumeric!(Numeric.RPL_LUSERCLIENT)(only("someone", "There are 42 users and 43 services on 44 servers"));
 		assert(luser.message == "There are 42 users and 43 services on 44 servers");
 	}
 }
@@ -90,8 +90,8 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LUSEROP, T)(T input) {
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LUSEROP
 	import std.range : only;
 	{
-		immutable luser = parseNumeric!(Numeric.RPL_LUSEROP)(only("45", "operator(s) online"));
-		assert(luser.numOpers == 45);
+		immutable luser = parseNumeric!(Numeric.RPL_LUSEROP)(only("someone", "45", "operator(s) online"));
+		assert(luser.numOperators == 45);
 		assert(luser.message == "operator(s) online");
 	}
 }
@@ -111,8 +111,8 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERCHANNELS, T)(T input) {
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LUSERCHANNELS
 	import std.range : only;
 	{
-		immutable luser = parseNumeric!(Numeric.RPL_LUSERCHANNELS)(only("46", "channels formed"));
-		assert(luser.numChans == 46);
+		immutable luser = parseNumeric!(Numeric.RPL_LUSERCHANNELS)(only("someone", "46", "channels formed"));
+		assert(luser.numChannels == 46);
 		assert(luser.message == "channels formed");
 	}
 }
@@ -128,7 +128,7 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERME, T)(T input) {
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_LUSERME
 	import std.range : only;
 	{
-		immutable luser = parseNumeric!(Numeric.RPL_LUSERME)(only("I have 47 clients and 48 servers"));
+		immutable luser = parseNumeric!(Numeric.RPL_LUSERME)(only("someone", "I have 47 clients and 48 servers"));
 		assert(luser.message == "I have 47 clients and 48 servers");
 	}
 }
