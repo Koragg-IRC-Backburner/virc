@@ -85,12 +85,11 @@ struct ModeChange {
 /++
 + Parse a mode string into individual mode changes.
 +/
-auto parseModeString(string input, ModeType[char] channelModeTypes) {
+auto parseModeString(T)(T input, ModeType[char] channelModeTypes) if (isInputRange!T) {
 	ModeChange[] changes;
 	bool unsetMode = false;
-	auto split = input.splitter(" ");
-	auto modeList = split.front;
-	split.popFront();
+	auto modeList = input.front;
+	input.popFront();
 	foreach (mode; modeList) {
 		if (mode == '+') {
 			unsetMode = false;
@@ -100,8 +99,8 @@ auto parseModeString(string input, ModeType[char] channelModeTypes) {
 			if (unsetMode) {
 				auto modeType = mode in channelModeTypes ? channelModeTypes[mode] : ModeType.d;
 				if (modeType.among(ModeType.a, ModeType.b)) {
-					auto arg = split.front;
-					split.popFront();
+					auto arg = input.front;
+					input.popFront();
 					changes ~= ModeChange(Mode(modeType, mode, Nullable!string(arg)), Change.unset);
 				} else {
 					changes ~= ModeChange(Mode(modeType, mode), Change.unset);
@@ -109,8 +108,8 @@ auto parseModeString(string input, ModeType[char] channelModeTypes) {
 			} else {
 				auto modeType = mode in channelModeTypes ? channelModeTypes[mode] : ModeType.d;
 				if (modeType.among(ModeType.a, ModeType.b, ModeType.c)) {
-					auto arg = split.front;
-					split.popFront();
+					auto arg = input.front;
+					input.popFront();
 					changes ~= ModeChange(Mode(modeType, mode, Nullable!string(arg)), Change.set);
 				} else {
 					changes ~= ModeChange(Mode(modeType, mode), Change.set);
@@ -119,6 +118,10 @@ auto parseModeString(string input, ModeType[char] channelModeTypes) {
 		}
 	}
 	return changes;
+}
+///ditto
+auto parseModeString(string input, ModeType[char] channelModeTypes) {
+	return parseModeString(input.splitter(" "), channelModeTypes);
 }
 ///
 @safe pure nothrow unittest {
