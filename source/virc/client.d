@@ -159,12 +159,14 @@ enum ISUPPORT {
 /++
 +
 +/
-auto ircClient(T, alias mix = null)(ref T output, NickInfo info, Nullable!string password = Nullable!string.init) {
+auto ircClient(T, alias mix = null)(ref T output, NickInfo info, string password = string.init) {
 	auto client = IRCClient!(T, mix)(output);
 	client.username = info.username;
 	client.realname = info.realname;
 	client.nickname = info.nickname;
-	client.password = password;
+	if (password != string.init) {
+		client.password = password;
+	}
 	client.initialize();
 	return client;
 }
