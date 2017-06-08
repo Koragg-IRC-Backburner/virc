@@ -649,37 +649,19 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 				recPing(split.front, metadata);
 				break;
 			case RFC1459Commands.notice:
-				Target target;
-				if (server.iSupport.channelTypes.canFind(split.front.front)) {
-					target.channel = Channel(split.front);
-				} else {
-					target.user = User();
-					target.user.mask = UserMask(split.front);
-				}
+				Target target = parseTarget(split.front);
 				split.popFront();
 				auto message = Message(split.front, MessageType.notice);
 				recNotice(source, target, message, metadata);
 				break;
 			case RFC1459Commands.privmsg:
-				Target target;
-				if (server.iSupport.channelTypes.canFind(split.front.front)) {
-					target.channel = Channel(split.front);
-				} else {
-					target.user = User();
-					target.user.mask = UserMask(split.front);
-				}
+				Target target = parseTarget(split.front);
 				split.popFront();
 				auto message = Message(split.front, MessageType.privmsg);
 				recPrivmsg(source, target, message, metadata);
 				break;
 			case RFC1459Commands.mode:
-				Target target;
-				if (server.iSupport.channelTypes.canFind(split.front.front)) {
-					target.channel = Channel(split.front);
-				} else {
-					target.user = User();
-					target.user.mask.nickname = split.front;
-				}
+				Target target = parseTarget(split.front);
 				split.popFront();
 				auto modes = parseModeString(split, server.iSupport.channelModeTypes);
 				recMode(source, target, modes, metadata);
@@ -1060,6 +1042,15 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		} else static if(hasMember!(typeof(this), func)) {
 			__traits(getMember, this, func)(params);
 		}
+	}
+	private Target parseTarget(string str) {
+		Target output;
+		if (server.iSupport.channelTypes.canFind(str.front)) {
+			output.channel = Channel(str);
+		} else {
+			output.user = User(str);
+		}
+		return output;
 	}
 }
 ///
