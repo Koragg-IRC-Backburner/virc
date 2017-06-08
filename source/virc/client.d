@@ -922,6 +922,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		tryCall!"onUserOnline"(user, timeOccurred, metadata);
 	}
 	private void recChgHost(const User user, const User target, const MessageMetadata metadata) {
+		internalAddressList.update(target);
 		tryCall!"onChgHost"(user, target, metadata);
 	}
 	private void recRPLTopicWhoTime(const TopicWhoTime twt, const MessageMetadata metadata) {
@@ -1466,15 +1467,21 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		};
 
 		initialize(client);
+		client.put(":nick!user@host JOIN #test");
+		assert("nick" in client.internalAddressList);
+		assert(client.internalAddressList["nick"] == User("nick!user@host"));
 		client.put(":nick!user@host CHGHOST user new.host.goes.here");
 		assert(users[0] == User("nick!user@host"));
 		assert(users[1] == User("nick!user@new.host.goes.here"));
+		assert(client.internalAddressList["nick"] == User("nick!user@new.host.goes.here"));
 		client.put(":nick!user@host CHGHOST newuser host");
 		assert(users[2] == User("nick!user@host"));
 		assert(users[3] == User("nick!newuser@host"));
+		assert(client.internalAddressList["nick"] == User("nick!newuser@host"));
 		client.put(":nick!user@host CHGHOST newuser new.host.goes.here");
 		assert(users[4] == User("nick!user@host"));
 		assert(users[5] == User("nick!newuser@new.host.goes.here"));
+		assert(client.internalAddressList["nick"] == User("nick!newuser@new.host.goes.here"));
 	}
 	{ //PING? PONG!
 		auto buffer = appender!(string);
