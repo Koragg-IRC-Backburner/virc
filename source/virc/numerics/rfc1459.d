@@ -200,14 +200,18 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LIST, T)(T input, ModeType[char]
 		assert(listEntry.modes.length == 0);
 	}
 }
+struct TopicReply {
+	string channel;
+	string topic;
+}
 /++
 + Parser for RPL_TOPIC.
 +
 + Format is `332 <client><channel> :<topic>`
 +/
 auto parseNumeric(Numeric numeric : Numeric.RPL_TOPIC, T)(T input) {
-	import std.typecons : Nullable, Tuple;
-	Nullable!(Tuple!(string, "channel", string, "topic")) output = Tuple!(string, "channel", string, "topic")();
+	import std.typecons : Nullable;
+	Nullable!TopicReply output = TopicReply();
 	if (input.empty) {
 		output.nullify;
 		return output;
@@ -247,18 +251,25 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_TOPIC, T)(T input) {
 		assert(topic.isNull);
 	}
 }
+struct NamesReply {
+	import std.algorithm : splitter;
+	import std.traits : ReturnType;
+	NamReplyFlag chanFlag;
+	string channel;
+	ReturnType!(splitter!("a == b", string, string)) users;
+}
 /++
 +
 +/
-enum NamReplyFlag {
+enum NamReplyFlag : string {
 	///Channel will never be shown to users that aren't in it
-	Secret = "@",
+	secret = "@",
 	///Channel will have its name replaced for users that aren't in it
-	Private = "*",
+	private_ = "*",
 	///Non-private and non-secret channel.
-	Public = "=",
+	public_ = "=",
 	///ditto
-	Other = Public
+	other = public_
 }
 
 /++
@@ -268,10 +279,8 @@ enum NamReplyFlag {
 +/
 auto parseNumeric(Numeric numeric : Numeric.RPL_NAMREPLY, T)(T input) {
 	import std.algorithm : splitter;
-	import std.traits : ReturnType;
 	import std.typecons : Nullable, Tuple;
-	alias OutputType = Tuple!(NamReplyFlag, "chanFlag", string, "channel", ReturnType!(splitter!("a == b", string, string)), "users");
-	Nullable!OutputType output = OutputType();
+	Nullable!NamesReply output = NamesReply();
 	if (input.empty) {
 		output.nullify();
 		return output;
@@ -304,7 +313,7 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_NAMREPLY, T)(T input) {
 	import virc.ircsplitter : IRCSplitter;
 	{
 		auto namReply = parseNumeric!(Numeric.RPL_NAMREPLY)(IRCSplitter("someone = #channel :User1 User2 @User3 +User4"));
-		assert(namReply.chanFlag == NamReplyFlag.Public);
+		assert(namReply.chanFlag == NamReplyFlag.public_);
 		assert(namReply.channel == "#channel");
 		assert(namReply.users.array.canFind("User1"));
 		assert(namReply.users.array.canFind("User2"));
