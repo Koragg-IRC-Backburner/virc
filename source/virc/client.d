@@ -350,10 +350,38 @@ struct Target {
 	Nullable!Channel channel;
 	///
 	Nullable!User user;
+	///
+	bool isChannel() @safe pure nothrow @nogc const {
+		return !channel.isNull;
+	}
+	///
+	bool isNickname() @safe pure nothrow @nogc const {
+		return !user.isNull;
+	}
+	bool opEquals(string target) const {
+		if (!channel.isNull) {
+			return channel.get == Channel(target);
+		} else if (!user.isNull) {
+			return user.get == User(target);
+		}
+		return false;
+	}
+	bool opEquals(const User target) const {
+		if (!user.isNull) {
+			return user.get == target;
+		}
+		return false;
+	}
+	bool opEquals(const Channel target) const {
+		if (!channel.isNull) {
+			return channel.get == target;
+		}
+		return false;
+	}
 	void toString(T)(T sink) const if (isOutputRange!(T, const(char))) {
 		if (!channel.isNull) {
 			channel.get.toString(sink);
-		} else if (user.isNull) {
+		} else if (!user.isNull) {
 			user.get.toString(sink);
 		}
 	}
