@@ -826,31 +826,54 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		}
 	}
 	private void recCapAck(T)(T caps, const MessageMetadata metadata) if (is(ElementType!T == Capability)) {
+		import std.range : hasLength;
 		capsEnabled ~= caps.save().array;
 		foreach (ref cap; caps) {
 			tryCall!"onReceiveCapAck"(cap, metadata);
-			capReqCount--;
-			if (capReqCount == 0) {
-				endRegistration();
+			static if (!hasLength!T) {
+				capAcknowledgementCommon(1);
 			}
+		}
+		static if (hasLength!T) {
+			capAcknowledgementCommon(caps.length);
 		}
 	}
 	private void recCapNak(T)(T caps, const MessageMetadata metadata) if (is(ElementType!T == Capability)) {
+		import std.range : hasLength;
 		foreach (ref cap; caps) {
 			tryCall!"onReceiveCapNak"(cap, metadata);
-			capReqCount--;
-			if (capReqCount == 0) {
-				endRegistration();
+			static if (!hasLength!T) {
+				capAcknowledgementCommon(1);
 			}
+		}
+		static if (hasLength!T) {
+			capAcknowledgementCommon(caps.length);
+		}
+	}
+	private void capAcknowledgementCommon(size_t count) {
+		capReqCount -= count;
+		if (capReqCount == 0) {
+			endRegistration();
 		}
 	}
 	private void recCapNew(T)(T caps, const MessageMetadata metadata) if (is(ElementType!T == Capability)) {
+		auto requestCaps = caps.filter!(among!supportedCaps);
+		capReqCount += requestCaps.save().walkLength;
+		if (!requestCaps.empty) {
+			write!"CAP REQ :%-(%s %)"(requestCaps);
+		}
 		foreach (ref cap; caps) {
 			tryCall!"onReceiveCapNew"(cap, metadata);
 		}
 	}
 	private void recCapDel(T)(T caps, const MessageMetadata metadata) if (is(ElementType!T == Capability)) {
+		import std.algorithm.mutation : remove;
+		import std.algorithm.searching : countUntil;
 		foreach (ref cap; caps) {
+			auto findCap = countUntil(capsEnabled, cap);
+			if (findCap > -1) {
+				capsEnabled = capsEnabled.remove(findCap);
+			}
 			tryCall!"onReceiveCapDel"(cap, metadata);
 		}
 	}
