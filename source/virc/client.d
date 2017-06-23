@@ -1473,6 +1473,14 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		assert(users[4] == User("nick!user@host"));
 		assert(users[5] == User("nick!newuser@new.host.goes.here"));
 		assert(client.internalAddressList["nick"] == User("nick!newuser@new.host.goes.here"));
+		client.put(":tim!~toolshed@backyard CHGHOST b ckyard");
+		assert(users[6] == User("tim!~toolshed@backyard"));
+		assert(users[7] == User("tim!b@ckyard"));
+		assert(client.internalAddressList["tim"] == User("tim!b@ckyard"));
+		client.put(":tim!b@ckyard CHGHOST ~toolshed backyard");
+		assert(users[8] == User("tim!b@ckyard"));
+		assert(users[9] == User("tim!~toolshed@backyard"));
+		assert(client.internalAddressList["tim"] == User("tim!~toolshed@backyard"));
 	}
 	{ //PING? PONG!
 		auto buffer = appender!(string);
