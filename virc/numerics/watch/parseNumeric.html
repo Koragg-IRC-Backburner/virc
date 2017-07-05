@@ -1,0 +1,60 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8"/>
+<title>Function parseNumeric</title>
+<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
+<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
+<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../../scripts/ddox.js">/**/</script></head><body onload="setupDdox();"><nav id="main-nav"><noscript><p style="color: red">The search functionality needs JavaScript enabled</p></noscript><div id="symbolSearchPane" style="display: none"><form action="#" method="GET">
+<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/></form><ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../../";
+$('#symbolSearchPane').show();</script></div><ul class="tree-view"><li class="tree-view "><div class="package ">virc</div><ul class="tree-view"><li class="tree-view "><div class="package "><a href="../../../virc/numerics.html">numerics</a></div><ul class="tree-view"><li><div class="module "><a href="../../../virc/numerics/definitions.html">definitions</a></div></li><li><div class="module "><a href="../../../virc/numerics/isupport.html">isupport</a></div></li><li><div class="module "><a href="../../../virc/numerics/misc.html">misc</a></div></li><li><div class="module "><a href="../../../virc/numerics/monitor.html">monitor</a></div></li><li><div class="module "><a href="../../../virc/numerics/rfc1459.html">rfc1459</a></div></li><li><div class="module "><a href="../../../virc/numerics/rfc2812.html">rfc2812</a></div></li><li><div class="module selected"><a href="../../../virc/numerics/watch.html">watch</a></div></li></ul></li><li><div class="module "><a href="../../../virc/batch.html">batch</a></div></li><li><div class="module "><a href="../../../virc/casemapping.html">casemapping</a></div></li><li><div class="module "><a href="../../../virc/client.html">client</a></div></li><li><div class="module "><a href="../../../virc/common.html">common</a></div></li><li><div class="module "><a href="../../../virc/connection.html">connection</a></div></li><li><div class="module "><a href="../../../virc/encoding.html">encoding</a></div></li><li><div class="module "><a href="../../../virc/internaladdresslist.html">internaladdresslist</a></div></li><li><div class="module "><a href="../../../virc/ircsplitter.html">ircsplitter</a></div></li><li><div class="module "><a href="../../../virc/modes.html">modes</a></div></li><li><div class="module "><a href="../../../virc/style.html">style</a></div></li><li><div class="module "><a href="../../../virc/tags.html">tags</a></div></li><li><div class="module "><a href="../../../virc/twitch.html">twitch</a></div></li><li><div class="module "><a href="../../../virc/usermask.html">usermask</a></div></li></ul></li></ul></nav><div id="main-contents"><h1>Function parseNumeric</h1><p>Parses most of the WATCH numerics. Most of them have the same format, so the
+ majority of the magic happens in this function.
+</p><div class="prototype"><code class="lang-d"><div class="single-prototype">
+<span class="kwd">auto </span><span class="kwd">auto</span> <span class="pln">parseNumeric</span>(<a href="../../../virc/numerics/definitions/Numeric.html"><span class="typ">Numeric</span></a> numeric, T)
+<span class="pun">(</span>
+<br/>
+&nbsp;&nbsp;<span class="pln">T</span> <span class="pln">input</span>
+<br/>
+<span class="pun">)</span>
+<br/>
+<span class="kwd">if</span> <span class="pun">(</span><span class="pln">numeric<wbr/></span><span class="pun">.</span><span class="pln">among</span><span class="pun">(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_LOGON</span><span class="pun">, </span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_LOGOFF</span><span class="pun">, </span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_WATCHOFF</span><span class="pun">, </span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_NOWOFF</span><span class="pun">, </span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_NOWON</span><span class="pun">, </span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_NOWISAWAY</span><span class="pun">)</span><span class="pun">);</span></div></code></div><section><p>Formats are:
+</p>
+
+<p> <code class="lang-d"><span class="lit">600 </span><span class="pun">&lt;</span><span class="pln">client</span><span class="pun">&gt; &lt;</span><span class="pln">nickname</span><span class="pun">&gt; &lt;</span><span class="pln">username</span><span class="pun">&gt; &lt;</span><span class="pln">hostname</span><span class="pun">&gt; &lt;</span><span class="pln">signontime</span><span class="pun">&gt; :</span><span class="pln">logged on</span></code>
+</p>
+
+<p> <code class="lang-d"><span class="lit">601 </span><span class="pun">&lt;</span><span class="pln">client</span><span class="pun">&gt; &lt;</span><span class="pln">nickname</span><span class="pun">&gt; &lt;</span><span class="pln">username</span><span class="pun">&gt; &lt;</span><span class="pln">hostname</span><span class="pun">&gt; &lt;</span><span class="pln">lastnickchange</span><span class="pun">&gt; :</span><span class="pln">logged off</span></code>
+</p>
+
+<p> <code class="lang-d"><span class="lit">602 </span><span class="pun">&lt;</span><span class="pln">client</span><span class="pun">&gt; &lt;</span><span class="pln">nickname</span><span class="pun">&gt; &lt;</span><span class="pln">username</span><span class="pun">&gt; &lt;</span><span class="pln">hostname</span><span class="pun">&gt; &lt;</span><span class="pln">lastnickchange</span><span class="pun">&gt; :</span><span class="pln">stopped watching</span></code>
+</p>
+
+<p> <code class="lang-d"><span class="lit">604 </span><span class="pun">&lt;</span><span class="pln">client</span><span class="pun">&gt; &lt;</span><span class="pln">nickname</span><span class="pun">&gt; &lt;</span><span class="pln">username</span><span class="pun">&gt; &lt;</span><span class="pln">hostname</span><span class="pun">&gt; &lt;</span><span class="pln">lastnickchange</span><span class="pun">&gt; :</span><span class="kwd">is </span><span class="pln">online</span></code>
+</p>
+
+<p> <code class="lang-d"><span class="lit">605 </span><span class="pun">&lt;</span><span class="pln">client</span><span class="pun">&gt; &lt;</span><span class="pln">nickname</span><span class="pun">&gt; &lt;</span><span class="pln">username</span><span class="pun">&gt; &lt;</span><span class="pln">hostname</span><span class="pun">&gt; &lt;</span><span class="pln">lastnickchange</span><span class="pun">&gt; :</span><span class="kwd">is </span><span class="pln">offline</span></code>
+</p>
+
+<p> <code class="lang-d"><span class="lit">609 </span><span class="pun">&lt;</span><span class="pln">client</span><span class="pun">&gt; &lt;</span><span class="pln">nickname</span><span class="pun">&gt; &lt;</span><span class="pln">username</span><span class="pun">&gt; &lt;</span><span class="pln">hostname</span><span class="pun">&gt; &lt;</span><span class="pln">awaysince</span><span class="pun">&gt; :</span><span class="kwd">is </span><span class="pln">away</span></code>
+</p>
+</section>
+
+<section><h2>Standards</h2>
+<p>Conforms to https://raw.githubusercontent.com/grawity/irc-docs/master/client/draft-meglio-irc-watch-00.txt
+</p>
+</section>
+<section><h2>Example</h2>
+
+<pre class="code"><code class="lang-d"><span class="pln"> </span><span class="com">//Numeric.RPL_LOGON
+</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">datetime </span><span class="pun">: </span><span class="typ">DateTime</span><span class="pun">, </span><span class="typ">SysTime</span><span class="pun">, </span><span class="pln">UTC</span><span class="pun">;
+</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">range </span><span class="pun">: </span><span class="pln">only</span><span class="pun">;
+{
+	</span><span class="kwd">immutable </span><span class="pln">logon </span><span class="pun">= </span><span class="pln">parseNumeric</span><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_LOGON</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"someoneElse"</span><span class="pun">, </span><span class="str">"someIdent"</span><span class="pun">, </span><span class="str">"example.net"</span><span class="pun">, </span><span class="str">"911248013"</span><span class="pun">, </span><span class="str">"logged on"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">logon<wbr/></span><span class="pun">.</span><span class="pln">user<wbr/></span><span class="pun">.</span><span class="pln">mask<wbr/></span><span class="pun">.</span><span class="pln">nickname </span><span class="pun">== </span><span class="str">"someoneElse"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">logon<wbr/></span><span class="pun">.</span><span class="pln">user<wbr/></span><span class="pun">.</span><span class="pln">mask<wbr/></span><span class="pun">.</span><span class="pln">ident </span><span class="pun">== </span><span class="str">"someIdent"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">logon<wbr/></span><span class="pun">.</span><span class="pln">user<wbr/></span><span class="pun">.</span><span class="pln">mask<wbr/></span><span class="pun">.</span><span class="pln">host </span><span class="pun">== </span><span class="str">"example.net"</span><span class="pun">);
+	</span><span class="kwd">static immutable </span><span class="pln">date </span><span class="pun">= </span><span class="typ">SysTime</span><span class="pun">(</span><span class="typ">DateTime</span><span class="pun">(</span><span class="lit">1998</span><span class="pun">, </span><span class="lit">11</span><span class="pun">, </span><span class="lit">16</span><span class="pun">, </span><span class="lit">20</span><span class="pun">, </span><span class="lit">26</span><span class="pun">, </span><span class="lit">53</span><span class="pun">), </span><span class="pln">UTC</span><span class="pun">());
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">logon<wbr/></span><span class="pun">.</span><span class="pln">timeOccurred </span><span class="pun">== </span><span class="pln">date</span><span class="pun">);
+}
+</span></code></pre>
+</section>
+
+<footer><table class="license-info"><tr><th>Authors</th><td></td></tr><tr><th>Copyright</th><td></td></tr><tr><th>License</th><td></td></tr></table><p class="faint">Generated using the DDOX documentation generator</p></footer></div></body></html>

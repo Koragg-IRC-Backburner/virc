@@ -1,0 +1,201 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8"/>
+<title>parseNumeric - multiple declarations</title>
+<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
+<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
+<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../../scripts/ddox.js">/**/</script></head><body onload="setupDdox();"><nav id="main-nav"><noscript><p style="color: red">The search functionality needs JavaScript enabled</p></noscript><div id="symbolSearchPane" style="display: none"><form action="#" method="GET">
+<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/></form><ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../../";
+$('#symbolSearchPane').show();</script></div><ul class="tree-view"><li class="tree-view "><div class="package ">virc</div><ul class="tree-view"><li class="tree-view "><div class="package "><a href="../../../virc/numerics.html">numerics</a></div><ul class="tree-view"><li><div class="module "><a href="../../../virc/numerics/definitions.html">definitions</a></div></li><li><div class="module "><a href="../../../virc/numerics/isupport.html">isupport</a></div></li><li><div class="module "><a href="../../../virc/numerics/misc.html">misc</a></div></li><li><div class="module "><a href="../../../virc/numerics/monitor.html">monitor</a></div></li><li><div class="module selected"><a href="../../../virc/numerics/rfc1459.html">rfc1459</a></div></li><li><div class="module "><a href="../../../virc/numerics/rfc2812.html">rfc2812</a></div></li><li><div class="module "><a href="../../../virc/numerics/watch.html">watch</a></div></li></ul></li><li><div class="module "><a href="../../../virc/batch.html">batch</a></div></li><li><div class="module "><a href="../../../virc/casemapping.html">casemapping</a></div></li><li><div class="module "><a href="../../../virc/client.html">client</a></div></li><li><div class="module "><a href="../../../virc/common.html">common</a></div></li><li><div class="module "><a href="../../../virc/connection.html">connection</a></div></li><li><div class="module "><a href="../../../virc/encoding.html">encoding</a></div></li><li><div class="module "><a href="../../../virc/internaladdresslist.html">internaladdresslist</a></div></li><li><div class="module "><a href="../../../virc/ircsplitter.html">ircsplitter</a></div></li><li><div class="module "><a href="../../../virc/modes.html">modes</a></div></li><li><div class="module "><a href="../../../virc/style.html">style</a></div></li><li><div class="module "><a href="../../../virc/tags.html">tags</a></div></li><li><div class="module "><a href="../../../virc/twitch.html">twitch</a></div></li><li><div class="module "><a href="../../../virc/usermask.html">usermask</a></div></li></ul></li></ul></nav><div id="main-contents"><h1>parseNumeric - multiple declarations</h1><nav class="page-nav"><ul><li><a href="#0">Function <code>parseNumeric</code></a></li><li><a href="#1">Function <code>parseNumeric</code></a></li><li><a href="#2">Function <code>parseNumeric</code></a></li><li><a href="#3">Function <code>parseNumeric</code></a></li><li><a href="#4">Function <code>parseNumeric</code></a></li><li><a href="#5">Function <code>parseNumeric</code></a></li><li><a href="#6">Function <code>parseNumeric</code></a></li></ul></nav><h2 id="0">Function parseNumeric</h2><p></p><div class="prototype"><code class="lang-d"><div class="single-prototype">
+<span class="kwd">auto </span><span class="kwd">auto</span> <span class="pln">parseNumeric</span>(<a href="../../../virc/numerics/definitions/Numeric.html"><span class="typ">Numeric</span></a> numeric, T)
+<span class="pun">(</span>
+<br/>
+&nbsp;&nbsp;<span class="pln">T</span> <span class="pln">input</span>
+<br/>
+<span class="pun">)</span><span class="pun">;</span></div></code></div>
+<section><h3>Example</h3>
+
+<pre class="code"><code class="lang-d"><span class="pln"> </span><span class="com">//Numeric.RPL_LUSERCLIENT
+</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">range </span><span class="pun">: </span><span class="pln">only</span><span class="pun">;
+{
+	</span><span class="kwd">immutable </span><span class="pln">luser </span><span class="pun">= </span><span class="pln">parseNumeric</span><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_LUSERCLIENT</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"There are 42 users and 43 services on 44 servers"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">luser<wbr/></span><span class="pun">.</span><span class="pln">message </span><span class="pun">== </span><span class="str">"There are 42 users and 43 services on 44 servers"</span><span class="pun">);
+}
+</span></code></pre>
+</section>
+<h2 id="1">Function parseNumeric</h2><p></p><div class="prototype"><code class="lang-d"><div class="single-prototype">
+<span class="kwd">auto </span><span class="kwd">auto</span> <span class="pln">parseNumeric</span>(<a href="../../../virc/numerics/definitions/Numeric.html"><span class="typ">Numeric</span></a> numeric, T)
+<span class="pun">(</span>
+<br/>
+&nbsp;&nbsp;<span class="pln">T</span> <span class="pln">input</span>
+<br/>
+<span class="pun">)</span><span class="pun">;</span></div></code></div>
+<section><h3>Example</h3>
+
+<pre class="code"><code class="lang-d"><span class="pln"> </span><span class="com">//Numeric.RPL_LUSEROP
+</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">range </span><span class="pun">: </span><span class="pln">only</span><span class="pun">;
+{
+	</span><span class="kwd">immutable </span><span class="pln">luser </span><span class="pun">= <a href="../../../virc/numerics/rfc1459/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_LUSEROP</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"45"</span><span class="pun">, </span><span class="str">"operator(s) online"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">luser<wbr/></span><span class="pun">.</span><span class="pln">numOperators </span><span class="pun">== </span><span class="lit">45</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">luser<wbr/></span><span class="pun">.</span><span class="pln">message </span><span class="pun">== </span><span class="str">"operator(s) online"</span><span class="pun">);
+}
+</span></code></pre>
+</section>
+<h2 id="2">Function parseNumeric</h2><p></p><div class="prototype"><code class="lang-d"><div class="single-prototype">
+<span class="kwd">auto </span><span class="kwd">auto</span> <span class="pln">parseNumeric</span>(<a href="../../../virc/numerics/definitions/Numeric.html"><span class="typ">Numeric</span></a> numeric, T)
+<span class="pun">(</span>
+<br/>
+&nbsp;&nbsp;<span class="pln">T</span> <span class="pln">input</span>
+<br/>
+<span class="pun">)</span><span class="pun">;</span></div></code></div>
+<section><h3>Example</h3>
+
+<pre class="code"><code class="lang-d"><span class="pln"> </span><span class="com">//Numeric.RPL_LUSERCHANNELS
+</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">range </span><span class="pun">: </span><span class="pln">only</span><span class="pun">;
+{
+	</span><span class="kwd">immutable </span><span class="pln">luser </span><span class="pun">= <a href="../../../virc/numerics/rfc1459/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_LUSERCHANNELS</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"46"</span><span class="pun">, </span><span class="str">"channels formed"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">luser<wbr/></span><span class="pun">.</span><span class="pln">numChannels </span><span class="pun">== </span><span class="lit">46</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">luser<wbr/></span><span class="pun">.</span><span class="pln">message </span><span class="pun">== </span><span class="str">"channels formed"</span><span class="pun">);
+}
+</span></code></pre>
+</section>
+<h2 id="3">Function parseNumeric</h2><p></p><div class="prototype"><code class="lang-d"><div class="single-prototype">
+<span class="kwd">auto </span><span class="kwd">auto</span> <span class="pln">parseNumeric</span>(<a href="../../../virc/numerics/definitions/Numeric.html"><span class="typ">Numeric</span></a> numeric, T)
+<span class="pun">(</span>
+<br/>
+&nbsp;&nbsp;<span class="pln">T</span> <span class="pln">input</span>
+<br/>
+<span class="pun">)</span><span class="pun">;</span></div></code></div>
+<section><h3>Example</h3>
+
+<pre class="code"><code class="lang-d"><span class="pln"> </span><span class="com">//Numeric.RPL_LUSERME
+</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">range </span><span class="pun">: </span><span class="pln">only</span><span class="pun">;
+{
+	</span><span class="kwd">immutable </span><span class="pln">luser </span><span class="pun">= <a href="../../../virc/numerics/rfc1459/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_LUSERME</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"I have 47 clients and 48 servers"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">luser<wbr/></span><span class="pun">.</span><span class="pln">message </span><span class="pun">== </span><span class="str">"I have 47 clients and 48 servers"</span><span class="pun">);
+}
+</span></code></pre>
+</section>
+<h2 id="4">Function parseNumeric</h2><p></p><div class="prototype"><code class="lang-d"><div class="single-prototype">
+<span class="kwd">auto </span><span class="kwd">auto</span> <span class="pln">parseNumeric</span>(<a href="../../../virc/numerics/definitions/Numeric.html"><span class="typ">Numeric</span></a> numeric, T)
+<span class="pun">(</span>
+<br/>
+&nbsp;&nbsp;<span class="pln">T</span> <span class="pln">input</span><span class="pun">,</span>
+<br/>
+&nbsp;&nbsp;<a href="../../../virc/modes/ModeType.html"><span class="typ">ModeType</span></a><span class="pun">[</span><span class="typ">char</span><span class="pun">]</span> <span class="pln">channelModeTypes</span>
+<br/>
+<span class="pun">)</span><span class="pun">;</span></div></code></div>
+<section><h3>Example</h3>
+
+<pre class="code"><code class="lang-d"><span class="pln"> </span><span class="com">//Numeric.RPL_LIST
+</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">algorithm<wbr/></span><span class="pun">.</span><span class="pln">searching </span><span class="pun">: </span><span class="pln">canFind</span><span class="pun">;
+</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">range </span><span class="pun">: </span><span class="pln">only</span><span class="pun">;
+</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons </span><span class="pun">: </span><span class="typ">Nullable</span><span class="pun">;
+</span><span class="kwd">import <a href="../../../virc/common.html"></span><span class="pln">virc<wbr/></span><span class="pun">.</span><span class="pln">common</span></a><span class="pln"> </span><span class="pun">: </span><span class="typ">Topic</span><span class="pun">;
+</span><span class="kwd">import <a href="../../../virc/modes.html"></span><span class="pln">virc<wbr/></span><span class="pun">.</span><span class="pln">modes</span></a><span class="pln"> </span><span class="pun">: </span><span class="typ">Mode</span><span class="pun">;
+{
+	</span><span class="kwd">immutable </span><span class="pln">listEntry </span><span class="pun">= <a href="../../../virc/numerics/rfc1459/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_LIST</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"#test"</span><span class="pun">, </span><span class="str">"4"</span><span class="pun">, </span><span class="str">"[+fnt 200:2] some words"</span><span class="pun">), [</span><span class="str">'n'</span><span class="pun">: </span><span class="typ">ModeType<wbr/></span><span class="pun">.</span><span class="pln">d</span><span class="pun">, </span><span class="str">'t'</span><span class="pun">: </span><span class="typ">ModeType<wbr/></span><span class="pun">.</span><span class="pln">d</span><span class="pun">, </span><span class="str">'f'</span><span class="pun">: </span><span class="typ">ModeType<wbr/></span><span class="pun">.</span><span class="pln">c</span><span class="pun">]);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">listEntry<wbr/></span><span class="pun">.</span><span class="pln">name </span><span class="pun">== </span><span class="str">"#test"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">listEntry<wbr/></span><span class="pun">.</span><span class="pln">userCount </span><span class="pun">== </span><span class="lit">4</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">listEntry<wbr/></span><span class="pun">.</span><span class="pln">topic </span><span class="pun">== </span><span class="typ">Topic</span><span class="pun">(</span><span class="str">"some words"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">listEntry<wbr/></span><span class="pun">.</span><span class="pln">modes<wbr/></span><span class="pun">.</span><span class="pln">canFind</span><span class="pun">(</span><span class="typ">Mode</span><span class="pun">(</span><span class="typ">ModeType<wbr/></span><span class="pun">.</span><span class="pln">d</span><span class="pun">, </span><span class="str">'n'</span><span class="pun">)));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">listEntry<wbr/></span><span class="pun">.</span><span class="pln">modes<wbr/></span><span class="pun">.</span><span class="pln">canFind</span><span class="pun">(</span><span class="typ">Mode</span><span class="pun">(</span><span class="typ">ModeType<wbr/></span><span class="pun">.</span><span class="pln">d</span><span class="pun">, </span><span class="str">'t'</span><span class="pun">)));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">listEntry<wbr/></span><span class="pun">.</span><span class="pln">modes<wbr/></span><span class="pun">.</span><span class="pln">canFind</span><span class="pun">(</span><span class="typ">Mode</span><span class="pun">(</span><span class="typ">ModeType<wbr/></span><span class="pun">.</span><span class="pln">c</span><span class="pun">, </span><span class="str">'f'</span><span class="pun">, </span><span class="typ">Nullable</span><span class="pun">!</span><span class="typ">string</span><span class="pun">(</span><span class="str">"100:2"</span><span class="pun">))));
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">listEntry </span><span class="pun">= <a href="../../../virc/numerics/rfc1459/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_LIST</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"#test2"</span><span class="pun">, </span><span class="str">"6"</span><span class="pun">, </span><span class="str">"[+fnst 100:2] some more words"</span><span class="pun">), [</span><span class="str">'n'</span><span class="pun">: </span><span class="typ">ModeType<wbr/></span><span class="pun">.</span><span class="pln">d</span><span class="pun">, </span><span class="str">'t'</span><span class="pun">: </span><span class="typ">ModeType<wbr/></span><span class="pun">.</span><span class="pln">d</span><span class="pun">, </span><span class="str">'f'</span><span class="pun">: </span><span class="typ">ModeType<wbr/></span><span class="pun">.</span><span class="pln">c</span><span class="pun">]);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">listEntry<wbr/></span><span class="pun">.</span><span class="pln">name </span><span class="pun">== </span><span class="str">"#test2"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">listEntry<wbr/></span><span class="pun">.</span><span class="pln">userCount </span><span class="pun">== </span><span class="lit">6</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">listEntry<wbr/></span><span class="pun">.</span><span class="pln">topic </span><span class="pun">== </span><span class="typ">Topic</span><span class="pun">(</span><span class="str">"some more words"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">listEntry<wbr/></span><span class="pun">.</span><span class="pln">modes<wbr/></span><span class="pun">.</span><span class="pln">canFind</span><span class="pun">(</span><span class="typ">Mode</span><span class="pun">(</span><span class="typ">ModeType<wbr/></span><span class="pun">.</span><span class="pln">d</span><span class="pun">, </span><span class="str">'n'</span><span class="pun">)));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">listEntry<wbr/></span><span class="pun">.</span><span class="pln">modes<wbr/></span><span class="pun">.</span><span class="pln">canFind</span><span class="pun">(</span><span class="typ">Mode</span><span class="pun">(</span><span class="typ">ModeType<wbr/></span><span class="pun">.</span><span class="pln">d</span><span class="pun">, </span><span class="str">'t'</span><span class="pun">)));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">listEntry<wbr/></span><span class="pun">.</span><span class="pln">modes<wbr/></span><span class="pun">.</span><span class="pln">canFind</span><span class="pun">(</span><span class="typ">Mode</span><span class="pun">(</span><span class="typ">ModeType<wbr/></span><span class="pun">.</span><span class="pln">d</span><span class="pun">, </span><span class="str">'s'</span><span class="pun">)));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">listEntry<wbr/></span><span class="pun">.</span><span class="pln">modes<wbr/></span><span class="pun">.</span><span class="pln">canFind</span><span class="pun">(</span><span class="typ">Mode</span><span class="pun">(</span><span class="typ">ModeType<wbr/></span><span class="pun">.</span><span class="pln">c</span><span class="pun">, </span><span class="str">'f'</span><span class="pun">, </span><span class="typ">Nullable</span><span class="pun">!</span><span class="typ">string</span><span class="pun">(</span><span class="str">"100:2"</span><span class="pun">))));
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">listEntry </span><span class="pun">= <a href="../../../virc/numerics/rfc1459/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_LIST</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"#test3"</span><span class="pun">, </span><span class="str">"1"</span><span class="pun">, </span><span class="str">"no modes?"</span><span class="pun">), [</span><span class="str">'n'</span><span class="pun">: </span><span class="typ">ModeType<wbr/></span><span class="pun">.</span><span class="pln">d</span><span class="pun">, </span><span class="str">'t'</span><span class="pun">: </span><span class="typ">ModeType<wbr/></span><span class="pun">.</span><span class="pln">d</span><span class="pun">, </span><span class="str">'f'</span><span class="pun">: </span><span class="typ">ModeType<wbr/></span><span class="pun">.</span><span class="pln">c</span><span class="pun">]);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">listEntry<wbr/></span><span class="pun">.</span><span class="pln">name </span><span class="pun">== </span><span class="str">"#test3"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">listEntry<wbr/></span><span class="pun">.</span><span class="pln">userCount </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">listEntry<wbr/></span><span class="pun">.</span><span class="pln">topic </span><span class="pun">== </span><span class="typ">Topic</span><span class="pun">(</span><span class="str">"no modes?"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">listEntry<wbr/></span><span class="pun">.</span><span class="pln">modes<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">0</span><span class="pun">);
+}
+</span></code></pre>
+</section>
+<h2 id="5">Function parseNumeric</h2><p>Parser for RPL_TOPIC.
+</p><div class="prototype"><code class="lang-d"><div class="single-prototype">
+<span class="kwd">auto </span><span class="kwd">auto</span> <span class="pln">parseNumeric</span>(<a href="../../../virc/numerics/definitions/Numeric.html"><span class="typ">Numeric</span></a> numeric, T)
+<span class="pun">(</span>
+<br/>
+&nbsp;&nbsp;<span class="pln">T</span> <span class="pln">input</span>
+<br/>
+<span class="pun">)</span><span class="pun">;</span></div></code></div><section><p>Format is <code class="lang-d"><span class="lit">332 </span><span class="pun">&lt;</span><span class="pln">client</span><span class="pun">&gt;&lt;</span><span class="pln">channel</span><span class="pun">&gt; :&lt;</span><span class="pln">topic</span><span class="pun">&gt;</span></code>
+</p>
+</section>
+
+<section><h3>Example</h3>
+
+<pre class="code"><code class="lang-d"><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">range </span><span class="pun">: </span><span class="pln">only</span><span class="pun">, </span><span class="pln">takeNone</span><span class="pun">;
+{
+	</span><span class="kwd">immutable </span><span class="pln">topic </span><span class="pun">= <a href="../../../virc/numerics/rfc1459/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_TOPIC</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"#channel"</span><span class="pun">, </span><span class="str">"This is the topic!"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">topic<wbr/></span><span class="pun">.</span><span class="pln">channel </span><span class="pun">== </span><span class="str">"#channel"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">topic<wbr/></span><span class="pun">.</span><span class="pln">topic </span><span class="pun">== </span><span class="str">"This is the topic!"</span><span class="pun">);
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">topic </span><span class="pun">= <a href="../../../virc/numerics/rfc1459/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_TOPIC</span><span class="pun">)(</span><span class="pln">takeNone</span><span class="pun">(</span><span class="pln">only</span><span class="pun">(</span><span class="str">""</span><span class="pun">)));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">topic<wbr/></span><span class="pun">.</span><span class="pln">isNull</span><span class="pun">);
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">topic </span><span class="pun">= <a href="../../../virc/numerics/rfc1459/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_TOPIC</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">topic<wbr/></span><span class="pun">.</span><span class="pln">isNull</span><span class="pun">);
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">topic </span><span class="pun">= <a href="../../../virc/numerics/rfc1459/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_TOPIC</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"#channel"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">topic<wbr/></span><span class="pun">.</span><span class="pln">isNull</span><span class="pun">);
+}
+</span></code></pre>
+</section>
+<h2 id="6">Function parseNumeric</h2><p>Parser for RPL_NAMREPLY
+</p><div class="prototype"><code class="lang-d"><div class="single-prototype">
+<span class="kwd">auto </span><span class="kwd">auto</span> <span class="pln">parseNumeric</span>(<a href="../../../virc/numerics/definitions/Numeric.html"><span class="typ">Numeric</span></a> numeric, T)
+<span class="pun">(</span>
+<br/>
+&nbsp;&nbsp;<span class="pln">T</span> <span class="pln">input</span>
+<br/>
+<span class="pun">)</span><span class="pun">;</span></div></code></div><section><p>Format is <code class="lang-d"><span class="lit">353 </span><span class="pun">&lt;</span><span class="pln">client</span><span class="pun">&gt; =</span><span class="com">/*/@ &lt;channel&gt; :&lt;prefix[es]&gt;&lt;usermask&gt;[ &lt;prefix[es]&gt;&lt;usermask&gt;...]</span></code>
+</p>
+</section>
+
+<section><h3>Example</h3>
+
+<pre class="code"><code class="lang-d"><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">algorithm<wbr/></span><span class="pun">.</span><span class="pln">searching </span><span class="pun">: </span><span class="pln">canFind</span><span class="pun">;
+</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">array </span><span class="pun">: </span><span class="pln">array</span><span class="pun">;
+</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">range </span><span class="pun">: </span><span class="pln">only</span><span class="pun">, </span><span class="pln">takeNone</span><span class="pun">;
+</span><span class="kwd">import <a href="../../../virc/ircsplitter.html"></span><span class="pln">virc<wbr/></span><span class="pun">.</span><span class="pln">ircsplitter</span></a><span class="pln"> </span><span class="pun">: </span><span class="typ">IRCSplitter</span><span class="pun">;
+{
+	</span><span class="kwd">auto </span><span class="pln">namReply </span><span class="pun">= <a href="../../../virc/numerics/rfc1459/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_NAMREPLY</span><span class="pun">)(</span><span class="typ">IRCSplitter</span><span class="pun">(</span><span class="str">"someone = #channel :User1 User2 @User3 +User4"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">namReply<wbr/></span><span class="pun">.</span><span class="pln">chanFlag </span><span class="pun">== <a href="../../../virc/numerics/rfc1459/NamReplyFlag.public_.html"></span><span class="typ">NamReplyFlag<wbr/></span><span class="pun">.</span><span class="pln">public_</span></a><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">namReply<wbr/></span><span class="pun">.</span><span class="pln">channel </span><span class="pun">== </span><span class="str">"#channel"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">namReply<wbr/></span><span class="pun">.</span><span class="pln">users<wbr/></span><span class="pun">.</span><span class="pln">array<wbr/></span><span class="pun">.</span><span class="pln">canFind</span><span class="pun">(</span><span class="str">"User1"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">namReply<wbr/></span><span class="pun">.</span><span class="pln">users<wbr/></span><span class="pun">.</span><span class="pln">array<wbr/></span><span class="pun">.</span><span class="pln">canFind</span><span class="pun">(</span><span class="str">"User2"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">namReply<wbr/></span><span class="pun">.</span><span class="pln">users<wbr/></span><span class="pun">.</span><span class="pln">array<wbr/></span><span class="pun">.</span><span class="pln">canFind</span><span class="pun">(</span><span class="str">"@User3"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">namReply<wbr/></span><span class="pun">.</span><span class="pln">users<wbr/></span><span class="pun">.</span><span class="pln">array<wbr/></span><span class="pun">.</span><span class="pln">canFind</span><span class="pun">(</span><span class="str">"+User4"</span><span class="pun">));
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">namReply </span><span class="pun">= <a href="../../../virc/numerics/rfc1459/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_NAMREPLY</span><span class="pun">)(</span><span class="typ">IRCSplitter</span><span class="pun">(</span><span class="str">"someone = #channel"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">namReply<wbr/></span><span class="pun">.</span><span class="pln">isNull</span><span class="pun">);
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">namReply </span><span class="pun">= <a href="../../../virc/numerics/rfc1459/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_NAMREPLY</span><span class="pun">)(</span><span class="typ">IRCSplitter</span><span class="pun">(</span><span class="str">"someone ="</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">namReply<wbr/></span><span class="pun">.</span><span class="pln">isNull</span><span class="pun">);
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">namReply </span><span class="pun">= <a href="../../../virc/numerics/rfc1459/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_NAMREPLY</span><span class="pun">)(</span><span class="typ">IRCSplitter</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">namReply<wbr/></span><span class="pun">.</span><span class="pln">isNull</span><span class="pun">);
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">namReply </span><span class="pun">= <a href="../../../virc/numerics/rfc1459/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_NAMREPLY</span><span class="pun">)(</span><span class="pln">takeNone</span><span class="pun">(</span><span class="pln">only</span><span class="pun">(</span><span class="str">""</span><span class="pun">)));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">namReply<wbr/></span><span class="pun">.</span><span class="pln">isNull</span><span class="pun">);
+}
+</span></code></pre>
+</section>
+
+<footer><table class="license-info"><tr><th>Authors</th><td></td></tr><tr><th>Copyright</th><td></td></tr><tr><th>License</th><td></td></tr></table><p class="faint">Generated using the DDOX documentation generator</p></footer></div></body></html>

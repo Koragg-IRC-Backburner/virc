@@ -1,0 +1,84 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8"/>
+<title>Function splitTag</title>
+<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script></head><body onload="setupDdox();"><nav id="main-nav"><noscript><p style="color: red">The search functionality needs JavaScript enabled</p></noscript><div id="symbolSearchPane" style="display: none"><form action="#" method="GET">
+<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/></form><ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script></div><ul class="tree-view"><li class="tree-view "><div class="package ">virc</div><ul class="tree-view"><li class="tree-view collapsed"><div class="package "><a href="../../virc/numerics.html">numerics</a></div><ul class="tree-view"><li><div class="module "><a href="../../virc/numerics/definitions.html">definitions</a></div></li><li><div class="module "><a href="../../virc/numerics/isupport.html">isupport</a></div></li><li><div class="module "><a href="../../virc/numerics/misc.html">misc</a></div></li><li><div class="module "><a href="../../virc/numerics/monitor.html">monitor</a></div></li><li><div class="module "><a href="../../virc/numerics/rfc1459.html">rfc1459</a></div></li><li><div class="module "><a href="../../virc/numerics/rfc2812.html">rfc2812</a></div></li><li><div class="module "><a href="../../virc/numerics/watch.html">watch</a></div></li></ul></li><li><div class="module "><a href="../../virc/batch.html">batch</a></div></li><li><div class="module "><a href="../../virc/casemapping.html">casemapping</a></div></li><li><div class="module "><a href="../../virc/client.html">client</a></div></li><li><div class="module "><a href="../../virc/common.html">common</a></div></li><li><div class="module "><a href="../../virc/connection.html">connection</a></div></li><li><div class="module "><a href="../../virc/encoding.html">encoding</a></div></li><li><div class="module "><a href="../../virc/internaladdresslist.html">internaladdresslist</a></div></li><li><div class="module "><a href="../../virc/ircsplitter.html">ircsplitter</a></div></li><li><div class="module "><a href="../../virc/modes.html">modes</a></div></li><li><div class="module "><a href="../../virc/style.html">style</a></div></li><li><div class="module selected"><a href="../../virc/tags.html">tags</a></div></li><li><div class="module "><a href="../../virc/twitch.html">twitch</a></div></li><li><div class="module "><a href="../../virc/usermask.html">usermask</a></div></li></ul></li></ul></nav><div id="main-contents"><h1>Function splitTag</h1><p></p><div class="prototype"><code class="lang-d"><div class="single-prototype">
+<span class="kwd">auto </span><a href="../../virc/tags/ParsedMessage.html"><span class="typ">ParsedMessage</span></a> <span class="pln">splitTag</span>
+<span class="pun">(</span>
+<br/>
+&nbsp;&nbsp;<span class="typ">string</span> <span class="pln">input</span>
+<br/>
+<span class="pun">)</span><span class="pln"> </span><span class="kwd">pure nothrow @safe</span><span class="pun">;</span></div></code></div>
+<section><h2>Example</h2>
+
+<pre class="code"><code class="lang-d"><span class="com">//Example from http://ircv3.net/specs/core/message-tags-3.2.html
+</span><span class="pun">{
+	</span><span class="kwd">immutable </span><span class="pln">splitStr </span><span class="pun">= </span><span class="str">":nick!ident@host.com PRIVMSG me :Hello"<wbr/></span><span class="pun">.</span><span class="pln">splitTag</span><span class="pun">;
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">msg </span><span class="pun">== </span><span class="str">":nick!ident@host.com PRIVMSG me :Hello"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">0</span><span class="pun">);
+}
+</span><span class="com">//ditto
+</span><span class="pun">{
+	</span><span class="kwd">auto </span><span class="pln">splitStr </span><span class="pun">= </span><span class="str">"@aaa=bbb;ccc;example.com/ddd=eee :nick!ident@host.com PRIVMSG me :Hello"<wbr/></span><span class="pun">.</span><span class="pln">splitTag</span><span class="pun">;
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">msg </span><span class="pun">== </span><span class="str">":nick!ident@host.com PRIVMSG me :Hello"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">3</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags</span><span class="pun">[</span><span class="str">"aaa"</span><span class="pun">] == </span><span class="str">"bbb"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags</span><span class="pun">[</span><span class="str">"ccc"</span><span class="pun">] == </span><span class="str">""</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags</span><span class="pun">[</span><span class="str">"example.com/ddd"</span><span class="pun">] == </span><span class="str">"eee"</span><span class="pun">);
+}
+</span><span class="com">//escape test
+</span><span class="pun">{
+	</span><span class="kwd">auto </span><span class="pln">splitStr </span><span class="pun">= </span><span class="str">`@whatevs=\\s :Angel!angel@example.org PRIVMSG Wiz :Hello`<wbr/></span><span class="pun">.</span><span class="pln">splitTag</span><span class="pun">;
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">msg </span><span class="pun">== </span><span class="str">":Angel!angel@example.org PRIVMSG Wiz :Hello"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="str">"whatevs" </span><span class="kwd">in </span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags</span><span class="pun">[</span><span class="str">"whatevs"</span><span class="pun">] == </span><span class="str">`\s`</span><span class="pun">);
+}
+</span><span class="com">//Example from http://ircv3.net/specs/extensions/batch-3.2.html
+</span><span class="pun">{
+	</span><span class="kwd">auto </span><span class="pln">splitStr </span><span class="pun">= </span><span class="str">`@batch=yXNAbvnRHTRBv :aji!a@a QUIT :irc.hub other.host`<wbr/></span><span class="pun">.</span><span class="pln">splitTag</span><span class="pun">;
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">msg </span><span class="pun">== </span><span class="str">":aji!a@a QUIT :irc.hub other.host"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="str">"batch" </span><span class="kwd">in </span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags</span><span class="pun">[</span><span class="str">"batch"</span><span class="pun">] == </span><span class="str">"yXNAbvnRHTRBv"</span><span class="pun">);
+}
+</span><span class="com">//Example from http://ircv3.net/specs/extensions/account-tag-3.2.html
+</span><span class="pun">{
+	</span><span class="kwd">auto </span><span class="pln">splitStr </span><span class="pun">= </span><span class="str">`@account=hax0r :user PRIVMSG #atheme :Now I'm logged in.`<wbr/></span><span class="pun">.</span><span class="pln">splitTag</span><span class="pun">;
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">msg </span><span class="pun">== </span><span class="str">":user PRIVMSG #atheme :Now I'm logged in."</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="str">"account" </span><span class="kwd">in </span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags</span><span class="pun">[</span><span class="str">"account"</span><span class="pun">] == </span><span class="str">"hax0r"</span><span class="pun">);
+}
+</span></code></pre>
+</section>
+<section><h2>Example</h2>
+
+<pre class="code"><code class="lang-d"><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">datetime </span><span class="pun">: </span><span class="typ">DateTime</span><span class="pun">, </span><span class="pln">msecs</span><span class="pun">, </span><span class="typ">SysTime</span><span class="pun">, </span><span class="pln">UTC</span><span class="pun">;
+</span><span class="com">//Example from http://ircv3.net/specs/extensions/server-time-3.2.html
+</span><span class="pun">{
+	</span><span class="kwd">auto </span><span class="pln">splitStr </span><span class="pun">= </span><span class="str">"@time=2011-10-19T16:40:51.620Z :Angel!angel@example.org PRIVMSG Wiz :Hello"<wbr/></span><span class="pun">.</span><span class="pln">splitTag</span><span class="pun">;
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">msg </span><span class="pun">== </span><span class="str">":Angel!angel@example.org PRIVMSG Wiz :Hello"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="str">"time" </span><span class="kwd">in </span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags</span><span class="pun">[</span><span class="str">"time"</span><span class="pun">] == </span><span class="str">"2011-10-19T16:40:51.620Z"</span><span class="pun">);
+	</span><span class="kwd">immutable </span><span class="pln">testTime </span><span class="pun">= </span><span class="typ">SysTime</span><span class="pun">(</span><span class="typ">DateTime</span><span class="pun">(</span><span class="lit">2011</span><span class="pun">,</span><span class="lit">10</span><span class="pun">,</span><span class="lit">19</span><span class="pun">,</span><span class="lit">16</span><span class="pun">,</span><span class="lit">40</span><span class="pun">,</span><span class="lit">51</span><span class="pun">), </span><span class="lit">620<wbr/></span><span class="pun">.</span><span class="pln">msecs</span><span class="pun">, </span><span class="pln">UTC</span><span class="pun">());
+	</span><span class="kwd">assert</span><span class="pun">(<a href="../../virc/tags/parseTime.html"></span><span class="pln">parseTime</span></a><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags</span><span class="pun">) == </span><span class="pln">testTime</span><span class="pun">);
+}
+</span><span class="com">//ditto
+</span><span class="pun">{
+	</span><span class="kwd">auto </span><span class="pln">splitStr </span><span class="pun">= </span><span class="str">"@time=2012-06-30T23:59:60.419Z :John!~john@1.2.3.4 JOIN #chan"<wbr/></span><span class="pun">.</span><span class="pln">splitTag</span><span class="pun">;
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">msg </span><span class="pun">== </span><span class="str">":John!~john@1.2.3.4 JOIN #chan"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="str">"time" </span><span class="kwd">in </span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">splitStr<wbr/></span><span class="pun">.</span><span class="pln">tags</span><span class="pun">[</span><span class="str">"time"</span><span class="pun">] == </span><span class="str">"2012-06-30T23:59:60.419Z"</span><span class="pun">);
+	</span><span class="com">//leap seconds not currently representable
+	//assert(parseTime(splitStr.tags) == SysTime(DateTime(2012,06,30,23,59,60), 419.msecs, UTC()));
+</span><span class="pun">}
+</span></code></pre>
+</section>
+
+<footer><table class="license-info"><tr><th>Authors</th><td></td></tr><tr><th>Copyright</th><td></td></tr><tr><th>License</th><td></td></tr></table><p class="faint">Generated using the DDOX documentation generator</p></footer></div></body></html>

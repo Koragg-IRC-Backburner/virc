@@ -1,0 +1,132 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8"/>
+<title>parseNumeric - multiple declarations</title>
+<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
+<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
+<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../../scripts/ddox.js">/**/</script></head><body onload="setupDdox();"><nav id="main-nav"><noscript><p style="color: red">The search functionality needs JavaScript enabled</p></noscript><div id="symbolSearchPane" style="display: none"><form action="#" method="GET">
+<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/></form><ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../../";
+$('#symbolSearchPane').show();</script></div><ul class="tree-view"><li class="tree-view "><div class="package ">virc</div><ul class="tree-view"><li class="tree-view "><div class="package "><a href="../../../virc/numerics.html">numerics</a></div><ul class="tree-view"><li><div class="module "><a href="../../../virc/numerics/definitions.html">definitions</a></div></li><li><div class="module "><a href="../../../virc/numerics/isupport.html">isupport</a></div></li><li><div class="module "><a href="../../../virc/numerics/misc.html">misc</a></div></li><li><div class="module "><a href="../../../virc/numerics/monitor.html">monitor</a></div></li><li><div class="module "><a href="../../../virc/numerics/rfc1459.html">rfc1459</a></div></li><li><div class="module selected"><a href="../../../virc/numerics/rfc2812.html">rfc2812</a></div></li><li><div class="module "><a href="../../../virc/numerics/watch.html">watch</a></div></li></ul></li><li><div class="module "><a href="../../../virc/batch.html">batch</a></div></li><li><div class="module "><a href="../../../virc/casemapping.html">casemapping</a></div></li><li><div class="module "><a href="../../../virc/client.html">client</a></div></li><li><div class="module "><a href="../../../virc/common.html">common</a></div></li><li><div class="module "><a href="../../../virc/connection.html">connection</a></div></li><li><div class="module "><a href="../../../virc/encoding.html">encoding</a></div></li><li><div class="module "><a href="../../../virc/internaladdresslist.html">internaladdresslist</a></div></li><li><div class="module "><a href="../../../virc/ircsplitter.html">ircsplitter</a></div></li><li><div class="module "><a href="../../../virc/modes.html">modes</a></div></li><li><div class="module "><a href="../../../virc/style.html">style</a></div></li><li><div class="module "><a href="../../../virc/tags.html">tags</a></div></li><li><div class="module "><a href="../../../virc/twitch.html">twitch</a></div></li><li><div class="module "><a href="../../../virc/usermask.html">usermask</a></div></li></ul></li></ul></nav><div id="main-contents"><h1>parseNumeric - multiple declarations</h1><nav class="page-nav"><ul><li><a href="#0">Function <code>parseNumeric</code></a></li><li><a href="#1">Function <code>parseNumeric</code></a></li><li><a href="#2">Function <code>parseNumeric</code></a></li></ul></nav><h2 id="0">Function parseNumeric</h2><p></p><div class="prototype"><code class="lang-d"><div class="single-prototype">
+<span class="kwd">auto </span><span class="kwd">auto</span> <span class="pln">parseNumeric</span>(<a href="../../../virc/numerics/definitions/Numeric.html"><span class="typ">Numeric</span></a> numeric, T)
+<span class="pun">(</span>
+<br/>
+&nbsp;&nbsp;<span class="pln">T</span> <span class="pln">input</span>
+<br/>
+<span class="pun">)</span><span class="pun">;</span></div></code></div>
+<section><h3>Example</h3>
+
+<pre class="code"><code class="lang-d"><span class="pln"> </span><span class="com">//Numeric.RPL_MYINFO
+</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">range </span><span class="pun">: </span><span class="pln">only</span><span class="pun">;
+{
+	</span><span class="kwd">immutable </span><span class="pln">info </span><span class="pun">= </span><span class="pln">parseNumeric</span><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_MYINFO</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"localhost"</span><span class="pun">, </span><span class="str">"IRCd-2.0"</span><span class="pun">, </span><span class="str">"BGHIRSWcdgikorswx"</span><span class="pun">, </span><span class="str">"ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz"</span><span class="pun">, </span><span class="str">"FIJLYabefghjkloqv"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">info<wbr/></span><span class="pun">.</span><span class="pln">name </span><span class="pun">== </span><span class="str">"localhost"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">info<wbr/></span><span class="pun">.</span><span class="pln">version_ </span><span class="pun">== </span><span class="str">"IRCd-2.0"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">info<wbr/></span><span class="pun">.</span><span class="pln">userModes </span><span class="pun">== </span><span class="str">"BGHIRSWcdgikorswx"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">info<wbr/></span><span class="pun">.</span><span class="pln">userModesWithParams </span><span class="pun">== </span><span class="str">""</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">info<wbr/></span><span class="pun">.</span><span class="pln">channelModes </span><span class="pun">== </span><span class="str">"ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">info<wbr/></span><span class="pun">.</span><span class="pln">channelModesWithParams </span><span class="pun">== </span><span class="str">"FIJLYabefghjkloqv"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">info<wbr/></span><span class="pun">.</span><span class="pln">serverModes </span><span class="pun">== </span><span class="str">""</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">info<wbr/></span><span class="pun">.</span><span class="pln">serverModesWithParams </span><span class="pun">== </span><span class="str">""</span><span class="pun">);
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">info </span><span class="pun">= </span><span class="pln">parseNumeric</span><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_MYINFO</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"localhost"</span><span class="pun">, </span><span class="str">"IRCd-2.0"</span><span class="pun">, </span><span class="str">"BGHIRSWcdgikorswx"</span><span class="pun">, </span><span class="str">"ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz"</span><span class="pun">, </span><span class="str">"FIJLYabefghjkloqv"</span><span class="pun">, </span><span class="str">"q"</span><span class="pun">, </span><span class="str">"w"</span><span class="pun">, </span><span class="str">"x"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">info<wbr/></span><span class="pun">.</span><span class="pln">name </span><span class="pun">== </span><span class="str">"localhost"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">info<wbr/></span><span class="pun">.</span><span class="pln">version_ </span><span class="pun">== </span><span class="str">"IRCd-2.0"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">info<wbr/></span><span class="pun">.</span><span class="pln">userModes </span><span class="pun">== </span><span class="str">"BGHIRSWcdgikorswx"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">info<wbr/></span><span class="pun">.</span><span class="pln">userModesWithParams </span><span class="pun">== </span><span class="str">"q"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">info<wbr/></span><span class="pun">.</span><span class="pln">channelModes </span><span class="pun">== </span><span class="str">"ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">info<wbr/></span><span class="pun">.</span><span class="pln">channelModesWithParams </span><span class="pun">== </span><span class="str">"FIJLYabefghjkloqv"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">info<wbr/></span><span class="pun">.</span><span class="pln">serverModes </span><span class="pun">== </span><span class="str">"w"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">info<wbr/></span><span class="pun">.</span><span class="pln">serverModesWithParams </span><span class="pun">== </span><span class="str">"x"</span><span class="pun">);
+}
+</span></code></pre>
+</section>
+<h2 id="1">Function parseNumeric</h2><p>Parser for RPL_TRACESERVICE.
+</p><div class="prototype"><code class="lang-d"><div class="single-prototype">
+<span class="kwd">auto </span><span class="kwd">auto</span> <span class="pln">parseNumeric</span>(<a href="../../../virc/numerics/definitions/Numeric.html"><span class="typ">Numeric</span></a> numeric, T)
+<span class="pun">(</span>
+<br/>
+&nbsp;&nbsp;<span class="pln">T</span> <span class="pln">input</span>
+<br/>
+<span class="pun">)</span>
+<br/>
+<span class="kwd">if</span> <span class="pun">(</span><span class="kwd">is</span><span class="pun">(</span><span class="typ">ElementType</span><span class="pun">!</span><span class="pln">T </span><span class="pun">: </span><span class="typ">string</span><span class="pun">)</span><span class="pun">);</span></div></code></div><section><p>Format is <code class="lang-d"><span class="lit">207 </span><span class="pun">&lt;</span><span class="pln">client</span><span class="pun">&gt; </span><span class="typ">Service </span><span class="pun">&lt;</span><span class="kwd">class</span><span class="pun">&gt; &lt;</span><span class="pln">name</span><span class="pun">&gt; &lt;</span><span class="pln">type</span><span class="pun">&gt; &lt;</span><span class="pln">active_type</span><span class="pun">&gt;</span></code>
+</p>
+</section>
+
+<section><h3>Example</h3>
+
+<pre class="code"><code class="lang-d"><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">range </span><span class="pun">: </span><span class="pln">only</span><span class="pun">, </span><span class="pln">takeNone</span><span class="pun">;
+</span><span class="com">//Need real world examples... No idea what these will really look like
+</span><span class="pun">{
+	</span><span class="kwd">immutable </span><span class="pln">trace </span><span class="pun">= <a href="../../../virc/numerics/rfc2812/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_TRACESERVICE</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"Service"</span><span class="pun">, </span><span class="str">"classy"</span><span class="pun">, </span><span class="str">"fred"</span><span class="pun">, </span><span class="str">"something"</span><span class="pun">, </span><span class="str">"no_idea"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">trace<wbr/></span><span class="pun">.</span><span class="pln">class_ </span><span class="pun">== </span><span class="str">"classy"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">trace<wbr/></span><span class="pun">.</span><span class="pln">name </span><span class="pun">== </span><span class="str">"fred"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">trace<wbr/></span><span class="pun">.</span><span class="pln">type </span><span class="pun">== </span><span class="str">"something"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">trace<wbr/></span><span class="pun">.</span><span class="pln">activeType </span><span class="pun">== </span><span class="str">"no_idea"</span><span class="pun">);
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">badTrace </span><span class="pun">= <a href="../../../virc/numerics/rfc2812/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_TRACESERVICE</span><span class="pun">)(</span><span class="pln">takeNone</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">[]));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">badTrace<wbr/></span><span class="pun">.</span><span class="pln">isNull</span><span class="pun">);
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">badTrace </span><span class="pun">= <a href="../../../virc/numerics/rfc2812/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_TRACESERVICE</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">badTrace<wbr/></span><span class="pun">.</span><span class="pln">isNull</span><span class="pun">);
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">badTrace </span><span class="pun">= <a href="../../../virc/numerics/rfc2812/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_TRACESERVICE</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"Service"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">badTrace<wbr/></span><span class="pun">.</span><span class="pln">isNull</span><span class="pun">);
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">badTrace </span><span class="pun">= <a href="../../../virc/numerics/rfc2812/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_TRACESERVICE</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"Service"</span><span class="pun">, </span><span class="str">"classy"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">badTrace<wbr/></span><span class="pun">.</span><span class="pln">isNull</span><span class="pun">);
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">badTrace </span><span class="pun">= <a href="../../../virc/numerics/rfc2812/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_TRACESERVICE</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"Service"</span><span class="pun">, </span><span class="str">"classy"</span><span class="pun">, </span><span class="str">"fred"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">badTrace<wbr/></span><span class="pun">.</span><span class="pln">isNull</span><span class="pun">);
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">badTrace </span><span class="pun">= <a href="../../../virc/numerics/rfc2812/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_TRACESERVICE</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"Service"</span><span class="pun">, </span><span class="str">"classy"</span><span class="pun">, </span><span class="str">"fred"</span><span class="pun">, </span><span class="str">"something"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">badTrace<wbr/></span><span class="pun">.</span><span class="pln">isNull</span><span class="pun">);
+}
+</span></code></pre>
+</section>
+<h2 id="2">Function parseNumeric</h2><p>Parser for RPL_TRACECLASS.
+</p><div class="prototype"><code class="lang-d"><div class="single-prototype">
+<span class="kwd">auto </span><span class="kwd">auto</span> <span class="pln">parseNumeric</span>(<a href="../../../virc/numerics/definitions/Numeric.html"><span class="typ">Numeric</span></a> numeric, T)
+<span class="pun">(</span>
+<br/>
+&nbsp;&nbsp;<span class="pln">T</span> <span class="pln">input</span>
+<br/>
+<span class="pun">)</span><span class="pun">;</span></div></code></div><section><p>Format is <code class="lang-d"><span class="lit">209 </span><span class="pun">&lt;</span><span class="pln">client</span><span class="pun">&gt; </span><span class="typ">Class </span><span class="pun">&lt;</span><span class="kwd">class</span><span class="pun">&gt; &lt;</span><span class="pln">count</span><span class="pun">&gt;</span></code>
+</p>
+</section>
+
+<section><h3>Example</h3>
+
+<pre class="code"><code class="lang-d"><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">range </span><span class="pun">: </span><span class="pln">only</span><span class="pun">, </span><span class="pln">takeNone</span><span class="pun">;
+</span><span class="com">//Need real world examples... No idea what these will really look like
+</span><span class="pun">{
+	</span><span class="kwd">immutable </span><span class="pln">trace </span><span class="pun">= <a href="../../../virc/numerics/rfc2812/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_TRACECLASS</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"CLASS"</span><span class="pun">, </span><span class="str">"classy"</span><span class="pun">, </span><span class="str">"238525813"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">trace<wbr/></span><span class="pun">.</span><span class="pln">class_ </span><span class="pun">== </span><span class="str">"classy"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">trace<wbr/></span><span class="pun">.</span><span class="pln">count </span><span class="pun">== </span><span class="str">"238525813"</span><span class="pun">);
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">badTrace </span><span class="pun">= <a href="../../../virc/numerics/rfc2812/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_TRACECLASS</span><span class="pun">)(</span><span class="pln">takeNone</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">[]));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">badTrace<wbr/></span><span class="pun">.</span><span class="pln">isNull</span><span class="pun">);
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">badTrace </span><span class="pun">= <a href="../../../virc/numerics/rfc2812/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_TRACECLASS</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">badTrace<wbr/></span><span class="pun">.</span><span class="pln">isNull</span><span class="pun">);
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">badTrace </span><span class="pun">= <a href="../../../virc/numerics/rfc2812/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_TRACECLASS</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"Class"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">badTrace<wbr/></span><span class="pun">.</span><span class="pln">isNull</span><span class="pun">);
+}
+{
+	</span><span class="kwd">immutable </span><span class="pln">badTrace </span><span class="pun">= <a href="../../../virc/numerics/rfc2812/parseNumeric.html"></span><span class="pln">parseNumeric</span></a><span class="pun">!(</span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">RPL_TRACECLASS</span><span class="pun">)(</span><span class="pln">only</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">, </span><span class="str">"Class"</span><span class="pun">, </span><span class="str">"classy"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">badTrace<wbr/></span><span class="pun">.</span><span class="pln">isNull</span><span class="pun">);
+}
+</span></code></pre>
+</section>
+
+<footer><table class="license-info"><tr><th>Authors</th><td></td></tr><tr><th>Copyright</th><td></td></tr><tr><th>License</th><td></td></tr></table><p class="faint">Generated using the DDOX documentation generator</p></footer></div></body></html>

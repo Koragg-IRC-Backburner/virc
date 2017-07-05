@@ -1,0 +1,25 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8"/>
+<title>Module virc.modes</title>
+<link rel="stylesheet" type="text/css" href="../styles/ddox.css"/>
+<link rel="stylesheet" href="../prettify/prettify.css" type="text/css"/>
+<script type="text/javascript" src="../scripts/jquery.js">/**/</script><script type="text/javascript" src="../scripts/ddox.js">/**/</script></head><body onload="setupDdox();"><nav id="main-nav"><noscript><p style="color: red">The search functionality needs JavaScript enabled</p></noscript><div id="symbolSearchPane" style="display: none"><form action="#" method="GET">
+<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/></form><ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../";
+$('#symbolSearchPane').show();</script></div><ul class="tree-view"><li class="tree-view "><div class="package ">virc</div><ul class="tree-view"><li class="tree-view collapsed"><div class="package "><a href="../virc/numerics.html">numerics</a></div><ul class="tree-view"><li><div class="module "><a href="../virc/numerics/definitions.html">definitions</a></div></li><li><div class="module "><a href="../virc/numerics/isupport.html">isupport</a></div></li><li><div class="module "><a href="../virc/numerics/misc.html">misc</a></div></li><li><div class="module "><a href="../virc/numerics/monitor.html">monitor</a></div></li><li><div class="module "><a href="../virc/numerics/rfc1459.html">rfc1459</a></div></li><li><div class="module "><a href="../virc/numerics/rfc2812.html">rfc2812</a></div></li><li><div class="module "><a href="../virc/numerics/watch.html">watch</a></div></li></ul></li><li><div class="module "><a href="../virc/batch.html">batch</a></div></li><li><div class="module "><a href="../virc/casemapping.html">casemapping</a></div></li><li><div class="module "><a href="../virc/client.html">client</a></div></li><li><div class="module "><a href="../virc/common.html">common</a></div></li><li><div class="module "><a href="../virc/connection.html">connection</a></div></li><li><div class="module "><a href="../virc/encoding.html">encoding</a></div></li><li><div class="module "><a href="../virc/internaladdresslist.html">internaladdresslist</a></div></li><li><div class="module "><a href="../virc/ircsplitter.html">ircsplitter</a></div></li><li><div class="module selected"><a href="../virc/modes.html">modes</a></div></li><li><div class="module "><a href="../virc/style.html">style</a></div></li><li><div class="module "><a href="../virc/tags.html">tags</a></div></li><li><div class="module "><a href="../virc/twitch.html">twitch</a></div></li><li><div class="module "><a href="../virc/usermask.html">usermask</a></div></li></ul></li></ul></nav><div id="main-contents"><h1>Module virc.modes</h1><p>Module for parsing IRC mode strings.
+</p>
+<section></section><section><h2>Functions</h2><table>
+<col class="caption"/>
+<tr><th>Name</th><th>Description</th></tr><tr><td><code><a id="parseModeString" class="["public"]" href="../virc/modes/parseModeString.html">parseModeString</a><span class="decoration">(input, channelModeTypes)</span></code></td><td>Parse a mode string into individual mode changes.
+</td></tr></table></section><section><h2>Structs</h2><table>
+<col class="caption"/>
+<tr><th>Name</th><th>Description</th></tr><tr><td><code><a id="Mode" class="["public"]" href="../virc/modes/Mode.html">Mode</a></code></td><td>IRC modes. These are settings for channels and users on an IRC network,
+ responsible for things ranging from user bans, flood control and colour
+ stripping to registration status.
+ Consists of a single character and (often) an argument string to go along
+ with it.
+</td></tr><tr><td><code><a id="ModeChange" class="["public"]" href="../virc/modes/ModeChange.html">ModeChange</a></code></td><td>Full metadata associated with a mode change.
+</td></tr></table></section><section><h2>Enums</h2><table>
+<col class="caption"/>
+<tr><th>Name</th><th>Description</th></tr><tr><td><code><a id="Change" class="["public"]" href="../virc/modes/Change.html">Change</a></code></td><td>Whether a mode was set or unset.
+</td></tr><tr><td><code><a id="ModeType" class="["public"]" href="../virc/modes/ModeType.html">ModeType</a></code></td><td>Mode classification.
+</td></tr></table></section><footer><table class="license-info"><tr><th>Authors</th><td></td></tr><tr><th>Copyright</th><td></td></tr><tr><th>License</th><td></td></tr></table><p class="faint">Generated using the DDOX documentation generator</p></footer></div></body></html>

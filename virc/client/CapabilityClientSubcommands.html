@@ -1,0 +1,753 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8"/>
+<title>Enum CapabilityClientSubcommands</title>
+<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script></head><body onload="setupDdox();"><nav id="main-nav"><noscript><p style="color: red">The search functionality needs JavaScript enabled</p></noscript><div id="symbolSearchPane" style="display: none"><form action="#" method="GET">
+<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/></form><ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script></div><ul class="tree-view"><li class="tree-view "><div class="package ">virc</div><ul class="tree-view"><li class="tree-view collapsed"><div class="package "><a href="../../virc/numerics.html">numerics</a></div><ul class="tree-view"><li><div class="module "><a href="../../virc/numerics/definitions.html">definitions</a></div></li><li><div class="module "><a href="../../virc/numerics/isupport.html">isupport</a></div></li><li><div class="module "><a href="../../virc/numerics/misc.html">misc</a></div></li><li><div class="module "><a href="../../virc/numerics/monitor.html">monitor</a></div></li><li><div class="module "><a href="../../virc/numerics/rfc1459.html">rfc1459</a></div></li><li><div class="module "><a href="../../virc/numerics/rfc2812.html">rfc2812</a></div></li><li><div class="module "><a href="../../virc/numerics/watch.html">watch</a></div></li></ul></li><li><div class="module "><a href="../../virc/batch.html">batch</a></div></li><li><div class="module "><a href="../../virc/casemapping.html">casemapping</a></div></li><li><div class="module selected"><a href="../../virc/client.html">client</a></div></li><li><div class="module "><a href="../../virc/common.html">common</a></div></li><li><div class="module "><a href="../../virc/connection.html">connection</a></div></li><li><div class="module "><a href="../../virc/encoding.html">encoding</a></div></li><li><div class="module "><a href="../../virc/internaladdresslist.html">internaladdresslist</a></div></li><li><div class="module "><a href="../../virc/ircsplitter.html">ircsplitter</a></div></li><li><div class="module "><a href="../../virc/modes.html">modes</a></div></li><li><div class="module "><a href="../../virc/style.html">style</a></div></li><li><div class="module "><a href="../../virc/tags.html">tags</a></div></li><li><div class="module "><a href="../../virc/twitch.html">twitch</a></div></li><li><div class="module "><a href="../../virc/usermask.html">usermask</a></div></li></ul></li></ul></nav><div id="main-contents"><h1>Enum CapabilityClientSubcommands</h1><p></p><div class="prototype"><code class="lang-d"><div class="single-prototype"><span class="kwd">enum</span> <span class="typ">CapabilityClientSubcommands</span>
+ <span class="pun">:</span> <span class="typ">string</span> <span class="pun">{ ... }</span></div></code></div>
+<section><h2>Enum members</h2><h4>Enum members</h4><table>
+<col class="caption"/>
+<tr><th>Name</th><th>Description</th></tr></table></section>
+<section><h2>Example</h2>
+
+<pre class="code"><code class="lang-d"><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">algorithm </span><span class="pun">: </span><span class="pln">equal</span><span class="pun">, </span><span class="pln">sort</span><span class="pun">, </span><span class="pln">until</span><span class="pun">;
+</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">array </span><span class="pun">: </span><span class="pln">appender</span><span class="pun">, </span><span class="pln">array</span><span class="pun">;
+</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">range</span><span class="pun">: </span><span class="pln">drop</span><span class="pun">, </span><span class="pln">empty</span><span class="pun">, </span><span class="pln">tail</span><span class="pun">;
+</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">stdio </span><span class="pun">: </span><span class="pln">writeln</span><span class="pun">;
+</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="typ">string </span><span class="pun">: </span><span class="pln">lineSplitter</span><span class="pun">, </span><span class="pln">representation</span><span class="pun">;
+</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons </span><span class="pun">: </span><span class="typ">Tuple</span><span class="pun">, </span><span class="pln">tuple</span><span class="pun">;
+
+</span><span class="kwd">enum </span><span class="pln">testUser </span><span class="pun">= <a href="../../virc/client/NickInfo.html"></span><span class="typ">NickInfo</span></a><span class="pun">(</span><span class="str">"nick"</span><span class="pun">, </span><span class="str">"ident"</span><span class="pun">, </span><span class="str">"real name!"</span><span class="pun">);
+</span><span class="typ">void </span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">T</span><span class="pun">)(</span><span class="kwd">ref </span><span class="pln">T client</span><span class="pun">) {
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 001 someone :Welcome to the TestNet IRC Network someone!test@::1"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 002 someone :Your host is localhost, running version IRCd-2.0"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 003 someone :This server was created 20:21:33 Oct  21 2016"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 004 someone localhost IRCd-2.0 BGHIRSWcdgikorswx ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz FIJLYabefghjkloqv"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 005 someone AWAYLEN=200 CALLERID=g CASEMAPPING=rfc1459 CHANMODES=IYbeg,k,FJLfjl,ABCDGKMNOPQRSTcimnprstuz CHANNELLEN=31 CHANTYPES=# CHARSET=ascii ELIST=MU ESILENCE EXCEPTS=e EXTBAN=,ABCNOQRSTUcjmprsz FNC INVEX=I :are supported by this server"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 005 someone KICKLEN=255 MAP MAXBANS=60 MAXCHANNELS=25 MAXPARA=32 MAXTARGETS=20 MODES=10 NAMESX NETWORK=TestNet NICKLEN=31 OPERLOG OVERRIDE PREFIX=(qaohv)~&amp;@%+ :are supported by this server"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 005 someone REMOVE SECURELIST SILENCE=32 SSL=[::]:6697 STARTTLS STATUSMSG=~&amp;@%+ TOPICLEN=307 UHNAMES USERIP VBANLIST WALLCHOPS WALLVOICES WATCH=1000 :are supported by this server"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">isRegistered</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">server<wbr/></span><span class="pun">.</span><span class="pln">iSupport<wbr/></span><span class="pun">.</span><span class="pln">userhostsInNames </span><span class="pun">== </span><span class="kwd">true</span><span class="pun">);
+}
+</span><span class="typ">void </span><span class="pln">initializeCaps</span><span class="pun">(</span><span class="pln">T</span><span class="pun">)(</span><span class="kwd">ref </span><span class="pln">T client</span><span class="pun">) {
+	</span><span class="pln">initializeWithCaps</span><span class="pun">(</span><span class="pln">client</span><span class="pun">, [<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"multi-prefix"</span><span class="pun">), <a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"server-time"</span><span class="pun">), <a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"sasl"</span><span class="pun">, </span><span class="kwd">false</span><span class="pun">, </span><span class="kwd">false</span><span class="pun">, </span><span class="kwd">false</span><span class="pun">, </span><span class="str">"EXTERNAL"</span><span class="pun">)]);
+}
+</span><span class="typ">void </span><span class="pln">initializeWithCaps</span><span class="pun">(</span><span class="pln">T</span><span class="pun">)(</span><span class="kwd">ref </span><span class="pln">T client</span><span class="pun">, <a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">[] </span><span class="pln">caps</span><span class="pun">) {
+	</span><span class="kwd">foreach </span><span class="pun">(</span><span class="pln">i</span><span class="pun">, </span><span class="pln">cap</span><span class="pun">; </span><span class="pln">caps</span><span class="pun">) {
+		</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost CAP * LS " </span><span class="pun">~ ((</span><span class="pln">i</span><span class="pun">+</span><span class="lit">1 </span><span class="pun">== </span><span class="pln">caps<wbr/></span><span class="pun">.</span><span class="pln">length</span><span class="pun">) ? </span><span class="str">"" </span><span class="pun">: </span><span class="str">"* "</span><span class="pun">)~ </span><span class="str">":" </span><span class="pun">~ </span><span class="pln">cap<wbr/></span><span class="pun">.</span><span class="pln">toString</span><span class="pun">);
+		</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost CAP * ACK :" </span><span class="pun">~ </span><span class="pln">cap<wbr/></span><span class="pun">.</span><span class="pln">name</span><span class="pun">);
+	}
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+}
+{ </span><span class="com">//some really basic stuff
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!</span><span class="typ">string</span><span class="pun">;
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+	</span><span class="typ">bool </span><span class="pln">lineReceived</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onRaw </span><span class="pun">= (</span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">lineReceived </span><span class="pun">= </span><span class="kwd">true</span><span class="pun">;
+	};
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">""</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lineReceived </span><span class="pun">== </span><span class="kwd">false</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">"\r\n"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lineReceived </span><span class="pun">== </span><span class="kwd">false</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">"\r\n"<wbr/></span><span class="pun">.</span><span class="pln">representation</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lineReceived </span><span class="pun">== </span><span class="kwd">false</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">"hello"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lineReceived </span><span class="pun">== </span><span class="kwd">true</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">isRegistered</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 001 someone :words"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">isRegistered</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 001 someone :words"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">isRegistered</span><span class="pun">);
+}
+{ </span><span class="com">//password test
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!</span><span class="typ">string</span><span class="pun">;
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">, </span><span class="str">"Example"</span><span class="pun">);
+
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">buffer<wbr/></span><span class="pun">.</span><span class="pln">data<wbr/></span><span class="pun">.</span><span class="pln">lineSplitter<wbr/></span><span class="pun">.</span><span class="pln">until</span><span class="pun">!(</span><span class="pln">x </span><span class="pun">=&gt; </span><span class="pln">x<wbr/></span><span class="pun">.</span><span class="pln">startsWith</span><span class="pun">(</span><span class="str">"USER"</span><span class="pun">))<wbr/>.</span><span class="pln">canFind</span><span class="pun">(</span><span class="str">"PASS :Example"</span><span class="pun">));
+}
+</span><span class="com">//Request capabilities (IRC v3.2)
+</span><span class="pun">{
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost CAP * LS :multi-prefix sasl=EXTERNAL"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost CAP * ACK :multi-prefix"</span><span class="pun">);
+
+	</span><span class="kwd">auto </span><span class="pln">lineByLine </span><span class="pun">= </span><span class="pln">buffer<wbr/></span><span class="pun">.</span><span class="pln">data<wbr/></span><span class="pun">.</span><span class="pln">lineSplitter</span><span class="pun">;
+
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">front </span><span class="pun">== </span><span class="str">"CAP LS 302"</span><span class="pun">);
+	</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">popFront</span><span class="pun">();
+	</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">popFront</span><span class="pun">();
+	</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">popFront</span><span class="pun">();
+	</span><span class="com">//sasl not yet supported
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">front </span><span class="pun">== </span><span class="str">"CAP REQ :multi-prefix"</span><span class="pun">);
+	</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">popFront</span><span class="pun">();
+	</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">empty</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">front </span><span class="pun">== </span><span class="str">"CAP END"</span><span class="pun">);
+}
+</span><span class="com">//Request capabilities NAK (IRC v3.2)
+</span><span class="pun">{
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+	<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">[] </span><span class="pln">capabilities</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onReceiveCapNak </span><span class="pun">= (</span><span class="kwd">const <a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pln"> cap</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">capabilities </span><span class="pun">~= </span><span class="pln">cap</span><span class="pun">;
+	};
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost CAP * LS :multi-prefix sasl=EXTERNAL"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost CAP * NAK :multi-prefix"</span><span class="pun">);
+
+
+	</span><span class="kwd">auto </span><span class="pln">lineByLine </span><span class="pun">= </span><span class="pln">buffer<wbr/></span><span class="pun">.</span><span class="pln">data<wbr/></span><span class="pun">.</span><span class="pln">lineSplitter</span><span class="pun">;
+
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">front </span><span class="pun">== </span><span class="str">"CAP LS 302"</span><span class="pun">);
+	</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">popFront</span><span class="pun">();
+	</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">popFront</span><span class="pun">();
+	</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">popFront</span><span class="pun">();
+	</span><span class="com">//sasl not yet supported
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">front </span><span class="pun">== </span><span class="str">"CAP REQ :multi-prefix"</span><span class="pun">);
+	</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">popFront</span><span class="pun">();
+	</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">empty</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">front </span><span class="pun">== </span><span class="str">"CAP END"</span><span class="pun">);
+
+	</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">capsEnabled<wbr/></span><span class="pun">.</span><span class="pln">canFind</span><span class="pun">(</span><span class="str">"multi-prefix"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">capabilities<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">capabilities</span><span class="pun">[</span><span class="lit">0</span><span class="pun">] == <a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"multi-prefix"</span><span class="pun">));
+}
+</span><span class="com">//Request capabilities, multiline (IRC v3.2)
+</span><span class="pun">{
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">lineByLine </span><span class="pun">= </span><span class="pln">buffer<wbr/></span><span class="pun">.</span><span class="pln">data<wbr/></span><span class="pun">.</span><span class="pln">lineSplitter</span><span class="pun">();
+
+	<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">[] </span><span class="pln">capabilities</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onReceiveCapLS </span><span class="pun">= (</span><span class="kwd">const <a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pln"> cap</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">capabilities </span><span class="pun">~= </span><span class="pln">cap</span><span class="pun">;
+	};
+
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">front </span><span class="pun">== </span><span class="str">"CAP LS 302"</span><span class="pun">);
+
+	</span><span class="pln">put</span><span class="pun">(</span><span class="pln">client</span><span class="pun">, </span><span class="str">":localhost CAP * LS * :multi-prefix extended-join account-notify batch invite-notify tls"</span><span class="pun">);
+	</span><span class="pln">put</span><span class="pun">(</span><span class="pln">client</span><span class="pun">, </span><span class="str">":localhost CAP * LS * :cap-notify server-time example.org/dummy-cap=dummyvalue example.org/second-dummy-cap"</span><span class="pun">);
+	</span><span class="pln">put</span><span class="pun">(</span><span class="pln">client</span><span class="pun">, </span><span class="str">":localhost CAP * LS :userhost-in-names sasl=EXTERNAL,DH-AES,DH-BLOWFISH,ECDSA-NIST256P-CHALLENGE,PLAIN"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">capabilities<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">12</span><span class="pun">);
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+}
+</span><span class="com">//CAP LIST multiline (IRC v3.2)
+</span><span class="pun">{
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+	<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">[] </span><span class="pln">capabilities</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onReceiveCapList </span><span class="pun">= (</span><span class="kwd">const <a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pln"> cap</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">capabilities </span><span class="pun">~= </span><span class="pln">cap</span><span class="pun">;
+	};
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">capList</span><span class="pun">();
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost CAP modernclient LIST * :example.org/example-cap example.org/second-example-cap account-notify"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost CAP modernclient LIST :invite-notify batch example.org/third-example-cap"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(
+		</span><span class="pln">capabilities<wbr/></span><span class="pun">.</span><span class="pln">array<wbr/></span><span class="pun">.</span><span class="pln">sort</span><span class="pun">()<wbr/>.</span><span class="pln">equal</span><span class="pun">(
+			[
+				<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"account-notify"</span><span class="pun">),
+				<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"batch"</span><span class="pun">),
+				<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"example.org/example-cap"</span><span class="pun">),
+				<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"example.org/second-example-cap"</span><span class="pun">),
+				<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"example.org/third-example-cap"</span><span class="pun">),
+				<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"invite-notify"</span><span class="pun">)
+			]
+	));
+}
+</span><span class="com">//CAP NEW, DEL (IRCv3.2 - cap-notify)
+</span><span class="pun">{
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+	<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">[] </span><span class="pln">capabilitiesNew</span><span class="pun">;
+	<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">[] </span><span class="pln">capabilitiesDeleted</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onReceiveCapNew </span><span class="pun">= (</span><span class="kwd">const <a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pln"> cap</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">capabilitiesNew </span><span class="pun">~= </span><span class="pln">cap</span><span class="pun">;
+	};
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onReceiveCapDel </span><span class="pun">= (</span><span class="kwd">const <a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pln"> cap</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">capabilitiesDeleted </span><span class="pun">~= </span><span class="pln">cap</span><span class="pun">;
+	};
+	</span><span class="pln">initializeWithCaps</span><span class="pun">(</span><span class="pln">client</span><span class="pun">, [<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"cap-notify"</span><span class="pun">), <a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"userhost-in-names"</span><span class="pun">), <a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"multi-prefix"</span><span class="pun">), <a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"away-notify"</span><span class="pun">)]);
+
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">capsEnabled<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">4</span><span class="pun">);
+
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":irc.example.com CAP modernclient NEW :batch"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">capabilitiesNew </span><span class="pun">== [<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"batch"</span><span class="pun">)]);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":irc.example.com CAP modernclient ACK :batch"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(
+		</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">capsEnabled<wbr/></span><span class="pun">.</span><span class="pln">sort</span><span class="pun">()<wbr/>.</span><span class="pln">equal</span><span class="pun">(
+			[
+				<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"away-notify"</span><span class="pun">),
+				<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"batch"</span><span class="pun">),
+				<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"cap-notify"</span><span class="pun">),
+				<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"multi-prefix"</span><span class="pun">),
+				<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"userhost-in-names"</span><span class="pun">)
+			]
+	));
+
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":irc.example.com CAP modernclient DEL :userhost-in-names multi-prefix away-notify"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(
+		</span><span class="pln">capabilitiesDeleted<wbr/></span><span class="pun">.</span><span class="pln">array<wbr/></span><span class="pun">.</span><span class="pln">sort</span><span class="pun">()<wbr/>.</span><span class="pln">equal</span><span class="pun">(
+			[
+				<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"away-notify"</span><span class="pun">),
+				<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"multi-prefix"</span><span class="pun">),
+				<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"userhost-in-names"</span><span class="pun">)
+			]
+	));
+	</span><span class="kwd">assert</span><span class="pun">(
+		</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">capsEnabled<wbr/></span><span class="pun">.</span><span class="pln">sort</span><span class="pun">()<wbr/>.</span><span class="pln">equal</span><span class="pun">(
+			[
+				<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"batch"</span><span class="pun">),
+				<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"cap-notify"</span><span class="pun">)
+			]
+	));
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":irc.example.com CAP modernclient NEW :account-notify"</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">lineByLine </span><span class="pun">= </span><span class="pln">buffer<wbr/></span><span class="pun">.</span><span class="pln">data<wbr/></span><span class="pun">.</span><span class="pln">lineSplitter</span><span class="pun">();
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">array</span><span class="pun">[$-</span><span class="lit">1</span><span class="pun">] == </span><span class="str">"CAP REQ :account-notify"</span><span class="pun">);
+}
+{ </span><span class="com">//JOIN
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+	</span><span class="typ">User</span><span class="pun">[] </span><span class="pln">users</span><span class="pun">;
+	</span><span class="kwd">const</span><span class="pun">(</span><span class="typ">Channel</span><span class="pun">)[] </span><span class="pln">channels</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onJoin </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">User </span><span class="pln">user</span><span class="pun">, </span><span class="kwd">const </span><span class="typ">Channel </span><span class="pln">chan</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">users </span><span class="pun">~= </span><span class="pln">user</span><span class="pun">;
+		</span><span class="pln">channels </span><span class="pun">~= </span><span class="pln">chan</span><span class="pun">;
+	};
+	</span><span class="typ">TopicWhoTime </span><span class="pln">topicWhoTime</span><span class="pun">;
+	</span><span class="typ">bool </span><span class="pln">topicWhoTimeReceived</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onTopicWhoTimeReply </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">TopicWhoTime </span><span class="pln">twt</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">topicWhoTimeReceived</span><span class="pun">);
+		</span><span class="pln">topicWhoTimeReceived </span><span class="pun">= </span><span class="kwd">true</span><span class="pun">;
+		</span><span class="pln">topicWhoTime </span><span class="pun">= </span><span class="pln">twt</span><span class="pun">;
+	};
+	</span><span class="typ">TopicReply </span><span class="pln">topicReply</span><span class="pun">;
+	</span><span class="typ">bool </span><span class="pln">topicReplyReceived</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onTopicReply </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">TopicReply </span><span class="pln">tr</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">topicReplyReceived</span><span class="pun">);
+		</span><span class="pln">topicReplyReceived </span><span class="pun">= </span><span class="kwd">true</span><span class="pun">;
+		</span><span class="pln">topicReply </span><span class="pun">= </span><span class="pln">tr</span><span class="pun">;
+	};
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">join</span><span class="pun">(</span><span class="str">"#test"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":someone!ident@hostmask JOIN :#test"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 332 someone #test :a topic"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 333 someone #test someoneElse :1496821983"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 353 someone = #test :someone!ident@hostmask another!user@somewhere"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 366 someone #test :End of /NAMES list."</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 324 someone #test :+nt"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 329 someone #test :1496821983"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]<wbr/>.</span><span class="pln">nickname </span><span class="pun">== </span><span class="str">"someone"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">channels<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">channels</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]<wbr/>.</span><span class="pln">name </span><span class="pun">== </span><span class="str">"#test"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">topicWhoTimeReceived</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">topicReplyReceived</span><span class="pun">);
+
+	</span><span class="kwd">with</span><span class="pun">(</span><span class="pln">topicReply</span><span class="pun">) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">channel </span><span class="pun">== </span><span class="str">"#test"</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">topic </span><span class="pun">== </span><span class="str">"a topic"</span><span class="pun">);
+	}
+
+	</span><span class="kwd">with </span><span class="pun">(</span><span class="pln">topicWhoTime</span><span class="pun">) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">channel </span><span class="pun">== </span><span class="str">"#test"</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">setter </span><span class="pun">== </span><span class="typ">User</span><span class="pun">(</span><span class="str">"someoneElse"</span><span class="pun">));
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">timestamp </span><span class="pun">== </span><span class="typ">SysTime</span><span class="pun">(</span><span class="typ">DateTime</span><span class="pun">(</span><span class="lit">2017</span><span class="pun">, </span><span class="lit">06</span><span class="pun">, </span><span class="lit">07</span><span class="pun">, </span><span class="lit">07</span><span class="pun">, </span><span class="lit">53</span><span class="pun">, </span><span class="lit">03</span><span class="pun">), </span><span class="pln">UTC</span><span class="pun">()));
+	}
+	</span><span class="com">//Add 366, 324, 329 tests
+	</span><span class="kwd">auto </span><span class="pln">lineByLine </span><span class="pun">= </span><span class="pln">buffer<wbr/></span><span class="pun">.</span><span class="pln">data<wbr/></span><span class="pun">.</span><span class="pln">lineSplitter</span><span class="pun">();
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">array</span><span class="pun">[$-</span><span class="lit">1</span><span class="pun">] == </span><span class="str">"JOIN #test"</span><span class="pun">);
+}
+{
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+	</span><span class="kwd">const</span><span class="pun">(</span><span class="typ">Channel</span><span class="pun">)[] </span><span class="pln">channels</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onList </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">Channel </span><span class="pln">chan</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">channels </span><span class="pun">~= </span><span class="pln">chan</span><span class="pun">;
+	};
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">list</span><span class="pun">();
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">"321 someone Channel :Users Name"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">"322 someone #test 4 :[+fnt 200:2] some words"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">"322 someone #test2 6 :[+fnst 100:2] some more words"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">"322 someone #test3 1 :no modes?"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">"323 someone :End of channel list."</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">channels<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">3</span><span class="pun">);
+	</span><span class="kwd">with</span><span class="pun">(</span><span class="pln">channels</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">name </span><span class="pun">== </span><span class="str">"#test"</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">userCount </span><span class="pun">== </span><span class="lit">4</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">topic </span><span class="pun">== </span><span class="typ">Topic</span><span class="pun">(</span><span class="str">"some words"</span><span class="pun">));
+	}
+	</span><span class="kwd">with</span><span class="pun">(</span><span class="pln">channels</span><span class="pun">[</span><span class="lit">1</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">name </span><span class="pun">== </span><span class="str">"#test2"</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">userCount </span><span class="pun">== </span><span class="lit">6</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">topic </span><span class="pun">== </span><span class="typ">Topic</span><span class="pun">(</span><span class="str">"some more words"</span><span class="pun">));
+	}
+	</span><span class="kwd">with</span><span class="pun">(</span><span class="pln">channels</span><span class="pun">[</span><span class="lit">2</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">name </span><span class="pun">== </span><span class="str">"#test3"</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">userCount </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">topic </span><span class="pun">== </span><span class="typ">Topic</span><span class="pun">(</span><span class="str">"no modes?"</span><span class="pun">));
+	}
+}
+{
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+	</span><span class="typ">User</span><span class="pun">[] </span><span class="pln">users</span><span class="pun">;
+	</span><span class="kwd">const</span><span class="pun">(</span><span class="typ">Channel</span><span class="pun">)[] </span><span class="pln">channels</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onJoin </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">User </span><span class="pln">user</span><span class="pun">, </span><span class="kwd">const </span><span class="typ">Channel </span><span class="pln">chan</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pln"> metadata</span><span class="pun">) {
+		</span><span class="pln">users </span><span class="pun">~= </span><span class="pln">user</span><span class="pun">;
+		</span><span class="pln">channels </span><span class="pun">~= </span><span class="pln">chan</span><span class="pun">;
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">metadata<wbr/></span><span class="pun">.</span><span class="pln">time </span><span class="pun">== </span><span class="typ">SysTime</span><span class="pun">(</span><span class="typ">DateTime</span><span class="pun">(</span><span class="lit">2012</span><span class="pun">,</span><span class="lit">06</span><span class="pun">,</span><span class="lit">30</span><span class="pun">,</span><span class="lit">23</span><span class="pun">,</span><span class="lit">59</span><span class="pun">,</span><span class="lit">59</span><span class="pun">), </span><span class="lit">419<wbr/></span><span class="pun">.</span><span class="pln">msecs</span><span class="pun">, </span><span class="pln">UTC</span><span class="pun">()));
+	};
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">"@time=2012-06-30T23:59:59.419Z :John!~john@1.2.3.4 JOIN #chan"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]<wbr/>.</span><span class="pln">nickname </span><span class="pun">== </span><span class="str">"John"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">channels<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">channels</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]<wbr/>.</span><span class="pln">name </span><span class="pun">== </span><span class="str">"#chan"</span><span class="pun">);
+}
+{
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+	</span><span class="typ">User</span><span class="pun">[] </span><span class="pln">users</span><span class="pun">;
+	</span><span class="kwd">const</span><span class="pun">(<a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">)[] </span><span class="pln">metadata</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onUserOnline </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">User </span><span class="pln">user</span><span class="pun">, </span><span class="kwd">const </span><span class="typ">SysTime</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">users </span><span class="pun">~= </span><span class="pln">user</span><span class="pun">;
+	};
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onUserOffline </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">User </span><span class="pln">user</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">users </span><span class="pun">~= </span><span class="pln">user</span><span class="pun">;
+	};
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onMonitorList </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">User </span><span class="pln">user</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">users </span><span class="pun">~= </span><span class="pln">user</span><span class="pun">;
+	};
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onError </span><span class="pun">= (</span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pln"> received</span><span class="pun">) {
+		</span><span class="pln">metadata </span><span class="pun">~= </span><span class="pln">received</span><span class="pun">;
+	};
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 730 someone :John!test@example.net,Bob!test2@example.com"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">2</span><span class="pun">);
+	</span><span class="kwd">with </span><span class="pun">(</span><span class="pln">users</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">nickname </span><span class="pun">== </span><span class="str">"John"</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">ident </span><span class="pun">== </span><span class="str">"test"</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">host </span><span class="pun">== </span><span class="str">"example.net"</span><span class="pun">);
+	}
+	</span><span class="kwd">with </span><span class="pun">(</span><span class="pln">users</span><span class="pun">[</span><span class="lit">1</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">nickname </span><span class="pun">== </span><span class="str">"Bob"</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">ident </span><span class="pun">== </span><span class="str">"test2"</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">host </span><span class="pun">== </span><span class="str">"example.com"</span><span class="pun">);
+	}
+
+	</span><span class="pln">users<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">= </span><span class="lit">0</span><span class="pun">;
+
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 731 someone :John"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]<wbr/>.</span><span class="pln">nickname </span><span class="pun">== </span><span class="str">"John"</span><span class="pun">);
+
+	</span><span class="pln">users<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">= </span><span class="lit">0</span><span class="pun">;
+
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 732 someone :John,Bob"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 733 someone :End of MONITOR list"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">2</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]<wbr/>.</span><span class="pln">nickname </span><span class="pun">== </span><span class="str">"John"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users</span><span class="pun">[</span><span class="lit">1</span><span class="pun">]<wbr/>.</span><span class="pln">nickname </span><span class="pun">== </span><span class="str">"Bob"</span><span class="pun">);
+
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 734 someone 5 Earl :Monitor list is full."</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">metadata<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">metadata</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]<wbr/>.</span><span class="pln">messageNumeric </span><span class="pun">== </span><span class="typ">Numeric<wbr/></span><span class="pun">.</span><span class="pln">ERR_MONLISTFULL</span><span class="pun">);
+}
+{ </span><span class="com">//extended-join http://ircv3.net/specs/extensions/extended-join-3.1.html
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+
+
+	</span><span class="typ">User</span><span class="pun">[] </span><span class="pln">users</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onJoin </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">User </span><span class="pln">user</span><span class="pun">, </span><span class="kwd">const </span><span class="typ">Channel</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">users </span><span class="pun">~= </span><span class="pln">user</span><span class="pun">;
+	};
+
+	</span><span class="pln">initializeWithCaps</span><span class="pun">(</span><span class="pln">client</span><span class="pun">, [<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"extended-join"</span><span class="pun">)]);
+
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":nick!user@host JOIN #channelname accountname :Real Name"</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">user </span><span class="pun">= </span><span class="typ">User</span><span class="pun">(</span><span class="str">"nick!user@host"</span><span class="pun">);
+	</span><span class="pln">user<wbr/></span><span class="pun">.</span><span class="pln">account </span><span class="pun">= </span><span class="str">"accountname"</span><span class="pun">;
+	</span><span class="pln">user<wbr/></span><span class="pun">.</span><span class="pln">realName </span><span class="pun">= </span><span class="str">"Real Name"</span><span class="pun">;
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users<wbr/></span><span class="pun">.</span><span class="pln">front </span><span class="pun">== </span><span class="pln">user</span><span class="pun">);
+
+	</span><span class="pln">user<wbr/></span><span class="pun">.</span><span class="pln">account<wbr/></span><span class="pun">.</span><span class="pln">nullify</span><span class="pun">();
+	</span><span class="pln">users </span><span class="pun">= [];
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":nick!user@host JOIN #channelname * :Real Name"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users<wbr/></span><span class="pun">.</span><span class="pln">front </span><span class="pun">== </span><span class="pln">user</span><span class="pun">);
+}
+{ </span><span class="com">//example taken from RFC2812, section 3.2.2
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+
+
+	</span><span class="typ">User</span><span class="pun">[] </span><span class="pln">users</span><span class="pun">;
+	</span><span class="kwd">const</span><span class="pun">(</span><span class="typ">Channel</span><span class="pun">)[] </span><span class="pln">channels</span><span class="pun">;
+	</span><span class="typ">string </span><span class="pln">lastMsg</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onPart </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">User </span><span class="pln">user</span><span class="pun">, </span><span class="kwd">const </span><span class="typ">Channel </span><span class="pln">chan</span><span class="pun">, </span><span class="kwd">const </span><span class="typ">string </span><span class="pln">msg</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">users </span><span class="pun">~= </span><span class="pln">user</span><span class="pun">;
+		</span><span class="pln">channels </span><span class="pun">~= </span><span class="pln">chan</span><span class="pun">;
+		</span><span class="pln">lastMsg </span><span class="pun">= </span><span class="pln">msg</span><span class="pun">;
+	};
+
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":WiZ!jto@tolsun.oulu.fi PART #playzone :I lost"</span><span class="pun">);
+	</span><span class="kwd">immutable </span><span class="pln">user </span><span class="pun">= </span><span class="typ">User</span><span class="pun">(</span><span class="str">"WiZ!jto@tolsun.oulu.fi"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users<wbr/></span><span class="pun">.</span><span class="pln">front </span><span class="pun">== </span><span class="pln">user</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">channels<wbr/></span><span class="pun">.</span><span class="pln">front </span><span class="pun">== </span><span class="typ">Channel</span><span class="pun">(</span><span class="str">"#playzone"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lastMsg </span><span class="pun">== </span><span class="str">"I lost"</span><span class="pun">);
+}
+{ </span><span class="com">//http://ircv3.net/specs/extensions/chghost-3.2.html
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+
+
+	</span><span class="typ">User</span><span class="pun">[] </span><span class="pln">users</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onChgHost </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">User </span><span class="pln">user</span><span class="pun">, </span><span class="kwd">const </span><span class="typ">User </span><span class="pln">newUser</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">users </span><span class="pun">~= </span><span class="pln">user</span><span class="pun">;
+		</span><span class="pln">users </span><span class="pun">~= </span><span class="pln">newUser</span><span class="pun">;
+	};
+
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":nick!user@host JOIN #test"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="str">"nick" </span><span class="kwd">in </span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">internalAddressList</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">internalAddressList</span><span class="pun">[</span><span class="str">"nick"</span><span class="pun">] == </span><span class="typ">User</span><span class="pun">(</span><span class="str">"nick!user@host"</span><span class="pun">));
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":nick!user@host CHGHOST user new.host.goes.here"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users</span><span class="pun">[</span><span class="lit">0</span><span class="pun">] == </span><span class="typ">User</span><span class="pun">(</span><span class="str">"nick!user@host"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users</span><span class="pun">[</span><span class="lit">1</span><span class="pun">] == </span><span class="typ">User</span><span class="pun">(</span><span class="str">"nick!user@new.host.goes.here"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">internalAddressList</span><span class="pun">[</span><span class="str">"nick"</span><span class="pun">] == </span><span class="typ">User</span><span class="pun">(</span><span class="str">"nick!user@new.host.goes.here"</span><span class="pun">));
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":nick!user@host CHGHOST newuser host"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users</span><span class="pun">[</span><span class="lit">2</span><span class="pun">] == </span><span class="typ">User</span><span class="pun">(</span><span class="str">"nick!user@host"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users</span><span class="pun">[</span><span class="lit">3</span><span class="pun">] == </span><span class="typ">User</span><span class="pun">(</span><span class="str">"nick!newuser@host"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">internalAddressList</span><span class="pun">[</span><span class="str">"nick"</span><span class="pun">] == </span><span class="typ">User</span><span class="pun">(</span><span class="str">"nick!newuser@host"</span><span class="pun">));
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":nick!user@host CHGHOST newuser new.host.goes.here"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users</span><span class="pun">[</span><span class="lit">4</span><span class="pun">] == </span><span class="typ">User</span><span class="pun">(</span><span class="str">"nick!user@host"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users</span><span class="pun">[</span><span class="lit">5</span><span class="pun">] == </span><span class="typ">User</span><span class="pun">(</span><span class="str">"nick!newuser@new.host.goes.here"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">internalAddressList</span><span class="pun">[</span><span class="str">"nick"</span><span class="pun">] == </span><span class="typ">User</span><span class="pun">(</span><span class="str">"nick!newuser@new.host.goes.here"</span><span class="pun">));
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":tim!~toolshed@backyard CHGHOST b ckyard"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users</span><span class="pun">[</span><span class="lit">6</span><span class="pun">] == </span><span class="typ">User</span><span class="pun">(</span><span class="str">"tim!~toolshed@backyard"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users</span><span class="pun">[</span><span class="lit">7</span><span class="pun">] == </span><span class="typ">User</span><span class="pun">(</span><span class="str">"tim!b@ckyard"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">internalAddressList</span><span class="pun">[</span><span class="str">"tim"</span><span class="pun">] == </span><span class="typ">User</span><span class="pun">(</span><span class="str">"tim!b@ckyard"</span><span class="pun">));
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":tim!b@ckyard CHGHOST ~toolshed backyard"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users</span><span class="pun">[</span><span class="lit">8</span><span class="pun">] == </span><span class="typ">User</span><span class="pun">(</span><span class="str">"tim!b@ckyard"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users</span><span class="pun">[</span><span class="lit">9</span><span class="pun">] == </span><span class="typ">User</span><span class="pun">(</span><span class="str">"tim!~toolshed@backyard"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">internalAddressList</span><span class="pun">[</span><span class="str">"tim"</span><span class="pun">] == </span><span class="typ">User</span><span class="pun">(</span><span class="str">"tim!~toolshed@backyard"</span><span class="pun">));
+}
+{ </span><span class="com">//PING? PONG!
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">"PING :words"</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">lineByLine </span><span class="pun">= </span><span class="pln">buffer<wbr/></span><span class="pun">.</span><span class="pln">data<wbr/></span><span class="pun">.</span><span class="pln">lineSplitter</span><span class="pun">();
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">array</span><span class="pun">[$-</span><span class="lit">1</span><span class="pun">] == </span><span class="str">"PONG :words"</span><span class="pun">);
+}
+{ </span><span class="com">//QUIT and invalidation check
+	</span><span class="kwd">import </span><span class="pln">core<wbr/></span><span class="pun">.</span><span class="pln">exception </span><span class="pun">: </span><span class="typ">AssertError</span><span class="pun">;
+	</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">exception </span><span class="pun">: </span><span class="pln">assertThrown</span><span class="pun">;
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">quit</span><span class="pun">(</span><span class="str">"I'm out"</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">lineByLine </span><span class="pun">= </span><span class="pln">buffer<wbr/></span><span class="pun">.</span><span class="pln">data<wbr/></span><span class="pun">.</span><span class="pln">lineSplitter</span><span class="pun">();
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">array</span><span class="pun">[$-</span><span class="lit">1</span><span class="pun">] == </span><span class="str">"QUIT :I'm out"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">invalid</span><span class="pun">);
+	</span><span class="pln">assertThrown</span><span class="pun">!</span><span class="typ">AssertError</span><span class="pun">(</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">"PING :hahahaha"</span><span class="pun">));
+}
+{ </span><span class="com">//NAMES
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+	</span><span class="typ">NamesReply</span><span class="pun">[] </span><span class="pln">replies</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onNamesReply </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">NamesReply </span><span class="pln">reply</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">replies </span><span class="pun">~= </span><span class="pln">reply</span><span class="pun">;
+	};
+
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">names</span><span class="pun">();
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 353 someone = #channel :User1 User2 @User3 +User4"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 353 someone @ #channel2 :User5 User2 @User6 +User7"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 353 someone * #channel3 :User1 User2 @User3 +User4"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 366 someone :End of NAMES list"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">replies<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">3</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">replies</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]<wbr/>.</span><span class="pln">chanFlag </span><span class="pun">== </span><span class="typ">NamReplyFlag<wbr/></span><span class="pun">.</span><span class="pln">public_</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">replies</span><span class="pun">[</span><span class="lit">1</span><span class="pun">]<wbr/>.</span><span class="pln">chanFlag </span><span class="pun">== </span><span class="typ">NamReplyFlag<wbr/></span><span class="pun">.</span><span class="pln">secret</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">replies</span><span class="pun">[</span><span class="lit">2</span><span class="pun">]<wbr/>.</span><span class="pln">chanFlag </span><span class="pun">== </span><span class="typ">NamReplyFlag<wbr/></span><span class="pun">.</span><span class="pln">private_</span><span class="pun">);
+}
+{ </span><span class="com">//WATCH stuff
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!</span><span class="typ">string</span><span class="pun">;
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+	</span><span class="typ">User</span><span class="pun">[] </span><span class="pln">users</span><span class="pun">;
+	</span><span class="typ">SysTime</span><span class="pun">[] </span><span class="pln">times</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onUserOnline </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">User </span><span class="pln">user</span><span class="pun">, </span><span class="kwd">const </span><span class="typ">SysTime </span><span class="pln">time</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">users </span><span class="pun">~= </span><span class="pln">user</span><span class="pun">;
+		</span><span class="pln">times </span><span class="pun">~= </span><span class="pln">time</span><span class="pun">;
+	};
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 600 someone someoneElse someIdent example.net 911248013 :logged on"</span><span class="pun">);
+
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">users</span><span class="pun">[</span><span class="lit">0</span><span class="pun">] == </span><span class="typ">User</span><span class="pun">(</span><span class="str">"someoneElse!someIdent@example.net"</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">times<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">times</span><span class="pun">[</span><span class="lit">0</span><span class="pun">] == </span><span class="typ">SysTime</span><span class="pun">(</span><span class="typ">DateTime</span><span class="pun">(</span><span class="lit">1998</span><span class="pun">, </span><span class="lit">11</span><span class="pun">, </span><span class="lit">16</span><span class="pun">, </span><span class="lit">20</span><span class="pun">, </span><span class="lit">26</span><span class="pun">, </span><span class="lit">53</span><span class="pun">), </span><span class="pln">UTC</span><span class="pun">()));
+}
+{ </span><span class="com">//LUSER stuff
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!</span><span class="typ">string</span><span class="pun">;
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+	</span><span class="typ">bool </span><span class="pln">lUserMeReceived</span><span class="pun">;
+	</span><span class="typ">bool </span><span class="pln">lUserChannelsReceived</span><span class="pun">;
+	</span><span class="typ">bool </span><span class="pln">lUserOpReceived</span><span class="pun">;
+	</span><span class="typ">bool </span><span class="pln">lUserClientReceived</span><span class="pun">;
+	</span><span class="typ">LUserMe </span><span class="pln">lUserMe</span><span class="pun">;
+	</span><span class="typ">LUserClient </span><span class="pln">lUserClient</span><span class="pun">;
+	</span><span class="typ">LUserOp </span><span class="pln">lUserOp</span><span class="pun">;
+	</span><span class="typ">LUserChannels </span><span class="pln">lUserChannels</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onLUserMe </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">LUserMe </span><span class="pln">param</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">lUserMeReceived</span><span class="pun">);
+		</span><span class="pln">lUserMeReceived </span><span class="pun">= </span><span class="kwd">true</span><span class="pun">;
+		</span><span class="pln">lUserMe </span><span class="pun">= </span><span class="pln">param</span><span class="pun">;
+	};
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onLUserChannels </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">LUserChannels </span><span class="pln">param</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">lUserChannelsReceived</span><span class="pun">);
+		</span><span class="pln">lUserChannelsReceived </span><span class="pun">= </span><span class="kwd">true</span><span class="pun">;
+		</span><span class="pln">lUserChannels </span><span class="pun">= </span><span class="pln">param</span><span class="pun">;
+	};
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onLUserOp </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">LUserOp </span><span class="pln">param</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">lUserOpReceived</span><span class="pun">);
+		</span><span class="pln">lUserOpReceived </span><span class="pun">= </span><span class="kwd">true</span><span class="pun">;
+		</span><span class="pln">lUserOp </span><span class="pun">= </span><span class="pln">param</span><span class="pun">;
+	};
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onLUserClient </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">LUserClient </span><span class="pln">param</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">lUserClientReceived</span><span class="pun">);
+		</span><span class="pln">lUserClientReceived </span><span class="pun">= </span><span class="kwd">true</span><span class="pun">;
+		</span><span class="pln">lUserClient </span><span class="pun">= </span><span class="pln">param</span><span class="pun">;
+	};
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">lUsers</span><span class="pun">();
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 251 someone :There are 8 users and 0 invisible on 2 servers"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 252 someone 1 :operator(s) online"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 254 someone 1 :channels formed"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost 255 someone :I have 1 clients and 1 servers"</span><span class="pun">);
+
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lUserMeReceived</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lUserChannelsReceived</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lUserOpReceived</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lUserClientReceived</span><span class="pun">);
+
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lUserMe<wbr/></span><span class="pun">.</span><span class="pln">message </span><span class="pun">== </span><span class="str">"I have 1 clients and 1 servers"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lUserClient<wbr/></span><span class="pun">.</span><span class="pln">message </span><span class="pun">== </span><span class="str">"There are 8 users and 0 invisible on 2 servers"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lUserOp<wbr/></span><span class="pun">.</span><span class="pln">numOperators </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lUserOp<wbr/></span><span class="pun">.</span><span class="pln">message </span><span class="pun">== </span><span class="str">"operator(s) online"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lUserChannels<wbr/></span><span class="pun">.</span><span class="pln">numChannels </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lUserChannels<wbr/></span><span class="pun">.</span><span class="pln">message </span><span class="pun">== </span><span class="str">"channels formed"</span><span class="pun">);
+}
+{ </span><span class="com">//PRIVMSG and NOTICE stuff
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!</span><span class="typ">string</span><span class="pun">;
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+	</span><span class="typ">Tuple</span><span class="pun">!(</span><span class="kwd">const </span><span class="typ">User</span><span class="pun">, </span><span class="str">"user"</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/Target.html"></span><span class="typ">Target</span></a><span class="pun">, </span><span class="str">"target"</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/Message.html"></span><span class="typ">Message</span></a><span class="pun">, </span><span class="str">"message"</span><span class="pun">)[] </span><span class="pln">messages</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onMessage </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">User </span><span class="pln">user</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/Target.html"></span><span class="typ">Target</span></a><span class="pln"> target</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/Message.html"></span><span class="typ">Message</span></a><span class="pln"> msg</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">messages </span><span class="pun">~= </span><span class="pln">tuple</span><span class="pun">!(</span><span class="str">"user"</span><span class="pun">, </span><span class="str">"target"</span><span class="pun">, </span><span class="str">"message"</span><span class="pun">)(</span><span class="pln">user</span><span class="pun">, </span><span class="pln">target</span><span class="pun">, </span><span class="pln">msg</span><span class="pun">);
+	};
+
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":someoneElse!somebody@somewhere PRIVMSG someone :words go here"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">messages<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">1</span><span class="pun">);
+	</span><span class="kwd">with </span><span class="pun">(</span><span class="pln">messages</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">user </span><span class="pun">== </span><span class="typ">User</span><span class="pun">(</span><span class="str">"someoneElse!somebody@somewhere"</span><span class="pun">));
+		</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">target<wbr/></span><span class="pun">.</span><span class="pln">isChannel</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">target<wbr/></span><span class="pun">.</span><span class="pln">isNickname</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">target </span><span class="pun">== </span><span class="typ">User</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">));
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">message </span><span class="pun">== </span><span class="str">"words go here"</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">message<wbr/></span><span class="pun">.</span><span class="pln">isReplyable</span><span class="pun">);
+	}
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":ohno!it's@me PRIVMSG #someplace :more words go here"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">messages<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">2</span><span class="pun">);
+	</span><span class="kwd">with </span><span class="pun">(</span><span class="pln">messages</span><span class="pun">[</span><span class="lit">1</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">user </span><span class="pun">== </span><span class="typ">User</span><span class="pun">(</span><span class="str">"ohno!it's@me"</span><span class="pun">));
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">target<wbr/></span><span class="pun">.</span><span class="pln">isChannel</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">target<wbr/></span><span class="pun">.</span><span class="pln">isNickname</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">target </span><span class="pun">== </span><span class="typ">Channel</span><span class="pun">(</span><span class="str">"#someplace"</span><span class="pun">));
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">message </span><span class="pun">== </span><span class="str">"more words go here"</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">message<wbr/></span><span class="pun">.</span><span class="pln">isReplyable</span><span class="pun">);
+	}
+
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":someoneElse2!somebody2@somewhere2 NOTICE someone :words don't go here"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">messages<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">3</span><span class="pun">);
+	</span><span class="kwd">with</span><span class="pun">(</span><span class="pln">messages</span><span class="pun">[</span><span class="lit">2</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">user </span><span class="pun">== </span><span class="typ">User</span><span class="pun">(</span><span class="str">"someoneElse2!somebody2@somewhere2"</span><span class="pun">));
+		</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">target<wbr/></span><span class="pun">.</span><span class="pln">isChannel</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">target<wbr/></span><span class="pun">.</span><span class="pln">isNickname</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">target </span><span class="pun">== </span><span class="typ">User</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">));
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">message </span><span class="pun">== </span><span class="str">"words don't go here"</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">message<wbr/></span><span class="pun">.</span><span class="pln">isReplyable</span><span class="pun">);
+	}
+
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":ohno2!it's2@me4 NOTICE #someplaceelse :more words might go here"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">messages<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">4</span><span class="pun">);
+	</span><span class="kwd">with</span><span class="pun">(</span><span class="pln">messages</span><span class="pun">[</span><span class="lit">3</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">user </span><span class="pun">== </span><span class="typ">User</span><span class="pun">(</span><span class="str">"ohno2!it's2@me4"</span><span class="pun">));
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">target<wbr/></span><span class="pun">.</span><span class="pln">isChannel</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">target<wbr/></span><span class="pun">.</span><span class="pln">isNickname</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">target </span><span class="pun">== </span><span class="typ">Channel</span><span class="pun">(</span><span class="str">"#someplaceelse"</span><span class="pun">));
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">message </span><span class="pun">== </span><span class="str">"more words might go here"</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">message<wbr/></span><span class="pun">.</span><span class="pln">isReplyable</span><span class="pun">);
+	}
+
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":someoneElse2!somebody2@somewhere2 NOTICE someone :\x01ACTION did the thing\x01"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">messages<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">5</span><span class="pun">);
+	</span><span class="kwd">with</span><span class="pun">(</span><span class="pln">messages</span><span class="pun">[</span><span class="lit">4</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">user </span><span class="pun">== </span><span class="typ">User</span><span class="pun">(</span><span class="str">"someoneElse2!somebody2@somewhere2"</span><span class="pun">));
+		</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">target<wbr/></span><span class="pun">.</span><span class="pln">isChannel</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">target<wbr/></span><span class="pun">.</span><span class="pln">isNickname</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">target </span><span class="pun">== </span><span class="typ">User</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">));
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">message<wbr/></span><span class="pun">.</span><span class="pln">isCTCP</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">message<wbr/></span><span class="pun">.</span><span class="pln">ctcpArgs </span><span class="pun">== </span><span class="str">"did the thing"</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">message<wbr/></span><span class="pun">.</span><span class="pln">ctcpCommand </span><span class="pun">== </span><span class="str">"ACTION"</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">message<wbr/></span><span class="pun">.</span><span class="pln">isReplyable</span><span class="pun">);
+	}
+
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":ohno2!it's2@me4 NOTICE #someplaceelse :\x01ACTION did not do the thing\x01"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">messages<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">6</span><span class="pun">);
+	</span><span class="kwd">with</span><span class="pun">(</span><span class="pln">messages</span><span class="pun">[</span><span class="lit">5</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">user </span><span class="pun">== </span><span class="typ">User</span><span class="pun">(</span><span class="str">"ohno2!it's2@me4"</span><span class="pun">));
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">target<wbr/></span><span class="pun">.</span><span class="pln">isChannel</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">target<wbr/></span><span class="pun">.</span><span class="pln">isNickname</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">target </span><span class="pun">== </span><span class="typ">Channel</span><span class="pun">(</span><span class="str">"#someplaceelse"</span><span class="pun">));
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">message<wbr/></span><span class="pun">.</span><span class="pln">isCTCP</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">message<wbr/></span><span class="pun">.</span><span class="pln">ctcpArgs </span><span class="pun">== </span><span class="str">"did not do the thing"</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">message<wbr/></span><span class="pun">.</span><span class="pln">ctcpCommand </span><span class="pun">== </span><span class="str">"ACTION"</span><span class="pun">);
+		</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">message<wbr/></span><span class="pun">.</span><span class="pln">isReplyable</span><span class="pun">);
+	}
+
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">msg</span><span class="pun">(</span><span class="str">"#channel"</span><span class="pun">, </span><span class="str">"ohai"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">notice</span><span class="pun">(</span><span class="str">"#channel"</span><span class="pun">, </span><span class="str">"ohi"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">msg</span><span class="pun">(</span><span class="str">"someoneElse"</span><span class="pun">, </span><span class="str">"ohay"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">notice</span><span class="pun">(</span><span class="str">"someoneElse"</span><span class="pun">, </span><span class="str">"ohello"</span><span class="pun">);
+	<a href="../../virc/client/Target.html"></span><span class="typ">Target</span></a><span class="pln"> channelTarget</span><span class="pun">;
+	</span><span class="pln">channelTarget<wbr/></span><span class="pun">.</span><span class="pln">channel </span><span class="pun">= </span><span class="typ">Channel</span><span class="pun">(</span><span class="str">"#channel"</span><span class="pun">);
+	<a href="../../virc/client/Target.html"></span><span class="typ">Target</span></a><span class="pln"> userTarget</span><span class="pun">;
+	</span><span class="pln">userTarget<wbr/></span><span class="pun">.</span><span class="pln">user </span><span class="pun">= </span><span class="typ">User</span><span class="pun">(</span><span class="str">"someoneElse"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">msg</span><span class="pun">(</span><span class="pln">channelTarget</span><span class="pun">, <a href="../../virc/client/Message.html"></span><span class="typ">Message</span></a><span class="pun">(</span><span class="str">"ohai"</span><span class="pun">));
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">notice</span><span class="pun">(</span><span class="pln">channelTarget</span><span class="pun">, <a href="../../virc/client/Message.html"></span><span class="typ">Message</span></a><span class="pun">(</span><span class="str">"ohi"</span><span class="pun">));
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">msg</span><span class="pun">(</span><span class="pln">userTarget</span><span class="pun">, <a href="../../virc/client/Message.html"></span><span class="typ">Message</span></a><span class="pun">(</span><span class="str">"ohay"</span><span class="pun">));
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">notice</span><span class="pun">(</span><span class="pln">userTarget</span><span class="pun">, <a href="../../virc/client/Message.html"></span><span class="typ">Message</span></a><span class="pun">(</span><span class="str">"ohello"</span><span class="pun">));
+	</span><span class="kwd">auto </span><span class="pln">lineByLine </span><span class="pun">= </span><span class="pln">buffer<wbr/></span><span class="pun">.</span><span class="pln">data<wbr/></span><span class="pun">.</span><span class="pln">lineSplitter</span><span class="pun">();
+	</span><span class="kwd">foreach </span><span class="pun">(</span><span class="pln">i</span><span class="pun">; </span><span class="lit">0</span><span class="pun">..</span><span class="lit">5</span><span class="pun">) </span><span class="com">//skip the initial handshake
+		</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">popFront</span><span class="pun">();
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">array </span><span class="pun">== [</span><span class="str">"PRIVMSG #channel :ohai"</span><span class="pun">, </span><span class="str">"NOTICE #channel :ohi"</span><span class="pun">, </span><span class="str">"PRIVMSG someoneElse :ohay"</span><span class="pun">, </span><span class="str">"NOTICE someoneElse :ohello"</span><span class="pun">, </span><span class="str">"PRIVMSG #channel :ohai"</span><span class="pun">, </span><span class="str">"NOTICE #channel :ohi"</span><span class="pun">, </span><span class="str">"PRIVMSG someoneElse :ohay"</span><span class="pun">, </span><span class="str">"NOTICE someoneElse :ohello"</span><span class="pun">]);
+}
+{ </span><span class="com">//PING? PONG!
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">ping</span><span class="pun">(</span><span class="str">"hooray"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":localhost PONG localhost :hooray"</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">lineByLine </span><span class="pun">= </span><span class="pln">buffer<wbr/></span><span class="pun">.</span><span class="pln">data<wbr/></span><span class="pun">.</span><span class="pln">lineSplitter</span><span class="pun">();
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">array</span><span class="pun">[$-</span><span class="lit">1</span><span class="pun">] == </span><span class="str">"PING :hooray"</span><span class="pun">);
+}
+{
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+	</span><span class="typ">Tuple</span><span class="pun">!(</span><span class="kwd">const </span><span class="typ">User</span><span class="pun">, </span><span class="str">"user"</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/Target.html"></span><span class="typ">Target</span></a><span class="pun">, </span><span class="str">"target"</span><span class="pun">, </span><span class="kwd">const </span><span class="typ">ModeChange</span><span class="pun">, </span><span class="str">"change"</span><span class="pun">)[] </span><span class="pln">changes</span><span class="pun">;
+
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onMode </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">User </span><span class="pln">user</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/Target.html"></span><span class="typ">Target</span></a><span class="pln"> target</span><span class="pun">, </span><span class="kwd">const </span><span class="typ">ModeChange </span><span class="pln">mode</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">changes </span><span class="pun">~= </span><span class="pln">tuple</span><span class="pun">!(</span><span class="str">"user"</span><span class="pun">, </span><span class="str">"target"</span><span class="pun">, </span><span class="str">"change"</span><span class="pun">)(</span><span class="pln">user</span><span class="pun">, </span><span class="pln">target</span><span class="pun">, </span><span class="pln">mode</span><span class="pun">);
+	};
+
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":someone!ident@host JOIN #test"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":someoneElse!user@host2 MODE #test +s"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":someoneElse!user@host2 MODE #test -s"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":someoneElse!user@host2 MODE #test +kp 2"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":someoneElse!user@host2 MODE someone +r"</span><span class="pun">);
+
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">changes<wbr/></span><span class="pun">.</span><span class="pln">length </span><span class="pun">== </span><span class="lit">5</span><span class="pun">);
+	</span><span class="kwd">with </span><span class="pun">(</span><span class="pln">changes</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">target </span><span class="pun">== </span><span class="typ">Channel</span><span class="pun">(</span><span class="str">"#test"</span><span class="pun">));
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">user </span><span class="pun">== </span><span class="typ">User</span><span class="pun">(</span><span class="str">"someoneElse!user@host2"</span><span class="pun">));
+	}
+	</span><span class="kwd">with </span><span class="pun">(</span><span class="pln">changes</span><span class="pun">[</span><span class="lit">1</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">target </span><span class="pun">== </span><span class="typ">Channel</span><span class="pun">(</span><span class="str">"#test"</span><span class="pun">));
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">user </span><span class="pun">== </span><span class="typ">User</span><span class="pun">(</span><span class="str">"someoneElse!user@host2"</span><span class="pun">));
+	}
+	</span><span class="kwd">with </span><span class="pun">(</span><span class="pln">changes</span><span class="pun">[</span><span class="lit">2</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">target </span><span class="pun">== </span><span class="typ">Channel</span><span class="pun">(</span><span class="str">"#test"</span><span class="pun">));
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">user </span><span class="pun">== </span><span class="typ">User</span><span class="pun">(</span><span class="str">"someoneElse!user@host2"</span><span class="pun">));
+
+	}
+	</span><span class="kwd">with </span><span class="pun">(</span><span class="pln">changes</span><span class="pun">[</span><span class="lit">3</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">target </span><span class="pun">== </span><span class="typ">Channel</span><span class="pun">(</span><span class="str">"#test"</span><span class="pun">));
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">user </span><span class="pun">== </span><span class="typ">User</span><span class="pun">(</span><span class="str">"someoneElse!user@host2"</span><span class="pun">));
+
+	}
+	</span><span class="kwd">with </span><span class="pun">(</span><span class="pln">changes</span><span class="pun">[</span><span class="lit">4</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">target </span><span class="pun">== </span><span class="typ">User</span><span class="pun">(</span><span class="str">"someone"</span><span class="pun">));
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">user </span><span class="pun">== </span><span class="typ">User</span><span class="pun">(</span><span class="str">"someoneElse!user@host2"</span><span class="pun">));
+
+	}
+}
+{ </span><span class="com">//account-tag examples from http://ircv3.net/specs/extensions/account-tag-3.2.html
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+	</span><span class="typ">User</span><span class="pun">[] </span><span class="pln">privmsgUsers</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onMessage </span><span class="pun">= (</span><span class="kwd">const </span><span class="typ">User </span><span class="pln">user</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/Target.html"></span><span class="typ">Target</span></a><span class="pln"> target</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/Message.html"></span><span class="typ">Message</span></a><span class="pln"> msg</span><span class="pun">, </span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="pln">privmsgUsers </span><span class="pun">~= </span><span class="pln">user</span><span class="pun">;
+	};
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":user PRIVMSG #atheme :Hello everyone."</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">":user ACCOUNT hax0r"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">"@account=hax0r :user PRIVMSG #atheme :Now I'm logged in."</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">"@account=hax0r :user ACCOUNT bob"</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">"@account=bob :user PRIVMSG #atheme :I switched accounts."</span><span class="pun">);
+	</span><span class="kwd">with</span><span class="pun">(</span><span class="pln">privmsgUsers</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">account<wbr/></span><span class="pun">.</span><span class="pln">isNull</span><span class="pun">);
+	}
+	</span><span class="kwd">with</span><span class="pun">(</span><span class="pln">privmsgUsers</span><span class="pun">[</span><span class="lit">1</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">account </span><span class="pun">== </span><span class="str">"hax0r"</span><span class="pun">);
+	}
+	</span><span class="kwd">with</span><span class="pun">(</span><span class="pln">privmsgUsers</span><span class="pun">[</span><span class="lit">2</span><span class="pun">]) {
+		</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">account </span><span class="pun">== </span><span class="str">"bob"</span><span class="pun">);
+	}
+}
+{ </span><span class="com">//monitor - http://ircv3.net/specs/core/monitor-3.2.html
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+	</span><span class="pln">initializeWithCaps</span><span class="pun">(</span><span class="pln">client</span><span class="pun">, [<a href="../../virc/client/Capability.html"></span><span class="typ">Capability</span></a><span class="pun">(</span><span class="str">"MONITOR"</span><span class="pun">)]);
+
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">monitorIsEnabled</span><span class="pun">);
+
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">monitorAdd</span><span class="pun">([</span><span class="typ">User</span><span class="pun">(</span><span class="str">"Someone"</span><span class="pun">)]);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">monitorRemove</span><span class="pun">([</span><span class="typ">User</span><span class="pun">(</span><span class="str">"Someone"</span><span class="pun">)]);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">monitorClear</span><span class="pun">();
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">monitorList</span><span class="pun">();
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">monitorStatus</span><span class="pun">();
+
+	</span><span class="kwd">auto </span><span class="pln">lineByLine </span><span class="pun">= </span><span class="pln">buffer<wbr/></span><span class="pun">.</span><span class="pln">data<wbr/></span><span class="pun">.</span><span class="pln">lineSplitter</span><span class="pun">()<wbr/>.</span><span class="pln">drop</span><span class="pun">(</span><span class="lit">5</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lineByLine<wbr/></span><span class="pun">.</span><span class="pln">array </span><span class="pun">== [</span><span class="str">"MONITOR + Someone"</span><span class="pun">, </span><span class="str">"MONITOR - Someone"</span><span class="pun">, </span><span class="str">"MONITOR C"</span><span class="pun">, </span><span class="str">"MONITOR L"</span><span class="pun">, </span><span class="str">"MONITOR S"</span><span class="pun">]);
+}
+{
+	</span><span class="kwd">auto </span><span class="pln">buffer </span><span class="pun">= </span><span class="pln">appender</span><span class="pun">!(</span><span class="typ">string</span><span class="pun">);
+	</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../virc/client/ircClient.html"></span><span class="pln">ircClient</span></a><span class="pun">(</span><span class="pln">buffer</span><span class="pun">, </span><span class="pln">testUser</span><span class="pun">);
+	</span><span class="typ">bool </span><span class="pln">errorReceived</span><span class="pun">;
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onError </span><span class="pun">= (</span><span class="kwd">const <a href="../../virc/client/MessageMetadata.html"></span><span class="typ">MessageMetadata</span></a><span class="pun">) {
+		</span><span class="kwd">assert</span><span class="pun">(!</span><span class="pln">errorReceived</span><span class="pun">);
+		</span><span class="pln">errorReceived </span><span class="pun">= </span><span class="kwd">true</span><span class="pun">;
+	};
+	</span><span class="pln">initialize</span><span class="pun">(</span><span class="pln">client</span><span class="pun">);
+	</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">put</span><span class="pun">(</span><span class="str">"422 someone :MOTD File is missing"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">errorReceived</span><span class="pun">);
+}
+</span></code></pre>
+</section>
+
+<footer><table class="license-info"><tr><th>Authors</th><td></td></tr><tr><th>Copyright</th><td></td></tr><tr><th>License</th><td></td></tr></table><p class="faint">Generated using the DDOX documentation generator</p></footer></div></body></html>
