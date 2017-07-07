@@ -286,29 +286,44 @@ enum MessageType {
 	privmsg
 }
 /++
-+
++ An IRC message, passed between clients.
 +/
 struct Message {
-	///
+	///This message's payload. Will include \x01 characters if the message is CTCP.
 	string msg;
-	///
+
+	/++
+	+ Type of message.
+	+
+	+ NOTICE and PRIVMSG are identical, but replying to a NOTICE
+	+ is discouraged.
+	+/
 	MessageType type;
-	///
+
+	///Whether or not the message was the result of the server echoing back our messages.
+	bool isEcho;
+
+	/++
+	+ Whether or not the message was a CTCP message.
+	+
+	+ Note that some clients may mangle long CTCP messages by truncation. Those
+	+ messages will not be detected as CTCP messages.
+	+/
 	auto isCTCP() const {
 		return (msg.startsWith("\x01")) && (msg.endsWith("\x01"));
 	}
-	///
+	///Whether or not the message is safe to reply to.
 	auto isReplyable() const {
 		return type != MessageType.notice;
 	}
-	///
+	///The CTCP command, if this is a CTCP message.
 	auto ctcpCommand() const in {
 		assert(isCTCP, "This is not a CTCP message!");
 	} body {
 		auto split = msg[1..$-1].splitter(" ");
 		return split.front;
 	}
-	///
+	///The arguments after the CTCP command, if this is a CTCP message.
 	auto ctcpArgs() const in {
 		assert(isCTCP, "This is not a CTCP message!");
 	} body {
