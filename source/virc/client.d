@@ -481,40 +481,8 @@ enum RFC1459Commands {
 enum RFC2812Commands {
 	service = "SERVICE"
 }
-/++
-+
-+/
-enum IRCV3Commands {
-	cap = "CAP",
-	metadata = "METADATA",
-	authenticate = "AUTHENTICATE",
-	account = "ACCOUNT",
-	starttls = "STARTTLS",
-	monitor = "MONITOR",
-	batch = "BATCH",
-	chghost = "CHGHOST"
-}
-/++
-+
-+/
-enum CapabilityServerSubcommands {
-	ls = "LS",
-	acknowledge = "ACK",
-	notAcknowledge = "NAK",
-	list = "LIST",
-	new_ = "NEW",
-	delete_ = "DEL"
-}
-/++
-+
-+/
-enum CapabilityClientSubcommands {
-	ls = "LS",
-	list = "LIST",
-	request = "REQ",
-	end = "END"
-}
-private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
+private struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
+	import virc.ircv3 : Capability, CapabilityServerSubcommands, IRCV3Commands;
 	T output;
 	Server server;
 	Capability[] capsEnabled;
@@ -1078,6 +1046,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 	import std.typecons : Tuple, tuple;
 
 	enum testUser = NickInfo("nick", "ident", "real name!");
+	import virc.ircv3 : Capability;
 	void initialize(T)(ref T client) {
 		client.put(":localhost 001 someone :Welcome to the TestNet IRC Network someone!test@::1");
 		client.put(":localhost 002 someone :Your host is localhost, running version IRCd-2.0");
@@ -1120,6 +1089,7 @@ private struct IRCClient(T, alias mix) if (isOutputRange!(T, char)) {
 		client.put(":localhost 001 someone :words");
 		assert(client.isRegistered);
 	}
+	import virc.ircv3 : Capability;
 	{ //password test
 		auto buffer = appender!string;
 		auto client = ircClient(buffer, testUser, "Example");
