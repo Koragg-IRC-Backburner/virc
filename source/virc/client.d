@@ -69,8 +69,8 @@ enum supportedCaps = AliasSeq!(
 /++
 +
 +/
-auto ircClient(T, alias mix = null)(ref T output, NickInfo info, string password = string.init) {
-	auto client = IRCClient!(T, mix)(output);
+auto ircClient(alias mix, T)(ref T output, NickInfo info, string password = string.init) {
+	auto client = IRCClient!(mix, T)(output);
 	client.username = info.username;
 	client.realname = info.realname;
 	client.nickname = info.nickname;
@@ -80,100 +80,8 @@ auto ircClient(T, alias mix = null)(ref T output, NickInfo info, string password
 	client.initialize();
 	return client;
 }
-
-/++
-+
-+/
-struct Capability {
-	///
-	string name;
-	///
-	bool isVendorSpecific;
-	///
-	bool isSticky;
-	///
-	bool isDisabled;
-	///
-	bool isAcked;
-	///
-	string value;
-
-	alias name this;
-
-	@disable this();
-
-	///
-	this(string str) @safe pure @nogc {
-		import std.algorithm.searching : findSplit;
-		import std.range : front, popFront;
-		assert(!str.empty);
-		auto prefix = str.byCodeUnit.front;
-		switch (prefix) {
-			case '~':
-				isAcked = true;
-				break;
-			case '=':
-				isSticky = true;
-				break;
-			case '-':
-				isDisabled = true;
-				break;
-			default:
-				break;
-		}
-		if (prefix.among('~', '=', '-')) {
-			str.popFront();
-		}
-		auto split = str.findSplit("=");
-		name = split[0];
-		value = split[2];
-		isVendorSpecific = name.byCodeUnit.canFind('/');
-	}
-	///
-	string toString() const pure @safe {
-		return name~(value.empty ? "" : "=")~value;
-	}
-}
-///
-@safe pure @nogc unittest {
-	{
-		auto cap = Capability("~account-notify");
-		assert(cap.name == "account-notify");
-		assert(cap.isAcked);
-	}
-	{
-		auto cap = Capability("=account-notify");
-		assert(cap.name == "account-notify");
-		assert(cap.isSticky);
-	}
-	{
-		auto cap = Capability("-account-notify");
-		assert(cap.name == "account-notify");
-		assert(cap.isDisabled);
-	}
-	{
-		auto cap = Capability("example.com/cap");
-		assert(cap.name == "example.com/cap");
-		assert(cap.isVendorSpecific);
-	}
-	{
-		auto cap = Capability("cap=value");
-		assert(cap.name == "cap");
-		assert(cap.value == "value");
-	}
-	{
-		auto cap = Capability("cap=value/notvendor");
-		assert(cap.name == "cap");
-		assert(cap.value == "value/notvendor");
-		assert(!cap.isVendorSpecific);
-	}
-}
-@system pure unittest {
-	import core.exception : AssertError;
-	import std.exception : assertThrown;
-	{
-		assertThrown!AssertError(Capability(""));
-	}
+auto ircClient(T)(ref T output, NickInfo info, string password = string.init) {
+	return ircClient!null(output, info, password);
 }
 /++
 +
@@ -289,7 +197,7 @@ struct Target {
 	bool isNickname() @safe pure nothrow @nogc const {
 		return !user.isNull;
 	}
-	bool opEquals(string target) const {
+	bool opEquals(string target) @safe pure nothrow @nogc const {
 		if (!channel.isNull) {
 			return channel.get == Channel(target);
 		} else if (!user.isNull) {
@@ -297,13 +205,13 @@ struct Target {
 		}
 		return false;
 	}
-	bool opEquals(const User target) const {
+	bool opEquals(const User target) @safe pure nothrow @nogc const {
 		if (!user.isNull) {
 			return user.get == target;
 		}
 		return false;
 	}
-	bool opEquals(const Channel target) const {
+	bool opEquals(const Channel target) @safe pure nothrow @nogc const {
 		if (!channel.isNull) {
 			return channel.get == target;
 		}
@@ -404,40 +312,40 @@ private struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	InternalAddressList internalAddressList;
 
 	static if (!__traits(isTemplate, mix)) {
-		void delegate(const Capability, const MessageMetadata) onReceiveCapList;
-		void delegate(const Capability, const MessageMetadata) onReceiveCapLS;
-		void delegate(const Capability, const MessageMetadata) onReceiveCapAck;
-		void delegate(const Capability, const MessageMetadata) onReceiveCapNak;
-		void delegate(const Capability, const MessageMetadata) onReceiveCapDel;
-		void delegate(const Capability, const MessageMetadata) onReceiveCapNew;
-		void delegate(const User, const SysTime, const MessageMetadata) onUserOnline;
-		void delegate(const User, const MessageMetadata) onUserOffline;
-		void delegate(const User, const MessageMetadata) onLogin;
-		void delegate(const User, const MessageMetadata) onLogout;
-		void delegate(const User, const string, const MessageMetadata) onAway;
-		void delegate(const User, const MessageMetadata) onBack;
-		void delegate(const User, const MessageMetadata) onMonitorList;
-		void delegate(const User, const string, const MessageMetadata) onNick;
-		void delegate(const User, const Channel, const MessageMetadata) onJoin;
-		void delegate(const User, const Channel, const string msg, const MessageMetadata) onPart;
-		void delegate(const User, const Channel, const User, const string msg, const MessageMetadata) onKick;
-		void delegate(const User, const string msg, const MessageMetadata) onQuit;
-		void delegate(const User, const Channel, const MessageMetadata) onTopic;
-		void delegate(const User, const Target, const ModeChange mode, const MessageMetadata) onMode;
-		void delegate(const User, const Target, const Message, const MessageMetadata) onMessage;
-		void delegate(const Channel, const MessageMetadata) onList;
-		void delegate(const User, const User, const MessageMetadata) onChgHost;
-		void delegate(const LUserClient, const MessageMetadata) onLUserClient;
-		void delegate(const LUserOp, const MessageMetadata) onLUserOp;
-		void delegate(const LUserChannels, const MessageMetadata) onLUserChannels;
-		void delegate(const LUserMe, const MessageMetadata) onLUserMe;
-		void delegate(const NamesReply, const MessageMetadata) onNamesReply;
-		void delegate(const TopicReply, const MessageMetadata) onTopicReply;
-		void delegate(const TopicWhoTime, const MessageMetadata) onTopicWhoTimeReply;
-		void delegate(const MessageMetadata) onError;
-		void delegate(const MessageMetadata) onRaw;
-		void delegate() onConnect;
-		debug void delegate(const string) onSend;
+		void delegate(const Capability, const MessageMetadata) @safe onReceiveCapList;
+		void delegate(const Capability, const MessageMetadata) @safe onReceiveCapLS;
+		void delegate(const Capability, const MessageMetadata) @safe onReceiveCapAck;
+		void delegate(const Capability, const MessageMetadata) @safe onReceiveCapNak;
+		void delegate(const Capability, const MessageMetadata) @safe onReceiveCapDel;
+		void delegate(const Capability, const MessageMetadata) @safe onReceiveCapNew;
+		void delegate(const User, const SysTime, const MessageMetadata) @safe onUserOnline;
+		void delegate(const User, const MessageMetadata) @safe onUserOffline;
+		void delegate(const User, const MessageMetadata) @safe onLogin;
+		void delegate(const User, const MessageMetadata) @safe onLogout;
+		void delegate(const User, const string, const MessageMetadata) @safe onAway;
+		void delegate(const User, const MessageMetadata) @safe onBack;
+		void delegate(const User, const MessageMetadata) @safe onMonitorList;
+		void delegate(const User, const string, const MessageMetadata) @safe onNick;
+		void delegate(const User, const Channel, const MessageMetadata) @safe onJoin;
+		void delegate(const User, const Channel, const string msg, const MessageMetadata) @safe onPart;
+		void delegate(const User, const Channel, const User, const string msg, const MessageMetadata) @safe onKick;
+		void delegate(const User, const string msg, const MessageMetadata) @safe onQuit;
+		void delegate(const User, const Channel, const MessageMetadata) @safe onTopic;
+		void delegate(const User, const Target, const ModeChange mode, const MessageMetadata) @safe onMode;
+		void delegate(const User, const Target, const Message, const MessageMetadata) @safe onMessage;
+		void delegate(const Channel, const MessageMetadata) @safe onList;
+		void delegate(const User, const User, const MessageMetadata) @safe onChgHost;
+		void delegate(const LUserClient, const MessageMetadata) @safe onLUserClient;
+		void delegate(const LUserOp, const MessageMetadata) @safe onLUserOp;
+		void delegate(const LUserChannels, const MessageMetadata) @safe onLUserChannels;
+		void delegate(const LUserMe, const MessageMetadata) @safe onLUserMe;
+		void delegate(const NamesReply, const MessageMetadata) @safe onNamesReply;
+		void delegate(const TopicReply, const MessageMetadata) @safe onTopicReply;
+		void delegate(const TopicWhoTime, const MessageMetadata) @safe onTopicWhoTimeReply;
+		void delegate(const MessageMetadata) @safe onError;
+		void delegate(const MessageMetadata) @safe onRaw;
+		void delegate() @safe onConnect;
+		debug void delegate(const string) @safe onSend;
 	} else {
 		mixin mix;
 	}
@@ -946,17 +854,21 @@ private struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		return output;
 	}
 }
-///
-@system unittest {
+version(unittest) {
 	import std.algorithm : equal, sort, until;
 	import std.array : appender, array;
 	import std.range: drop, empty, tail;
 	import std.stdio : writeln;
 	import std.string : lineSplitter, representation;
 	import std.typecons : Tuple, tuple;
-
-	enum testUser = NickInfo("nick", "ident", "real name!");
 	import virc.ircv3 : Capability;
+	static immutable testUser = NickInfo("nick", "ident", "real name!");
+	mixin template Test() {
+		bool lineReceived;
+		void onRaw(const MessageMetadata) @safe pure {
+			lineReceived = true;
+		}
+	}
 	void initialize(T)(ref T client) {
 		client.put(":localhost 001 someone :Welcome to the TestNet IRC Network someone!test@::1");
 		client.put(":localhost 002 someone :Your host is localhost, running version IRCd-2.0");
@@ -978,27 +890,32 @@ private struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		}
 		initialize(client);
 	}
-	{ //some really basic stuff
-		auto buffer = appender!string;
-		auto client = ircClient(buffer, testUser);
-		bool lineReceived;
-		client.onRaw = (const MessageMetadata) {
-			lineReceived = true;
-		};
-		client.put("");
-		assert(lineReceived == false);
-		client.put("\r\n");
-		assert(lineReceived == false);
-		client.put("\r\n".representation);
-		assert(lineReceived == false);
-		client.put("hello");
-		assert(lineReceived == true);
-		assert(!client.isRegistered);
-		client.put(":localhost 001 someone :words");
-		assert(client.isRegistered);
-		client.put(":localhost 001 someone :words");
-		assert(client.isRegistered);
-	}
+}
+///Test the basics
+@safe unittest {
+	auto buffer = appender!string;
+	auto client = ircClient!Test(buffer, testUser);
+	client.put("");
+	assert(client.lineReceived == false);
+	client.put("\r\n");
+	assert(client.lineReceived == false);
+	client.put("hello");
+	assert(client.lineReceived == true);
+	assert(!client.isRegistered);
+	client.put(":localhost 001 someone :words");
+	assert(client.isRegistered);
+	client.put(":localhost 001 someone :words");
+	assert(client.isRegistered);
+}
+///Auto-decoding test
+@system unittest {
+	auto buffer = appender!string;
+	auto client = ircClient!Test(buffer, testUser);
+	client.put("\r\n".representation);
+	assert(client.lineReceived == false);
+}
+///
+@safe unittest {
 	import virc.ircv3 : Capability;
 	{ //password test
 		auto buffer = appender!string;
@@ -1386,6 +1303,8 @@ private struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		auto lineByLine = buffer.data.lineSplitter();
 		assert(lineByLine.array[$-1] == "PONG :words");
 	}
+}
+@system unittest {
 	{ //QUIT and invalidation check
 		import core.exception : AssertError;
 		import std.exception : assertThrown;
@@ -1399,6 +1318,8 @@ private struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		assert(client.invalid);
 		assertThrown!AssertError(client.put("PING :hahahaha"));
 	}
+}
+@safe unittest {
 	{ //NAMES
 		auto buffer = appender!(string);
 		auto client = ircClient(buffer, testUser);
