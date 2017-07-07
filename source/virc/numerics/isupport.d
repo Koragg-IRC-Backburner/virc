@@ -1235,7 +1235,6 @@ private auto keyValuePair(string token) pure @safe {
 +/
 void parseNumeric(Numeric numeric: Numeric.RPL_ISUPPORT, T)(T input, ref ISupport iSupport) {
 	import std.typecons : Nullable;
-	immutable username = input.front;
 	input.popFront();
 	while (!input.empty && !input.isColonParameter) {
 		iSupport.insertToken(keyValuePair(input.front));
