@@ -304,8 +304,8 @@ private struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	T output;
 	Server server;
 	Capability[] capsEnabled;
-	string username;
 	string nickname;
+	string username;
 	string realname;
 	Nullable!string password;
 
