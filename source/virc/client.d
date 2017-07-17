@@ -477,6 +477,10 @@ private struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 				break;
 			case Numeric.RPL_WELCOME:
 				isRegistered = true;
+				auto meUser = User();
+				meUser.mask.nickname = nickname;
+				meUser.mask.ident = username;
+				internalAddressList.update(meUser);
 				tryCall!"onConnect"();
 				break;
 			case Numeric.RPL_ISUPPORT:
@@ -852,6 +856,10 @@ private struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 			output.user = User(str);
 		}
 		return output;
+	}
+	auto me() {
+		assert(nickname in internalAddressList);
+		return internalAddressList[nickname];
 	}
 }
 version(unittest) {
@@ -1294,6 +1302,11 @@ version(unittest) {
 		client.put("PING :words");
 		auto lineByLine = client.output.data.lineSplitter();
 		assert(lineByLine.array[$-1] == "PONG :words");
+	}
+	{ //Test self-tracking
+		auto client = spawnNoBufferClient();
+		initialize(client);
+		assert(client.me.nickname == testUser.nickname);
 	}
 }
 @system unittest {
