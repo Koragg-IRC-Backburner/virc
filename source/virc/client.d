@@ -54,13 +54,14 @@ enum supportedCaps = AliasSeq!(
 	"account-notify", // http://ircv3.net/specs/extensions/account-notify-3.1.html
 	"account-tag", // http://ircv3.net/specs/extensions/account-tag-3.2.html
 	"away-notify", // http://ircv3.net/specs/extensions/away-notify-3.1.html
+	//"batch", // http://ircv3.net/specs/extensions/batch-3.2.html
 	"cap-notify", // http://ircv3.net/specs/extensions/cap-notify-3.2.html
 	"chghost", // http://ircv3.net/specs/extensions/chghost-3.2.html
 	"echo-message", // http://ircv3.net/specs/extensions/echo-message-3.2.html
 	"extended-join", // http://ircv3.net/specs/extensions/extended-join-3.1.html
-	"invite-notify", // http://ircv3.net/specs/extensions/invite-notify-3.2.html
-	"metadata", // http://ircv3.net/specs/core/metadata-3.2.html
-	"monitor", // http://ircv3.net/specs/core/monitor-3.2.html
+	//"invite-notify", // http://ircv3.net/specs/extensions/invite-notify-3.2.html
+	//"metadata", // http://ircv3.net/specs/core/metadata-3.2.html
+	//"monitor", // http://ircv3.net/specs/core/monitor-3.2.html
 	"multi-prefix", // http://ircv3.net/specs/extensions/multi-prefix-3.1.html
 	"server-time", // http://ircv3.net/specs/extensions/server-time-3.2.html
 	"userhost-in-names", // http://ircv3.net/specs/extensions/userhost-in-names-3.2.html
