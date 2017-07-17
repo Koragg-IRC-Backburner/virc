@@ -151,6 +151,9 @@ struct Message {
 	bool opEquals(string str) @safe pure nothrow @nogc const {
 		return str == msg;
 	}
+	auto toHash() const {
+		return hashOf(msg);
+	}
 	string toString() @safe pure nothrow @nogc const {
 		return msg;
 	}
