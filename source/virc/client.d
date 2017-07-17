@@ -675,10 +675,16 @@ private struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void recPart(const User user, const Channel channel, const string msg, const MessageMetadata metadata) {
 		tryCall!"onPart"(user, channel, msg, metadata);
 	}
-	private void recNotice(const User user, const Target target, const Message msg, const MessageMetadata metadata) {
-		tryCall!"onMessage"(user, target, msg, metadata);
+	private void recNotice(const User user, const Target target, Message msg, const MessageMetadata metadata) {
+		recMessageCommon(user, target, msg, metadata);
 	}
-	private void recPrivmsg(const User user, const Target target, const Message msg, const MessageMetadata metadata) {
+	private void recPrivmsg(const User user, const Target target, Message msg, const MessageMetadata metadata) {
+		recMessageCommon(user, target, msg, metadata);
+	}
+	private void recMessageCommon(const User user, const Target target, Message msg, const MessageMetadata metadata) {
+		if (user.nickname == nickname) {
+			msg.isEcho = true;
+		}
 		tryCall!"onMessage"(user, target, msg, metadata);
 	}
 	private void recList(const Channel channel, const MessageMetadata metadata) {
@@ -1303,6 +1309,23 @@ version(unittest) {
 		auto lineByLine = client.output.data.lineSplitter();
 		assert(lineByLine.array[$-1] == "PONG :words");
 	}
+	{ //echo-message http://ircv3.net/specs/extensions/echo-message-3.2.html
+		auto client = spawnNoBufferClient();
+		Message[] messages;
+		client.onMessage = (const User, const Target, const Message msg, const MessageMetadata) {
+			messages ~= msg;
+		};
+		initialize(client);
+		client.msg("Attila", "hi");
+		client.put(":"~testUser.nickname~"!"~testUser.username~"@localhost PRIVMSG Attila :hi");
+		assert(messages.length > 0);
+		assert(messages[0].isEcho);
+
+		client.msg("#ircv3", "back from \x02lunch\x0F");
+		client.put(":"~testUser.nickname~"!"~testUser.username~"@localhost PRIVMSG #ircv3 :back from lunch");
+		assert(messages.length > 1);
+		assert(messages[1].isEcho);
+	}
 	{ //Test self-tracking
 		auto client = spawnNoBufferClient();
 		initialize(client);
@@ -1426,6 +1449,7 @@ version(unittest) {
 			assert(target == User("someone"));
 			assert(message == "words go here");
 			assert(message.isReplyable);
+			assert(!message.isEcho);
 		}
 		client.put(":ohno!it's@me PRIVMSG #someplace :more words go here");
 		assert(messages.length == 2);
@@ -1436,6 +1460,7 @@ version(unittest) {
 			assert(target == Channel("#someplace"));
 			assert(message == "more words go here");
 			assert(message.isReplyable);
+			assert(!message.isEcho);
 		}
 
 		client.put(":someoneElse2!somebody2@somewhere2 NOTICE someone :words don't go here");
@@ -1447,6 +1472,7 @@ version(unittest) {
 			assert(target == User("someone"));
 			assert(message == "words don't go here");
 			assert(!message.isReplyable);
+			assert(!message.isEcho);
 		}
 
 		client.put(":ohno2!it's2@me4 NOTICE #someplaceelse :more words might go here");
@@ -1458,6 +1484,7 @@ version(unittest) {
 			assert(target == Channel("#someplaceelse"));
 			assert(message == "more words might go here");
 			assert(!message.isReplyable);
+			assert(!message.isEcho);
 		}
 
 		client.put(":someoneElse2!somebody2@somewhere2 NOTICE someone :\x01ACTION did the thing\x01");
@@ -1471,6 +1498,7 @@ version(unittest) {
 			assert(message.ctcpArgs == "did the thing");
 			assert(message.ctcpCommand == "ACTION");
 			assert(!message.isReplyable);
+			assert(!message.isEcho);
 		}
 
 		client.put(":ohno2!it's2@me4 NOTICE #someplaceelse :\x01ACTION did not do the thing\x01");
@@ -1484,6 +1512,7 @@ version(unittest) {
 			assert(message.ctcpArgs == "did not do the thing");
 			assert(message.ctcpCommand == "ACTION");
 			assert(!message.isReplyable);
+			assert(!message.isEcho);
 		}
 
 		client.msg("#channel", "ohai");
