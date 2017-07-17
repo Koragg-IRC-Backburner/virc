@@ -870,7 +870,7 @@ version(unittest) {
 		}
 	}
 	void initialize(T)(ref T client) {
-		client.put(":localhost 001 someone :Welcome to the TestNet IRC Network someone!test@::1");
+		client.put(":localhost 001 someone :Welcome to the TestNet IRC Network "~testUser.nickname~"!"~testUser.username~"@::1");
 		client.put(":localhost 002 someone :Your host is localhost, running version IRCd-2.0");
 		client.put(":localhost 003 someone :This server was created 20:21:33 Oct  21 2016");
 		client.put(":localhost 004 someone localhost IRCd-2.0 BGHIRSWcdgikorswx ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz FIJLYabefghjkloqv");
@@ -890,11 +890,18 @@ version(unittest) {
 		}
 		initialize(client);
 	}
+	auto spawnNoBufferClient(string password = string.init) {
+		auto buffer = appender!(string);
+		return ircClient(buffer, testUser, password);
+	}
+	auto spawnNoBufferClient(alias mix)(string password = string.init) {
+		auto buffer = appender!(string);
+		return ircClient!mix(buffer, testUser, password);
+	}
 }
 ///Test the basics
 @safe unittest {
-	auto buffer = appender!string;
-	auto client = ircClient!Test(buffer, testUser);
+	auto client = spawnNoBufferClient!Test();
 	client.put("");
 	assert(client.lineReceived == false);
 	client.put("\r\n");
@@ -909,8 +916,7 @@ version(unittest) {
 }
 ///Auto-decoding test
 @system unittest {
-	auto buffer = appender!string;
-	auto client = ircClient!Test(buffer, testUser);
+	auto client = spawnNoBufferClient!Test();
 	client.put("\r\n".representation);
 	assert(client.lineReceived == false);
 }
@@ -918,19 +924,17 @@ version(unittest) {
 @safe unittest {
 	import virc.ircv3 : Capability;
 	{ //password test
-		auto buffer = appender!string;
-		auto client = ircClient(buffer, testUser, "Example");
+		auto client = spawnNoBufferClient("Example");
 
-		assert(buffer.data.lineSplitter.until!(x => x.startsWith("USER")).canFind("PASS :Example"));
+		assert(client.output.data.lineSplitter.until!(x => x.startsWith("USER")).canFind("PASS :Example"));
 	}
 	//Request capabilities (IRC v3.2)
 	{
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+		auto client = spawnNoBufferClient();
 		client.put(":localhost CAP * LS :multi-prefix sasl=EXTERNAL");
 		client.put(":localhost CAP * ACK :multi-prefix");
 
-		auto lineByLine = buffer.data.lineSplitter;
+		auto lineByLine = client.output.data.lineSplitter;
 
 		assert(lineByLine.front == "CAP LS 302");
 		lineByLine.popFront();
@@ -944,8 +948,7 @@ version(unittest) {
 	}
 	//Request capabilities NAK (IRC v3.2)
 	{
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+		auto client = spawnNoBufferClient();
 		Capability[] capabilities;
 		client.onReceiveCapNak = (const Capability cap, const MessageMetadata) {
 			capabilities ~= cap;
@@ -954,7 +957,7 @@ version(unittest) {
 		client.put(":localhost CAP * NAK :multi-prefix");
 
 
-		auto lineByLine = buffer.data.lineSplitter;
+		auto lineByLine = client.output.data.lineSplitter;
 
 		assert(lineByLine.front == "CAP LS 302");
 		lineByLine.popFront();
@@ -972,9 +975,8 @@ version(unittest) {
 	}
 	//Request capabilities, multiline (IRC v3.2)
 	{
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
-		auto lineByLine = buffer.data.lineSplitter();
+		auto client = spawnNoBufferClient();
+		auto lineByLine = client.output.data.lineSplitter();
 
 		Capability[] capabilities;
 		client.onReceiveCapLS = (const Capability cap, const MessageMetadata) {
@@ -991,8 +993,7 @@ version(unittest) {
 	}
 	//CAP LIST multiline (IRC v3.2)
 	{
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+		auto client = spawnNoBufferClient();
 		Capability[] capabilities;
 		client.onReceiveCapList = (const Capability cap, const MessageMetadata) {
 			capabilities ~= cap;
@@ -1015,8 +1016,7 @@ version(unittest) {
 	}
 	//CAP NEW, DEL (IRCv3.2 - cap-notify)
 	{
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+		auto client = spawnNoBufferClient();
 		Capability[] capabilitiesNew;
 		Capability[] capabilitiesDeleted;
 		client.onReceiveCapNew = (const Capability cap, const MessageMetadata) {
@@ -1060,12 +1060,11 @@ version(unittest) {
 				]
 		));
 		client.put(":irc.example.com CAP modernclient NEW :account-notify");
-		auto lineByLine = buffer.data.lineSplitter();
+		auto lineByLine = client.output.data.lineSplitter();
 		assert(lineByLine.array[$-1] == "CAP REQ :account-notify");
 	}
 	{ //JOIN
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+		auto client = spawnNoBufferClient();
 		User[] users;
 		const(Channel)[] channels;
 		client.onJoin = (const User user, const Channel chan, const MessageMetadata) {
@@ -1112,13 +1111,12 @@ version(unittest) {
 			assert(setter == User("someoneElse"));
 			assert(timestamp == SysTime(DateTime(2017, 06, 07, 07, 53, 03), UTC()));
 		}
-		//Add 366, 324, 329 tests
-		auto lineByLine = buffer.data.lineSplitter();
+		//TODO: Add 366, 324, 329 tests
+		auto lineByLine = client.output.data.lineSplitter();
 		assert(lineByLine.array[$-1] == "JOIN #test");
 	}
-	{
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+	{ //Channel list example
+		auto client = spawnNoBufferClient();
 		const(Channel)[] channels;
 		client.onList = (const Channel chan, const MessageMetadata) {
 			channels ~= chan;
@@ -1147,9 +1145,8 @@ version(unittest) {
 			assert(topic == Topic("no modes?"));
 		}
 	}
-	{
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+	{ //server-time http://ircv3.net/specs/extensions/server-time-3.2.html
+		auto client = spawnNoBufferClient();
 		User[] users;
 		const(Channel)[] channels;
 		client.onJoin = (const User user, const Channel chan, const MessageMetadata metadata) {
@@ -1164,9 +1161,8 @@ version(unittest) {
 		assert(channels.length == 1);
 		assert(channels[0].name == "#chan");
 	}
-	{
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+	{ //monitor
+		auto client = spawnNoBufferClient();
 		User[] users;
 		const(MessageMetadata)[] metadata;
 		client.onUserOnline = (const User user, const SysTime, const MessageMetadata) {
@@ -1214,8 +1210,7 @@ version(unittest) {
 		assert(metadata[0].messageNumeric == Numeric.ERR_MONLISTFULL);
 	}
 	{ //extended-join http://ircv3.net/specs/extensions/extended-join-3.1.html
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+		auto client = spawnNoBufferClient();
 
 
 		User[] users;
@@ -1237,8 +1232,7 @@ version(unittest) {
 		assert(users.front == user);
 	}
 	{ //example taken from RFC2812, section 3.2.2
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+		auto client = spawnNoBufferClient();
 
 
 		User[] users;
@@ -1259,8 +1253,7 @@ version(unittest) {
 		assert(lastMsg == "I lost");
 	}
 	{ //http://ircv3.net/specs/extensions/chghost-3.2.html
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+		auto client = spawnNoBufferClient();
 
 
 		User[] users;
@@ -1295,12 +1288,11 @@ version(unittest) {
 		assert(client.internalAddressList["tim"] == User("tim!~toolshed@backyard"));
 	}
 	{ //PING? PONG!
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+		auto client = spawnNoBufferClient();
 
 		initialize(client);
 		client.put("PING :words");
-		auto lineByLine = buffer.data.lineSplitter();
+		auto lineByLine = client.output.data.lineSplitter();
 		assert(lineByLine.array[$-1] == "PONG :words");
 	}
 }
@@ -1308,12 +1300,11 @@ version(unittest) {
 	{ //QUIT and invalidation check
 		import core.exception : AssertError;
 		import std.exception : assertThrown;
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+		auto client = spawnNoBufferClient();
 
 		initialize(client);
 		client.quit("I'm out");
-		auto lineByLine = buffer.data.lineSplitter();
+		auto lineByLine = client.output.data.lineSplitter();
 		assert(lineByLine.array[$-1] == "QUIT :I'm out");
 		assert(client.invalid);
 		assertThrown!AssertError(client.put("PING :hahahaha"));
@@ -1321,8 +1312,7 @@ version(unittest) {
 }
 @safe unittest {
 	{ //NAMES
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+		auto client = spawnNoBufferClient();
 		NamesReply[] replies;
 		client.onNamesReply = (const NamesReply reply, const MessageMetadata) {
 			replies ~= reply;
@@ -1341,8 +1331,7 @@ version(unittest) {
 		assert(replies[2].chanFlag == NamReplyFlag.private_);
 	}
 	{ //WATCH stuff
-		auto buffer = appender!string;
-		auto client = ircClient(buffer, testUser);
+		auto client = spawnNoBufferClient();
 		User[] users;
 		SysTime[] times;
 		client.onUserOnline = (const User user, const SysTime time, const MessageMetadata) {
@@ -1358,8 +1347,7 @@ version(unittest) {
 		assert(times[0] == SysTime(DateTime(1998, 11, 16, 20, 26, 53), UTC()));
 	}
 	{ //LUSER stuff
-		auto buffer = appender!string;
-		auto client = ircClient(buffer, testUser);
+		auto client = spawnNoBufferClient();
 		bool lUserMeReceived;
 		bool lUserChannelsReceived;
 		bool lUserOpReceived;
@@ -1408,8 +1396,7 @@ version(unittest) {
 		assert(lUserChannels.message == "channels formed");
 	}
 	{ //PRIVMSG and NOTICE stuff
-		auto buffer = appender!string;
-		auto client = ircClient(buffer, testUser);
+		auto client = spawnNoBufferClient();
 		Tuple!(const User, "user", const Target, "target", const Message, "message")[] messages;
 		client.onMessage = (const User user, const Target target, const Message msg, const MessageMetadata) {
 			messages ~= tuple!("user", "target", "message")(user, target, msg);
@@ -1498,24 +1485,22 @@ version(unittest) {
 		client.notice(channelTarget, Message("ohi"));
 		client.msg(userTarget, Message("ohay"));
 		client.notice(userTarget, Message("ohello"));
-		auto lineByLine = buffer.data.lineSplitter();
+		auto lineByLine = client.output.data.lineSplitter();
 		foreach (i; 0..5) //skip the initial handshake
 			lineByLine.popFront();
 		assert(lineByLine.array == ["PRIVMSG #channel :ohai", "NOTICE #channel :ohi", "PRIVMSG someoneElse :ohay", "NOTICE someoneElse :ohello", "PRIVMSG #channel :ohai", "NOTICE #channel :ohi", "PRIVMSG someoneElse :ohay", "NOTICE someoneElse :ohello"]);
 	}
 	{ //PING? PONG!
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+		auto client = spawnNoBufferClient();
 
 		initialize(client);
 		client.ping("hooray");
 		client.put(":localhost PONG localhost :hooray");
-		auto lineByLine = buffer.data.lineSplitter();
+		auto lineByLine = client.output.data.lineSplitter();
 		assert(lineByLine.array[$-1] == "PING :hooray");
 	}
-	{
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+	{ //Mode change test
+		auto client = spawnNoBufferClient();
 		Tuple!(const User, "user", const Target, "target", const ModeChange, "change")[] changes;
 
 		client.onMode = (const User user, const Target target, const ModeChange mode, const MessageMetadata) {
@@ -1555,8 +1540,7 @@ version(unittest) {
 		}
 	}
 	{ //account-tag examples from http://ircv3.net/specs/extensions/account-tag-3.2.html
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+		auto client = spawnNoBufferClient();
 		User[] privmsgUsers;
 		client.onMessage = (const User user, const Target target, const Message msg, const MessageMetadata) {
 			privmsgUsers ~= user;
@@ -1579,8 +1563,7 @@ version(unittest) {
 		}
 	}
 	{ //monitor - http://ircv3.net/specs/core/monitor-3.2.html
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+		auto client = spawnNoBufferClient();
 		initializeWithCaps(client, [Capability("MONITOR")]);
 
 		assert(client.monitorIsEnabled);
@@ -1591,12 +1574,11 @@ version(unittest) {
 		client.monitorList();
 		client.monitorStatus();
 
-		auto lineByLine = buffer.data.lineSplitter().drop(5);
+		auto lineByLine = client.output.data.lineSplitter().drop(5);
 		assert(lineByLine.array == ["MONITOR + Someone", "MONITOR - Someone", "MONITOR C", "MONITOR L", "MONITOR S"]);
 	}
-	{
-		auto buffer = appender!(string);
-		auto client = ircClient(buffer, testUser);
+	{ //No MOTD test
+		auto client = spawnNoBufferClient();
 		bool errorReceived;
 		client.onError = (const MessageMetadata) {
 			assert(!errorReceived);
