@@ -229,7 +229,8 @@ struct Target {
 		}
 	}
 }
-unittest {
+///
+@safe pure nothrow unittest {
 	{
 		Target target;
 		target.channel = Channel("#hello");
