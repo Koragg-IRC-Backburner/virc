@@ -507,9 +507,11 @@ private struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 				recMode(source, target, modes, metadata);
 				break;
 			case RFC1459Commands.nick:
-				User old = source;
-				internalAddressList.renameTo(source, split.front);
-				recNick(old, internalAddressList[split.front], metadata);
+				if (!split.empty) {
+					User old = source;
+					internalAddressList.renameTo(source, split.front);
+					recNick(old, internalAddressList[split.front], metadata);
+				}
 				break;
 			case IRCV3Commands.chghost:
 				User target;
@@ -1693,7 +1695,7 @@ version(unittest) {
 		initialize(client);
 		client.put(":WiZ NICK Kilroy");
 
-		assert(nickChanges.length > 0);
+		assert(nickChanges.length == 1);
 		with(nickChanges[0]) {
 			assert(old.nickname == "WiZ");
 			assert(new_.nickname == "Kilroy");
@@ -1701,10 +1703,14 @@ version(unittest) {
 
 		client.put(":dan-!d@localhost NICK Mamoped");
 
-		assert(nickChanges.length > 1);
+		assert(nickChanges.length == 2);
 		with(nickChanges[1]) {
 			assert(old.nickname == "dan-");
 			assert(new_.nickname == "Mamoped");
 		}
+
+		//invalid, so we shouldn't see anything
+		client.put(":a NICK");
+		assert(nickChanges.length == 2);
 	}
 }
