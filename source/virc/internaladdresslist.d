@@ -29,7 +29,15 @@ struct InternalAddressList {
 		}
 	}
 	///
-	void rename(User user, string oldNick) @safe pure nothrow {
+	void renameTo(User user, string newNick) @safe pure nothrow {
+		assert(user.nickname in users);
+		users[newNick] = users[user.nickname];
+		users.remove(user.nickname);
+		user.mask.nickname = newNick;
+		update(user);
+	}
+	///
+	void renameFrom(User user, string oldNick) @safe pure nothrow {
 		users[user.nickname] = users[oldNick];
 		users.remove(oldNick);
 		update(user);
@@ -64,11 +72,14 @@ struct InternalAddressList {
 	test.update(User("Test"));
 	assert(test["Test"] == User("Test!testo2@testy2"));
 
-	test.rename(User("Test3"), "Test");
+	test.renameFrom(User("Test3"), "Test");
 	assert(test["Test3"] == User("Test3!testo2@testy2"));
 
 	assert("Test" !in test);
 
-	test.invalidate("Test3");
-	assert("Test3" !in test);
+	test.renameTo(test["Test3"], "Test");
+	assert(test["Test"] == User("Test!testo2@testy2"));
+
+	test.invalidate("Test");
+	assert("Test" !in test);
 }

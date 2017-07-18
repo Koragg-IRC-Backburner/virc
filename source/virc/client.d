@@ -316,43 +316,77 @@ private struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 
 	InternalAddressList internalAddressList;
 
-	static if (!__traits(isTemplate, mix)) {
-		void delegate(const Capability, const MessageMetadata) @safe onReceiveCapList;
-		void delegate(const Capability, const MessageMetadata) @safe onReceiveCapLS;
-		void delegate(const Capability, const MessageMetadata) @safe onReceiveCapAck;
-		void delegate(const Capability, const MessageMetadata) @safe onReceiveCapNak;
-		void delegate(const Capability, const MessageMetadata) @safe onReceiveCapDel;
-		void delegate(const Capability, const MessageMetadata) @safe onReceiveCapNew;
-		void delegate(const User, const SysTime, const MessageMetadata) @safe onUserOnline;
-		void delegate(const User, const MessageMetadata) @safe onUserOffline;
-		void delegate(const User, const MessageMetadata) @safe onLogin;
-		void delegate(const User, const MessageMetadata) @safe onLogout;
-		void delegate(const User, const string, const MessageMetadata) @safe onAway;
-		void delegate(const User, const MessageMetadata) @safe onBack;
-		void delegate(const User, const MessageMetadata) @safe onMonitorList;
-		void delegate(const User, const string, const MessageMetadata) @safe onNick;
-		void delegate(const User, const Channel, const MessageMetadata) @safe onJoin;
-		void delegate(const User, const Channel, const string msg, const MessageMetadata) @safe onPart;
-		void delegate(const User, const Channel, const User, const string msg, const MessageMetadata) @safe onKick;
-		void delegate(const User, const string msg, const MessageMetadata) @safe onQuit;
-		void delegate(const User, const Channel, const MessageMetadata) @safe onTopic;
-		void delegate(const User, const Target, const ModeChange mode, const MessageMetadata) @safe onMode;
-		void delegate(const User, const Target, const Message, const MessageMetadata) @safe onMessage;
-		void delegate(const Channel, const MessageMetadata) @safe onList;
-		void delegate(const User, const User, const MessageMetadata) @safe onChgHost;
-		void delegate(const LUserClient, const MessageMetadata) @safe onLUserClient;
-		void delegate(const LUserOp, const MessageMetadata) @safe onLUserOp;
-		void delegate(const LUserChannels, const MessageMetadata) @safe onLUserChannels;
-		void delegate(const LUserMe, const MessageMetadata) @safe onLUserMe;
-		void delegate(const NamesReply, const MessageMetadata) @safe onNamesReply;
-		void delegate(const TopicReply, const MessageMetadata) @safe onTopicReply;
-		void delegate(const TopicWhoTime, const MessageMetadata) @safe onTopicWhoTimeReply;
-		void delegate(const MessageMetadata) @safe onError;
-		void delegate(const MessageMetadata) @safe onRaw;
-		void delegate() @safe onConnect;
-		debug void delegate(const string) @safe onSend;
-	} else {
+	static if (__traits(isTemplate, mix)) {
 		mixin mix;
+	} else {
+		///
+		void delegate(const Capability, const MessageMetadata) @safe onReceiveCapList;
+		///
+		void delegate(const Capability, const MessageMetadata) @safe onReceiveCapLS;
+		///
+		void delegate(const Capability, const MessageMetadata) @safe onReceiveCapAck;
+		///
+		void delegate(const Capability, const MessageMetadata) @safe onReceiveCapNak;
+		///
+		void delegate(const Capability, const MessageMetadata) @safe onReceiveCapDel;
+		///
+		void delegate(const Capability, const MessageMetadata) @safe onReceiveCapNew;
+		///
+		void delegate(const User, const SysTime, const MessageMetadata) @safe onUserOnline;
+		///
+		void delegate(const User, const MessageMetadata) @safe onUserOffline;
+		///
+		void delegate(const User, const MessageMetadata) @safe onLogin;
+		///
+		void delegate(const User, const MessageMetadata) @safe onLogout;
+		///
+		void delegate(const User, const string, const MessageMetadata) @safe onAway;
+		///
+		void delegate(const User, const MessageMetadata) @safe onBack;
+		///
+		void delegate(const User, const MessageMetadata) @safe onMonitorList;
+		///
+		void delegate(const User, const User, const MessageMetadata) @safe onNick;
+		///
+		void delegate(const User, const Channel, const MessageMetadata) @safe onJoin;
+		///
+		void delegate(const User, const Channel, const string, const MessageMetadata) @safe onPart;
+		///
+		void delegate(const User, const Channel, const User, const string, const MessageMetadata) @safe onKick;
+		///
+		void delegate(const User, const string, const MessageMetadata) @safe onQuit;
+		///
+		void delegate(const User, const Channel, const MessageMetadata) @safe onTopic;
+		///
+		void delegate(const User, const Target, const ModeChange, const MessageMetadata) @safe onMode;
+		///
+		void delegate(const User, const Target, const Message, const MessageMetadata) @safe onMessage;
+		///
+		void delegate(const Channel, const MessageMetadata) @safe onList;
+		///
+		void delegate(const User, const User, const MessageMetadata) @safe onChgHost;
+		///
+		void delegate(const LUserClient, const MessageMetadata) @safe onLUserClient;
+		///
+		void delegate(const LUserOp, const MessageMetadata) @safe onLUserOp;
+		///
+		void delegate(const LUserChannels, const MessageMetadata) @safe onLUserChannels;
+		///
+		void delegate(const LUserMe, const MessageMetadata) @safe onLUserMe;
+		///
+		void delegate(const NamesReply, const MessageMetadata) @safe onNamesReply;
+		///
+		void delegate(const TopicReply, const MessageMetadata) @safe onTopicReply;
+		///
+		void delegate(const TopicWhoTime, const MessageMetadata) @safe onTopicWhoTimeReply;
+		///
+		void delegate(const MessageMetadata) @safe onError;
+		///
+		void delegate(const MessageMetadata) @safe onRaw;
+		///
+		void delegate() @safe onConnect;
+		///
+		debug void delegate(const string) @safe onSend;
 	}
 
 
@@ -471,6 +505,11 @@ private struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 				split.popFront();
 				auto modes = parseModeString(split, server.iSupport.channelModeTypes);
 				recMode(source, target, modes, metadata);
+				break;
+			case RFC1459Commands.nick:
+				User old = source;
+				internalAddressList.renameTo(source, split.front);
+				recNick(old, internalAddressList[split.front], metadata);
 				break;
 			case IRCV3Commands.chghost:
 				User target;
@@ -792,6 +831,12 @@ private struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	public void notice(Target target, Message message) {
 		notice(target.text, message.text);
+	}
+	private void recNick(const User old, const User new_, const MessageMetadata metadata) {
+		if (old.nickname == nickname) {
+			nickname = new_.nickname;
+		}
+		tryCall!"onNick"(old, new_, metadata);
 	}
 	private void recUnknownCommand(const string cmd, const MessageMetadata metadata) {
 		debug(verboseirc) import std.stdio : writeln;
@@ -1335,6 +1380,9 @@ version(unittest) {
 		auto client = spawnNoBufferClient();
 		initialize(client);
 		assert(client.me.nickname == testUser.nickname);
+		client.changeNickname("Testface");
+		client.put(":"~testUser.nickname~" NICK Testface");
+		assert(client.me.nickname == "Testface");
 	}
 }
 @system unittest {
@@ -1589,7 +1637,7 @@ version(unittest) {
 	{ //account-tag examples from http://ircv3.net/specs/extensions/account-tag-3.2.html
 		auto client = spawnNoBufferClient();
 		User[] privmsgUsers;
-		client.onMessage = (const User user, const Target target, const Message msg, const MessageMetadata) {
+		client.onMessage = (const User user, const Target, const Message, const MessageMetadata) {
 			privmsgUsers ~= user;
 		};
 		initialize(client);
@@ -1621,8 +1669,8 @@ version(unittest) {
 		client.monitorList();
 		client.monitorStatus();
 
-		auto lineByLine = client.output.data.lineSplitter().drop(5);
-		assert(lineByLine.array == ["MONITOR + Someone", "MONITOR - Someone", "MONITOR C", "MONITOR L", "MONITOR S"]);
+		const lineByLine = client.output.data.lineSplitter().drop(5).array;
+		assert(lineByLine == ["MONITOR + Someone", "MONITOR - Someone", "MONITOR C", "MONITOR L", "MONITOR S"]);
 	}
 	{ //No MOTD test
 		auto client = spawnNoBufferClient();
@@ -1634,5 +1682,29 @@ version(unittest) {
 		initialize(client);
 		client.put("422 someone :MOTD File is missing");
 		assert(errorReceived);
+	}
+	{ //NICK tests
+		auto client = spawnNoBufferClient();
+		Tuple!(const User, "old", const User, "new_")[] nickChanges;
+		client.onNick = (const User old, const User new_, const MessageMetadata) {
+			nickChanges ~= tuple!("old", "new_")(old, new_);
+		};
+
+		initialize(client);
+		client.put(":WiZ NICK Kilroy");
+
+		assert(nickChanges.length > 0);
+		with(nickChanges[0]) {
+			assert(old.nickname == "WiZ");
+			assert(new_.nickname == "Kilroy");
+		}
+
+		client.put(":dan-!d@localhost NICK Mamoped");
+
+		assert(nickChanges.length > 1);
+		with(nickChanges[1]) {
+			assert(old.nickname == "dan-");
+			assert(new_.nickname == "Mamoped");
+		}
 	}
 }
