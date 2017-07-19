@@ -655,6 +655,135 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	void put(immutable(ubyte)[] rawString) {
 		put(rawString.toUTF8String);
 	}
+	private void endRegistration() {
+		write("CAP END");
+	}
+	public void capList() {
+		write("CAP LIST");
+	}
+	public void list() {
+		write("LIST");
+	}
+	public void monitorClear() {
+		assert(monitorIsEnabled);
+		write("MONITOR C");
+	}
+	public void monitorList() {
+		assert(monitorIsEnabled);
+		write("MONITOR L");
+	}
+	public void monitorStatus() {
+		assert(monitorIsEnabled);
+		write("MONITOR S");
+	}
+	public void monitorAdd(T)(T users) if (isInputRange!T && is(ElementType!T == User)) {
+		assert(monitorIsEnabled);
+		writeList!("MONITOR + ", ",")(users.map!(x => x.nickname));
+	}
+	public void monitorRemove(T)(T users) if (isInputRange!T && is(ElementType!T == User)) {
+		assert(monitorIsEnabled);
+		writeList!("MONITOR - ", ",")(users.map!(x => x.nickname));
+	}
+	public bool monitorIsEnabled() {
+		return capsEnabled.canFind("MONITOR");
+	}
+	public void quit(const string msg) {
+		write!"QUIT :%s"(msg);
+		invalid = true;
+	}
+	public void changeNickname(const string nick) {
+		write!"NICK %s"(nick);
+	}
+	public void join(T,U = void[])(T channel, U keys = U.init) if (isInputRange!T && isInputRange!U) in {
+		assert(channels.filter!(x => server.iSupport.canFind(x.front)).empty, channel.front~": Not a channel type");
+		assert(!channels.empty, "No channels specified");
+	} body {
+		if (!keys.empty) {
+			write!"JOIN %-(%s,%) %-(%s,%)"(channels, keys);
+		} else {
+			write!"JOIN %-(%s,%)"(channels);
+		}
+	}
+	public void join(string chan) {
+		write!"JOIN %s"(chan);
+	}
+	public void msg(string target, string message) {
+		write!"PRIVMSG %s :%s"(target, message);
+	}
+	public void msg(Target target, Message message) {
+		msg(target.text, message.text);
+	}
+	public void notice(string target, string message) {
+		write!"NOTICE %s :%s"(target, message);
+	}
+	public void notice(Target target, Message message) {
+		notice(target.text, message.text);
+	}
+	private void register() {
+		assert(!isRegistered);
+		if (!password.isNull) {
+			write!"PASS :%s"(password);
+		}
+		changeNickname(nickname);
+		write!"USER %s 0 * :%s"(username, realname);
+	}
+	private void write(string fmt, T...)(T args) {
+		import std.range : put;
+		debug(verboseirc) import std.stdio : writefln;
+		debug(verboseirc) writefln!("O: "~fmt)(args);
+		formattedWrite!fmt(output, args);
+		put(output, "\r\n");
+		debug {
+			tryCall!"onSend"(format!fmt(args));
+		}
+		static if (is(typeof(output.flush()))) {
+			output.flush();
+		}
+	}
+	private void write(T...)(const string fmt, T args) {
+		debug(verboseirc) writefln("O: "~fmt, args);
+		formattedWrite(output, fmt, args);
+		std.range.put(output, "\r\n");
+		debug {
+			tryCall!"onSend"(format(fmt, args));
+		}
+		static if (is(typeof(output.flush()))) {
+			output.flush();
+		}
+	}
+	private void write(const string text) {
+		write!"%s"(text);
+	}
+	private void writeList(string prefix, string separator, T)(T range) if (isInputRange!T && is(Unqual!(ElementType!T) == string)) {
+		write!(prefix~"%-(%s"~separator~"%)")(range);
+	}
+	private bool isEnabled(const Capability cap) {
+		return capsEnabled.canFind(cap);
+	}
+	private void tryCall(string func, T...)(T params) {
+		import std.traits : hasMember;
+		static if (!__traits(isTemplate, mix)) {
+			if (__traits(getMember, this, func) !is null) {
+				__traits(getMember, this, func)(params);
+			}
+		} else static if(hasMember!(typeof(this), func)) {
+			__traits(getMember, this, func)(params);
+		}
+	}
+	private Target parseTarget(string str) {
+		Target output;
+		if (server.iSupport.channelTypes.canFind(str.front)) {
+			output.channel = Channel(str);
+		} else {
+			output.user = User(str);
+		}
+		return output;
+	}
+	auto me() {
+		assert(nickname in internalAddressList);
+		return internalAddressList[nickname];
+	}
+	//Message parsing functions follow
 	private void recCap(T)(T tokens, MessageMetadata metadata) if (isInputRange!T && is(ElementType!T == string)) {
 		immutable username = tokens.front; //Unused?
 		tokens.popFront();
@@ -813,70 +942,6 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void recTopic(const TopicReply tr, const MessageMetadata metadata) {
 		tryCall!"onTopicReply"(tr, metadata);
 	}
-	private void endRegistration() {
-		write("CAP END");
-	}
-	public void capList() {
-		write("CAP LIST");
-	}
-	public void list() {
-		write("LIST");
-	}
-	public void monitorClear() {
-		assert(monitorIsEnabled);
-		write("MONITOR C");
-	}
-	public void monitorList() {
-		assert(monitorIsEnabled);
-		write("MONITOR L");
-	}
-	public void monitorStatus() {
-		assert(monitorIsEnabled);
-		write("MONITOR S");
-	}
-	public void monitorAdd(T)(T users) if (isInputRange!T && is(ElementType!T == User)) {
-		assert(monitorIsEnabled);
-		writeList!("MONITOR + ", ",")(users.map!(x => x.nickname));
-	}
-	public void monitorRemove(T)(T users) if (isInputRange!T && is(ElementType!T == User)) {
-		assert(monitorIsEnabled);
-		writeList!("MONITOR - ", ",")(users.map!(x => x.nickname));
-	}
-	public bool monitorIsEnabled() {
-		return capsEnabled.canFind("MONITOR");
-	}
-	public void quit(const string msg) {
-		write!"QUIT :%s"(msg);
-		invalid = true;
-	}
-	public void changeNickname(const string nick) {
-		write!"NICK %s"(nick);
-	}
-	public void join(T,U = void[])(T channel, U keys = U.init) if (isInputRange!T && isInputRange!U) in {
-		assert(channels.filter!(x => server.iSupport.canFind(x.front)).empty, channel.front~": Not a channel type");
-		assert(!channels.empty, "No channels specified");
-	} body {
-		if (!keys.empty) {
-			write!"JOIN %-(%s,%) %-(%s,%)"(channels, keys);
-		} else {
-			write!"JOIN %-(%s,%)"(channels);
-		}
-	}
-	public void join(string chan) {
-		write!"JOIN %s"(chan);
-	}
-	public void msg(string target, string message) {
-		write!"PRIVMSG %s :%s"(target, message);
-	}
-	public void msg(Target target, Message message) {
-		msg(target.text, message.text);
-	}
-	public void notice(string target, string message) {
-		write!"NOTICE %s :%s"(target, message);
-	}
-	public void notice(Target target, Message message) {
-		notice(target.text, message.text);
-	}
 	private void recNick(const User old, const User new_, const MessageMetadata metadata) {
 		if (old.nickname == nickname) {
 			nickname = new_.nickname;
@@ -904,70 +969,6 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void recUnknownNumeric(const string cmd, const MessageMetadata metadata) {
 		debug(verboseirc) import std.stdio : writeln;
 		debug(verboseirc) writeln(metadata.time, " Unhandled numeric: ", cast(Numeric)cmd, " ", metadata.original);
-	}
-	private void register() {
-		assert(!isRegistered);
-		if (!password.isNull) {
-			write!"PASS :%s"(password);
-		}
-		changeNickname(nickname);
-		write!"USER %s 0 * :%s"(username, realname);
-	}
-	private void write(string fmt, T...)(T args) {
-		import std.range : put;
-		debug(verboseirc) import std.stdio : writefln;
-		debug(verboseirc) writefln!("O: "~fmt)(args);
-		formattedWrite!fmt(output, args);
-		put(output, "\r\n");
-		debug {
-			tryCall!"onSend"(format!fmt(args));
-		}
-		static if (is(typeof(output.flush()))) {
-			output.flush();
-		}
-	}
-	private void write(T...)(const string fmt, T args) {
-		debug(verboseirc) writefln("O: "~fmt, args);
-		formattedWrite(output, fmt, args);
-		std.range.put(output, "\r\n");
-		debug {
-			tryCall!"onSend"(format(fmt, args));
-		}
-		static if (is(typeof(output.flush()))) {
-			output.flush();
-		}
-	}
-	private void write(const string text) {
-		write!"%s"(text);
-	}
-	private void writeList(string prefix, string separator, T)(T range) if (isInputRange!T && is(Unqual!(ElementType!T) == string)) {
-		write!(prefix~"%-(%s"~separator~"%)")(range);
-	}
-	private bool isEnabled(const Capability cap) {
-		return capsEnabled.canFind(cap);
-	}
-	void tryCall(string func, T...)(T params) {
-		import std.traits : hasMember;
-		static if (!__traits(isTemplate, mix)) {
-			if (__traits(getMember, this, func) !is null) {
-				__traits(getMember, this, func)(params);
-			}
-		} else static if(hasMember!(typeof(this), func)) {
-			__traits(getMember, this, func)(params);
-		}
-	}
-	private Target parseTarget(string str) {
-		Target output;
-		if (server.iSupport.channelTypes.canFind(str.front)) {
-			output.channel = Channel(str);
-		} else {
-			output.user = User(str);
-		}
-		return output;
-	}
-	auto me() {
-		assert(nickname in internalAddressList);
-		return internalAddressList[nickname];
 	}
 }
 version(unittest) {
