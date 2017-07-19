@@ -60,7 +60,7 @@ enum supportedCaps = AliasSeq!(
 	"chghost", // http://ircv3.net/specs/extensions/chghost-3.2.html
 	"echo-message", // http://ircv3.net/specs/extensions/echo-message-3.2.html
 	"extended-join", // http://ircv3.net/specs/extensions/extended-join-3.1.html
-	//"invite-notify", // http://ircv3.net/specs/extensions/invite-notify-3.2.html
+	"invite-notify", // http://ircv3.net/specs/extensions/invite-notify-3.2.html
 	//"metadata", // http://ircv3.net/specs/core/metadata-3.2.html
 	//"monitor", // http://ircv3.net/specs/core/monitor-3.2.html
 	"multi-prefix", // http://ircv3.net/specs/extensions/multi-prefix-3.1.html
@@ -360,6 +360,8 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		///
 		void delegate(const User, const User, const MessageMetadata) @safe onNick;
 		///
+		void delegate(const User, const User, const Channel, const MessageMetadata) @safe onInvite;
+		///
 		void delegate(const User, const Channel, const MessageMetadata) @safe onJoin;
 		///
 		void delegate(const User, const Channel, const string, const MessageMetadata) @safe onPart;
@@ -534,6 +536,22 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 							User old = source;
 							internalAddressList.renameTo(source, split.front);
 							recNick(old, internalAddressList[split.front], metadata);
+						}
+						break;
+					case RFC1459Commands.invite:
+						if (!split.empty) {
+							User inviter = source;
+							User invited;
+							if (split.front in internalAddressList) {
+								invited = internalAddressList[split.front];
+							} else {
+								invited = User(split.front);
+							}
+							split.popFront();
+							if (!split.empty) {
+								auto channel = Channel(split.front);
+								recInvite(inviter, invited, channel, metadata);
+							}
 						}
 						break;
 					case IRCV3Commands.chghost:
@@ -864,6 +882,9 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 			nickname = new_.nickname;
 		}
 		tryCall!"onNick"(old, new_, metadata);
+	}
+	private void recInvite(const User inviter, const User invited, const Channel channel, const MessageMetadata metadata) {
+		tryCall!"onInvite"(inviter, invited, channel, metadata);
 	}
 	private void recQuit(const User user, const string msg, const MessageMetadata metadata) {
 		internalAddressList.invalidate(user.nickname);
@@ -1782,6 +1803,36 @@ version(unittest) {
 		assert(quits.length == 3);
 		with(quits[0]) {
 			assert(metadata.batch.type == "netsplit");
+		}
+	}
+	{ //INVITE tests
+		auto client = spawnNoBufferClient();
+
+		Tuple!(const User, "inviter", const User, "invited",  const Channel, "channel")[] invites;
+		client.onInvite = (const User inviter, const User invited, const Channel channel, const MessageMetadata) {
+			invites ~= tuple!("inviter", "invited", "channel")(inviter, invited, channel);
+		};
+
+		client.initialize();
+
+		//Ensure the internal address list gets used for invited users as well
+		client.internalAddressList.update(User("Wiz!ident@host"));
+
+		client.put(":Angel INVITE Wiz #Dust");
+		assert(invites.length == 1);
+		with(invites[0]) {
+			assert(inviter.nickname == "Angel");
+			assert(invited.nickname == "Wiz");
+			assert(invited.host == "host");
+			assert(channel == Channel("#Dust"));
+		}
+
+		client.put(":ChanServ!ChanServ@example.com INVITE Attila #channel");
+		assert(invites.length == 2);
+		with(invites[1]) {
+			assert(inviter.nickname == "ChanServ");
+			assert(invited.nickname == "Attila");
+			assert(channel == Channel("#channel"));
 		}
 	}
 }
