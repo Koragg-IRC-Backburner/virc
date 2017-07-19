@@ -14,6 +14,8 @@ import std.range : dropOne, isInputRange, only;
 import std.traits : isArray;
 import std.typecons : Nullable;
 import std.utf;
+
+import virc.batch;
 /++
 +
 +/
@@ -23,6 +25,8 @@ struct ParsedMessage {
 	///
 	IRCTags tags;
 	///
+	BatchInformation batch;
+	///
 	this(string text) pure @safe nothrow @nogc {
 		msg = text;
 	}
@@ -30,6 +34,9 @@ struct ParsedMessage {
 	this(string text, string[string] inTags) pure @safe nothrow @nogc {
 		msg = text;
 		tags = IRCTags(inTags);
+	}
+	auto opEquals(const ParsedMessage b) const {
+		return(this.msg == b.msg);
 	}
 }
 /++

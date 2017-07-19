@@ -19,6 +19,7 @@ import std.traits : Parameters, Unqual;
 import std.typecons : Nullable;
 import std.utf : byCodeUnit;
 
+import virc.batch;
 import virc.common;
 import virc.encoding;
 import virc.internaladdresslist;
@@ -96,6 +97,8 @@ struct MessageMetadata {
 	Nullable!Numeric messageNumeric;
 	///
 	string original;
+	///
+	BatchInformation batch;
 }
 /++
 +
@@ -393,7 +396,7 @@ private struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private bool invalid = true;
 	private bool isRegistered;
 	private ulong capReqCount = 0;
-
+	private BatchProcessor batchProcessor;
 	void initialize() {
 		invalid = false;
 		write("CAP LS 302");
@@ -423,190 +426,203 @@ private struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		if (line.empty) {
 			return;
 		}
-		auto tagSplit = line.splitTag;
-		line = tagSplit.msg;
-		Nullable!User source;
-		if (line.front == ':') {
-			auto found = line.findSplit(" ");
-			source = User();
-			source.mask = UserMask(found[0][1..$]);
-			line = found[2];
-		}
-		auto split = IRCSplitter(line);
-		auto metadata = MessageMetadata();
-		metadata.tags = tagSplit.tags;
-		if("time" in tagSplit.tags) {
-			metadata.time = parseTime(tagSplit.tags);
-		} else {
-			metadata.time = Clock.currTime(UTC());
-		}
-		if ("account" in tagSplit.tags) {
-			if (!source.isNull) {
-				source.account = tagSplit.tags["account"];
-			}
-		}
-		if (!source.isNull) {
-			internalAddressList.update(source);
-			if (source.nickname in internalAddressList) {
-				source = internalAddressList[source.nickname];
-			}
-		}
-
-		if (split.front.filter!(x => !isDigit(x)).empty) {
-			metadata.messageNumeric = cast(Numeric)split.front;
-		}
-		metadata.original = line;
-		tryCall!"onRaw"(metadata);
-
-		auto firstToken = split.front;
-		split.popFront();
-		switch (firstToken) {
-			case IRCV3Commands.cap:
-				recCap(split, metadata);
-				break;
-			case RFC1459Commands.join:
-				Channel channel;
-				channel.name = split.front;
-				split.popFront();
-				if (isEnabled(Capability("extended-join"))) {
-					if (split.front != "*") {
-						source.account = split.front;
+		batchProcessor.put(line);
+		foreach (batch; batchProcessor) {
+			batchProcessor.popFront();
+			foreach (tagSplit; batch.lines) {
+				auto batchLine = tagSplit.msg;
+				Nullable!User source;
+				if (batchLine.front == ':') {
+					auto found = batchLine.findSplit(" ");
+					source = User();
+					source.mask = UserMask(found[0][1..$]);
+					batchLine = found[2];
+				}
+				auto split = IRCSplitter(batchLine);
+				auto metadata = MessageMetadata();
+				metadata.batch = tagSplit.batch;
+				metadata.tags = tagSplit.tags;
+				if("time" in tagSplit.tags) {
+					metadata.time = parseTime(tagSplit.tags);
+				} else {
+					metadata.time = Clock.currTime(UTC());
+				}
+				if ("account" in tagSplit.tags) {
+					if (!source.isNull) {
+						source.account = tagSplit.tags["account"];
 					}
-					split.popFront();
-					source.realName = split.front;
-					split.popFront();
 				}
-				recJoin(source, channel, metadata);
-				break;
-			case RFC1459Commands.part:
-				Channel channel;
-				channel.name = split.front;
-				split.popFront();
-				auto msg = split.front;
-				recPart(source, channel, msg, metadata);
-				break;
-			case RFC1459Commands.ping:
-				recPing(split.front, metadata);
-				break;
-			case RFC1459Commands.notice:
-				Target target = parseTarget(split.front);
-				split.popFront();
-				auto message = Message(split.front, MessageType.notice);
-				recNotice(source, target, message, metadata);
-				break;
-			case RFC1459Commands.privmsg:
-				Target target = parseTarget(split.front);
-				split.popFront();
-				auto message = Message(split.front, MessageType.privmsg);
-				recPrivmsg(source, target, message, metadata);
-				break;
-			case RFC1459Commands.mode:
-				Target target = parseTarget(split.front);
-				split.popFront();
-				auto modes = parseModeString(split, server.iSupport.channelModeTypes);
-				recMode(source, target, modes, metadata);
-				break;
-			case RFC1459Commands.nick:
-				if (!split.empty) {
-					User old = source;
-					internalAddressList.renameTo(source, split.front);
-					recNick(old, internalAddressList[split.front], metadata);
+				if (!source.isNull) {
+					internalAddressList.update(source);
+					if (source.nickname in internalAddressList) {
+						source = internalAddressList[source.nickname];
+					}
 				}
-				break;
-			case IRCV3Commands.chghost:
-				User target;
-				target.mask.nickname = source.nickname;
-				target.mask.ident = split.front;
+
+				if (split.front.filter!(x => !isDigit(x)).empty) {
+					metadata.messageNumeric = cast(Numeric)split.front;
+				}
+				metadata.original = batchLine;
+				tryCall!"onRaw"(metadata);
+
+				auto firstToken = split.front;
 				split.popFront();
-				target.mask.host = split.front;
-				recChgHost(source, target, metadata);
-				break;
-			case Numeric.RPL_WELCOME:
-				isRegistered = true;
-				auto meUser = User();
-				meUser.mask.nickname = nickname;
-				meUser.mask.ident = username;
-				internalAddressList.update(meUser);
-				tryCall!"onConnect"();
-				break;
-			case Numeric.RPL_ISUPPORT:
-				switch (split.save().canFind("UHNAMES", "NAMESX")) {
-					case 1:
-						if (!isEnabled(Capability("userhost-in-names"))) {
-							write("PROTOCTL UHNAMES");
+				switch (firstToken) {
+					case IRCV3Commands.cap:
+						recCap(split, metadata);
+						break;
+					case RFC1459Commands.join:
+						Channel channel;
+						channel.name = split.front;
+						split.popFront();
+						if (isEnabled(Capability("extended-join"))) {
+							if (split.front != "*") {
+								source.account = split.front;
+							}
+							split.popFront();
+							source.realName = split.front;
+							split.popFront();
+						}
+						recJoin(source, channel, metadata);
+						break;
+					case RFC1459Commands.part:
+						Channel channel;
+						channel.name = split.front;
+						split.popFront();
+						auto msg = split.front;
+						recPart(source, channel, msg, metadata);
+						break;
+					case RFC1459Commands.quit:
+						string msg;
+						if (!split.empty) {
+							msg = split.front;
+						}
+						recQuit(source, msg, metadata);
+						break;
+					case RFC1459Commands.ping:
+						recPing(split.front, metadata);
+						break;
+					case RFC1459Commands.notice:
+						Target target = parseTarget(split.front);
+						split.popFront();
+						auto message = Message(split.front, MessageType.notice);
+						recNotice(source, target, message, metadata);
+						break;
+					case RFC1459Commands.privmsg:
+						Target target = parseTarget(split.front);
+						split.popFront();
+						auto message = Message(split.front, MessageType.privmsg);
+						recPrivmsg(source, target, message, metadata);
+						break;
+					case RFC1459Commands.mode:
+						Target target = parseTarget(split.front);
+						split.popFront();
+						auto modes = parseModeString(split, server.iSupport.channelModeTypes);
+						recMode(source, target, modes, metadata);
+						break;
+					case RFC1459Commands.nick:
+						if (!split.empty) {
+							User old = source;
+							internalAddressList.renameTo(source, split.front);
+							recNick(old, internalAddressList[split.front], metadata);
 						}
 						break;
-					case 2:
-						if (!isEnabled(Capability("multi-prefix"))) {
-							write("PROTOCTL NAMESX");
+					case IRCV3Commands.chghost:
+						User target;
+						target.mask.nickname = source.nickname;
+						target.mask.ident = split.front;
+						split.popFront();
+						target.mask.host = split.front;
+						recChgHost(source, target, metadata);
+						break;
+					case Numeric.RPL_WELCOME:
+						isRegistered = true;
+						auto meUser = User();
+						meUser.mask.nickname = nickname;
+						meUser.mask.ident = username;
+						internalAddressList.update(meUser);
+						tryCall!"onConnect"();
+						break;
+					case Numeric.RPL_ISUPPORT:
+						switch (split.save().canFind("UHNAMES", "NAMESX")) {
+							case 1:
+								if (!isEnabled(Capability("userhost-in-names"))) {
+									write("PROTOCTL UHNAMES");
+								}
+								break;
+							case 2:
+								if (!isEnabled(Capability("multi-prefix"))) {
+									write("PROTOCTL NAMESX");
+								}
+								break;
+							default: break;
+						}
+						parseNumeric!(Numeric.RPL_ISUPPORT)(split, server.iSupport);
+						break;
+					case Numeric.RPL_LIST:
+						auto channel = parseNumeric!(Numeric.RPL_LIST)(split, server.iSupport.channelModeTypes);
+						recList(channel, metadata);
+						break;
+					case Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT:
+						break;
+					case Numeric.RPL_MYINFO:
+						server.myInfo = parseNumeric!(Numeric.RPL_MYINFO)(split);
+						break;
+					case Numeric.RPL_LOGON:
+						auto reply = parseNumeric!(Numeric.RPL_LOGON)(split);
+						recLogon(reply.user, reply.timeOccurred, metadata);
+						break;
+					case Numeric.RPL_MONONLINE:
+						auto user = parseNumeric!(Numeric.RPL_MONONLINE)(split);
+						recMonitorOnline(user, metadata);
+						break;
+					case Numeric.RPL_MONOFFLINE:
+						auto user = parseNumeric!(Numeric.RPL_MONOFFLINE)(split);
+						recMonitorOffline(user, metadata);
+						break;
+					case Numeric.RPL_MONLIST:
+						auto user = parseNumeric!(Numeric.RPL_MONLIST)(split);
+						recMonitorList(user, metadata);
+						break;
+					case Numeric.ERR_MONLISTFULL:
+						recMonListFull(parseNumeric!(Numeric.ERR_MONLISTFULL)(split), metadata);
+						break;
+					case Numeric.ERR_NOMOTD:
+						tryCall!"onError"(metadata);
+						break;
+					case Numeric.RPL_LUSERCLIENT:
+						tryCall!"onLUserClient"(parseNumeric!(Numeric.RPL_LUSERCLIENT)(split), metadata);
+						break;
+					case Numeric.RPL_LUSEROP:
+						tryCall!"onLUserOp"(parseNumeric!(Numeric.RPL_LUSEROP)(split), metadata);
+						break;
+					case Numeric.RPL_LUSERCHANNELS:
+						tryCall!"onLUserChannels"(parseNumeric!(Numeric.RPL_LUSERCHANNELS)(split), metadata);
+						break;
+					case Numeric.RPL_LUSERME:
+						tryCall!"onLUserMe"(parseNumeric!(Numeric.RPL_LUSERME)(split), metadata);
+						break;
+					case Numeric.RPL_TOPIC:
+						auto reply = parseNumeric!(Numeric.RPL_TOPIC)(split);
+						if (!reply.isNull) {
+							recTopic(reply.get, metadata);
 						}
 						break;
-					default: break;
+					case Numeric.RPL_NAMREPLY:
+						auto reply = parseNumeric!(Numeric.RPL_NAMREPLY)(split);
+						if (!reply.isNull) {
+							recRPLNamReply(reply.get, metadata);
+						}
+						break;
+					case Numeric.RPL_TOPICWHOTIME:
+						auto reply = parseNumeric!(Numeric.RPL_TOPICWHOTIME)(split);
+						if (!reply.isNull) {
+							recRPLTopicWhoTime(reply.get, metadata);
+						}
+						break;
+					default: recUnknownCommand(firstToken, metadata); break;
 				}
-				parseNumeric!(Numeric.RPL_ISUPPORT)(split, server.iSupport);
-				break;
-			case Numeric.RPL_LIST:
-				auto channel = parseNumeric!(Numeric.RPL_LIST)(split, server.iSupport.channelModeTypes);
-				recList(channel, metadata);
-				break;
-			case Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT:
-				break;
-			case Numeric.RPL_MYINFO:
-				server.myInfo = parseNumeric!(Numeric.RPL_MYINFO)(split);
-				break;
-			case Numeric.RPL_LOGON:
-				auto reply = parseNumeric!(Numeric.RPL_LOGON)(split);
-				recLogon(reply.user, reply.timeOccurred, metadata);
-				break;
-			case Numeric.RPL_MONONLINE:
-				auto user = parseNumeric!(Numeric.RPL_MONONLINE)(split);
-				recMonitorOnline(user, metadata);
-				break;
-			case Numeric.RPL_MONOFFLINE:
-				auto user = parseNumeric!(Numeric.RPL_MONOFFLINE)(split);
-				recMonitorOffline(user, metadata);
-				break;
-			case Numeric.RPL_MONLIST:
-				auto user = parseNumeric!(Numeric.RPL_MONLIST)(split);
-				recMonitorList(user, metadata);
-				break;
-			case Numeric.ERR_MONLISTFULL:
-				recMonListFull(parseNumeric!(Numeric.ERR_MONLISTFULL)(split), metadata);
-				break;
-			case Numeric.ERR_NOMOTD:
-				tryCall!"onError"(metadata);
-				break;
-			case Numeric.RPL_LUSERCLIENT:
-				tryCall!"onLUserClient"(parseNumeric!(Numeric.RPL_LUSERCLIENT)(split), metadata);
-				break;
-			case Numeric.RPL_LUSEROP:
-				tryCall!"onLUserOp"(parseNumeric!(Numeric.RPL_LUSEROP)(split), metadata);
-				break;
-			case Numeric.RPL_LUSERCHANNELS:
-				tryCall!"onLUserChannels"(parseNumeric!(Numeric.RPL_LUSERCHANNELS)(split), metadata);
-				break;
-			case Numeric.RPL_LUSERME:
-				tryCall!"onLUserMe"(parseNumeric!(Numeric.RPL_LUSERME)(split), metadata);
-				break;
-			case Numeric.RPL_TOPIC:
-				auto reply = parseNumeric!(Numeric.RPL_TOPIC)(split);
-				if (!reply.isNull) {
-					recTopic(reply.get, metadata);
-				}
-				break;
-			case Numeric.RPL_NAMREPLY:
-				auto reply = parseNumeric!(Numeric.RPL_NAMREPLY)(split);
-				if (!reply.isNull) {
-					recRPLNamReply(reply.get, metadata);
-				}
-				break;
-			case Numeric.RPL_TOPICWHOTIME:
-				auto reply = parseNumeric!(Numeric.RPL_TOPICWHOTIME)(split);
-				if (!reply.isNull) {
-					recRPLTopicWhoTime(reply.get, metadata);
-				}
-				break;
-			default: recUnknownCommand(firstToken, metadata); break;
+			}
 		}
 	}
 	void put(immutable(ubyte)[] rawString) {
@@ -839,6 +855,10 @@ private struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 			nickname = new_.nickname;
 		}
 		tryCall!"onNick"(old, new_, metadata);
+	}
+	private void recQuit(const User user, const string msg, const MessageMetadata metadata) {
+		internalAddressList.invalidate(user.nickname);
+		tryCall!"onQuit"(user, msg, metadata);
 	}
 	private void recUnknownCommand(const string cmd, const MessageMetadata metadata) {
 		debug(verboseirc) import std.stdio : writeln;
@@ -1712,5 +1732,47 @@ version(unittest) {
 		//invalid, so we shouldn't see anything
 		client.put(":a NICK");
 		assert(nickChanges.length == 2);
+	}
+	{ //QUIT tests
+		auto client = spawnNoBufferClient();
+
+		Tuple!(const User, "user", string, "message")[] quits;
+		client.onQuit = (const User user, const string msg, const MessageMetadata) {
+			quits ~= tuple!("user", "message")(user, msg);
+		};
+
+		client.initialize();
+
+		client.put(":dan-!d@localhost QUIT :Quit: Bye for now!");
+		assert(quits.length == 1);
+		with (quits[0]) {
+			assert(user == User("dan-!d@localhost"));
+			assert(message == "Quit: Bye for now!");
+		}
+	}
+	{ //Batch stuff
+		auto client = spawnNoBufferClient();
+
+		Tuple!(const User, "user", const MessageMetadata, "metadata")[] quits;
+		client.onQuit = (const User user, const string, const MessageMetadata metadata) {
+			quits ~= tuple!("user", "metadata")(user, metadata);
+		};
+
+		client.initialize();
+
+		client.put(`:irc.host BATCH +yXNAbvnRHTRBv netsplit irc.hub other.host`);
+		client.put(`@batch=yXNAbvnRHTRBv :aji!a@a QUIT :irc.hub other.host`);
+		client.put(`@batch=yXNAbvnRHTRBv :nenolod!a@a QUIT :irc.hub other.host`);
+		client.put(`:nick!user@host PRIVMSG #channel :This is not in batch, so processed immediately`);
+		client.put(`@batch=yXNAbvnRHTRBv :jilles!a@a QUIT :irc.hub other.host`);
+
+		assert(quits.length == 0);
+
+		client.put(`:irc.host BATCH -yXNAbvnRHTRBv`);
+
+		assert(quits.length == 3);
+		with(quits[0]) {
+			assert(metadata.batch.type == "netsplit");
+		}
 	}
 }

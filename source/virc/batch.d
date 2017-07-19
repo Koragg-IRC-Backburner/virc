@@ -23,14 +23,14 @@ struct BatchProcessor {
 		auto processed = BatchCommand(splitMsg.msg);
 		Batch newBatch;
 		if (processed.isValid && processed.isNew) {
-			newBatch.referenceTag = processed.referenceTag;
-			newBatch.type = processed.type;
-			newBatch.parameters = processed.parameters;
+			newBatch.info.referenceTag = processed.referenceTag;
+			newBatch.info.type = processed.type;
+			newBatch.info.parameters = processed.parameters;
 		}
 		if ("batch" !in splitMsg.tags) {
 			if (processed.isValid) {
 				if (processed.isNew) {
-					batchCache[newBatch.referenceTag] = newBatch;
+					batchCache[newBatch.info.referenceTag] = newBatch;
 				} else if (processed.isClosed) {
 					batches ~= batchCache[processed.referenceTag];
 					consumeBatch ~= true;
@@ -43,10 +43,10 @@ struct BatchProcessor {
 		} else {
 			void findBatch(ref Batch[string] searchBatches, string identifier) @safe pure {
 				foreach (ref batch; searchBatches) {
-					if (batch.referenceTag == identifier) {
+					if (batch.info.referenceTag == identifier) {
 						if (processed.isValid) {
 							if (processed.isNew)
-								batch.nestedBatches[newBatch.referenceTag] = newBatch;
+								batch.nestedBatches[newBatch.info.referenceTag] = newBatch;
 						} else {
 							batch.put(splitMsg);
 						}
@@ -77,7 +77,7 @@ struct BatchProcessor {
 		if (consumeBatch[0])
 			return batches[0];
 		else
-			return Batch(false, "", "NOT A BATCH", [], [batchless[0]]);
+			return Batch(BatchInformation(false, "", "NOT A BATCH", []), [batchless[0]]);
 	}
 }
 private struct BatchCommand {
@@ -109,22 +109,30 @@ private struct BatchCommand {
 +
 +/
 struct Batch {
-	///
-	bool isValidBatch = true;
-	///A simple string identifying the batch. Uniqueness is not guaranteed?
-	string referenceTag;
-	///Indicates how the batch is to be processed. Examples include netsplit, netjoin, chathistory
-	string type;
-	///Miscellaneous details associated with the batch. Meanings vary based on type.
-	string[] parameters;
+	///Metadata attached to this batch
+	BatchInformation info;
 	///Lines captured minus the batch tag and starting/ending commands.
 	ParsedMessage[] lines;
 	///Any batches nested inside this one.
 	Batch[string] nestedBatches;
 	///
 	void put(ParsedMessage line) @safe pure {
+		line.batch = info;
 		lines ~= line;
 	}
+}
+/++
++
++/
+struct BatchInformation {
+	///
+	bool isValidBatch = false;
+	///A simple string identifying the batch. Uniqueness is not guaranteed?
+	string referenceTag;
+	///Indicates how the batch is to be processed. Examples include netsplit, netjoin, chathistory
+	string type;
+	///Miscellaneous details associated with the batch. Meanings vary based on type.
+	string[] parameters;
 }
 @safe pure /+nothrow+/ unittest {
 	import std.algorithm : copy;
@@ -148,9 +156,9 @@ struct Batch {
 		batchProcessor.popFront();
 		{
 			const batch = takeOne(batchProcessor).front;
-			assert(batch.referenceTag == `yXNAbvnRHTRBv`);
-			assert(batch.type == `netsplit`);
-			assert(batch.parameters == [`irc.hub`, `other.host`]);
+			assert(batch.info.referenceTag == `yXNAbvnRHTRBv`);
+			assert(batch.info.type == `netsplit`);
+			assert(batch.info.parameters == [`irc.hub`, `other.host`]);
 			assert(batch.lines == [ParsedMessage(`:aji!a@a QUIT :irc.hub other.host`, ["batch": "yXNAbvnRHTRBv"]), ParsedMessage(`:nenolod!a@a QUIT :irc.hub other.host`, ["batch": "yXNAbvnRHTRBv"]), ParsedMessage(`:jilles!a@a QUIT :irc.hub other.host`, ["batch": "yXNAbvnRHTRBv"])]);
 		}
 		batchProcessor.popFront();
@@ -171,15 +179,15 @@ struct Batch {
 		copy(lines, batchProcessor);
 		{
 			const batch = takeOne(batchProcessor).front;
-			assert(batch.type == "example.com/foo");
-			assert(batch.referenceTag == "1");
+			assert(batch.info.type == "example.com/foo");
+			assert(batch.info.referenceTag == "1");
 			assert(batch.lines == [ParsedMessage(":nick!user@host PRIVMSG #channel :Message 1", ["batch": "1"]), ParsedMessage(":nick!user@host PRIVMSG #channel :Message 2", ["batch": "1"]), ParsedMessage(":nick!user@host PRIVMSG #channel :Message 3", ["batch": "1"])]);
 		}
 		batchProcessor.popFront();
 		{
 			const batch = takeOne(batchProcessor).front;
-			assert(batch.type == "example.com/foo");
-			assert(batch.referenceTag == "2");
+			assert(batch.info.type == "example.com/foo");
+			assert(batch.info.referenceTag == "2");
 			assert(batch.lines == [ParsedMessage(":nick!user@host PRIVMSG #channel :Message 4", ["batch": "2"]), ParsedMessage(":nick!user@host PRIVMSG #channel :Message 5", ["batch": "2"])]);
 		}
 		batchProcessor.popFront();
@@ -196,14 +204,14 @@ struct Batch {
 		copy(lines, batchProcessor);
 		{
 			auto batch = takeOne(batchProcessor).front;
-			assert(batch.type == "example.com/foo");
-			assert(batch.referenceTag == "outer");
-			assert(batch.parameters == []);
+			assert(batch.info.type == "example.com/foo");
+			assert(batch.info.referenceTag == "outer");
+			assert(batch.info.parameters == []);
 			assert(batch.lines == []);
 			assert("inner" in batch.nestedBatches);
-			assert(batch.nestedBatches["inner"].type == "example.com/bar");
-			assert(batch.nestedBatches["inner"].referenceTag == "inner");
-			assert(batch.nestedBatches["inner"].parameters == []);
+			assert(batch.nestedBatches["inner"].info.type == "example.com/bar");
+			assert(batch.nestedBatches["inner"].info.referenceTag == "inner");
+			assert(batch.nestedBatches["inner"].info.parameters == []);
 			assert(batch.nestedBatches["inner"].lines == [ParsedMessage(":nick!user@host PRIVMSG #channel :Hi", ["batch": "inner"])]);
 		}
 		batchProcessor.popFront();
@@ -220,9 +228,9 @@ struct Batch {
 		copy(lines, batchProcessor);
 		{
 			const batch = takeOne(batchProcessor).front;
-			assert(batch.type == "netsplit");
-			assert(batch.referenceTag == "yXNAbvnRHTRBv");
-			assert(batch.parameters == ["irc.hub", "other.host"]);
+			assert(batch.info.type == "netsplit");
+			assert(batch.info.referenceTag == "yXNAbvnRHTRBv");
+			assert(batch.info.parameters == ["irc.hub", "other.host"]);
 			assert(batch.lines == [ParsedMessage(":aji!a@a QUIT :irc.hub other.host", ["batch": "yXNAbvnRHTRBv"]), ParsedMessage(":nenolod!a@a QUIT :irc.hub other.host", ["batch": "yXNAbvnRHTRBv"]), ParsedMessage(`:jilles!a@a QUIT :irc.hub other.host`, ["batch": "yXNAbvnRHTRBv"])]);
 		}
 		batchProcessor.popFront();
@@ -242,9 +250,9 @@ struct Batch {
 		copy(lines, batchProcessor);
 		{
 			const batch = takeOne(batchProcessor).front;
-			assert(batch.type == "netjoin");
-			assert(batch.referenceTag == "4lMeQwsaOMs6s");
-			assert(batch.parameters == ["irc.hub", "other.host"]);
+			assert(batch.info.type == "netjoin");
+			assert(batch.info.referenceTag == "4lMeQwsaOMs6s");
+			assert(batch.info.parameters == ["irc.hub", "other.host"]);
 			assert(batch.lines == [ParsedMessage(":aji!a@a JOIN #atheme", ["batch": "4lMeQwsaOMs6s"]), ParsedMessage(":nenolod!a@a JOIN #atheme", ["batch": "4lMeQwsaOMs6s"]), ParsedMessage(`:jilles!a@a JOIN #atheme`, ["batch": "4lMeQwsaOMs6s"]), ParsedMessage(`:nenolod!a@a JOIN #ircv3`, ["batch": "4lMeQwsaOMs6s"]), ParsedMessage(`:jilles!a@a JOIN #ircv3`, ["batch": "4lMeQwsaOMs6s"]), ParsedMessage(`:Elizacat!a@a JOIN #ircv3`, ["batch": "4lMeQwsaOMs6s"])]);
 		}
 		batchProcessor.popFront();
@@ -261,9 +269,9 @@ struct Batch {
 		copy(lines, batchProcessor);
 		{
 			const batch = takeOne(batchProcessor).front;
-			assert(batch.type == "chathistory");
-			assert(batch.referenceTag == "sxtUfAeXBgNoD");
-			assert(batch.parameters == ["#channel"]);
+			assert(batch.info.type == "chathistory");
+			assert(batch.info.referenceTag == "sxtUfAeXBgNoD");
+			assert(batch.info.parameters == ["#channel"]);
 			assert(batch.lines == [ParsedMessage(":foo!foo@example.com PRIVMSG #channel :I like turtles.", ["time":"2015-06-26T19:40:31.230Z", "batch": "sxtUfAeXBgNoD"]), ParsedMessage(":bar!bar@example.com NOTICE #channel :Tortoises are better.", ["time":"2015-06-26T19:43:53.410Z", "batch": "sxtUfAeXBgNoD"]), ParsedMessage(`:irc.host PRIVMSG #channel :Squishy animals are inferior to computers.`, ["time":"2015-06-26T19:48:18.140Z", "batch": "sxtUfAeXBgNoD"])]);
 		}
 		batchProcessor.popFront();
@@ -279,10 +287,37 @@ struct Batch {
 		copy(lines, batchProcessor);
 		{
 			const batch = takeOne(batchProcessor).front;
-			assert(batch.type == "chathistory");
-			assert(batch.referenceTag == "sxtUfAeXBgNoD");
-			assert(batch.parameters == ["remote"]);
+			assert(batch.info.type == "chathistory");
+			assert(batch.info.referenceTag == "sxtUfAeXBgNoD");
+			assert(batch.info.parameters == ["remote"]);
 			assert(batch.lines == [ParsedMessage(":remote!foo@example.com PRIVMSG local :I like turtles.", ["time":"2015-06-26T19:40:31.230Z", "batch":"sxtUfAeXBgNoD"]), ParsedMessage(":local!bar@example.com PRIVMSG remote :Tortoises are better.", ["time":"2015-06-26T19:43:53.410Z", "batch": "sxtUfAeXBgNoD"])]);
+		}
+		batchProcessor.popFront();
+		assert(batchProcessor.empty);
+	}
+	{ //Non-batch
+		auto batchProcessor = new BatchProcessor;
+		auto lines = [`@time=2015-06-26T19:40:31.230Z :remote!foo@example.com PRIVMSG local :I like turtles.`];
+		copy(lines, batchProcessor);
+		{
+			const batch = takeOne(batchProcessor).front;
+			assert(batch.lines == [ParsedMessage(":remote!foo@example.com PRIVMSG local :I like turtles.", ["time":"2015-06-26T19:40:31.230Z"])]);
+		}
+		batchProcessor.popFront();
+		assert(batchProcessor.empty);
+	}
+	{ //Non-batch
+		auto batchProcessor = new BatchProcessor;
+		batchProcessor.put(`@time=2015-06-26T19:40:31.230Z :remote!foo@example.com PRIVMSG local :I like turtles.`);
+		{
+			const batch = takeOne(batchProcessor).front;
+			assert(batch.lines == [ParsedMessage(":remote!foo@example.com PRIVMSG local :I like turtles.", ["time":"2015-06-26T19:40:31.230Z"])]);
+		}
+		batchProcessor.popFront();
+		batchProcessor.put(`@time=2015-06-26T19:40:31.230Z :remote!foo@example.com PRIVMSG local :I like turtles.`);
+		{
+			const batch = takeOne(batchProcessor).front;
+			assert(batch.lines == [ParsedMessage(":remote!foo@example.com PRIVMSG local :I like turtles.", ["time":"2015-06-26T19:40:31.230Z"])]);
 		}
 		batchProcessor.popFront();
 		assert(batchProcessor.empty);
