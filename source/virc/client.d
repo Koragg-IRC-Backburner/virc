@@ -179,6 +179,9 @@ struct Message {
 		assert(msg.ctcpArgs == "does a thing");
 	}
 }
+@system pure nothrow @nogc unittest {
+	assert(Message("Hello!", MessageType.notice).toHash == Message("Hello!", MessageType.privmsg).toHash);
+}
 /++
 +
 +/
