@@ -310,16 +310,22 @@ enum RFC1459Commands {
 enum RFC2812Commands {
 	service = "SERVICE"
 }
-private struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
+/++
++
++/
+struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	import virc.ircv3 : Capability, CapabilityServerSubcommands, IRCV3Commands;
 	T output;
+	///
 	Server server;
+	///
 	Capability[] capsEnabled;
-	string nickname;
-	string username;
-	string realname;
-	Nullable!string password;
+	private string nickname;
+	private string username;
+	private string realname;
+	private Nullable!string password;
 
+	///
 	InternalAddressList internalAddressList;
 
 	static if (__traits(isTemplate, mix)) {
