@@ -29,6 +29,10 @@ struct InternalAddressList {
 		}
 	}
 	///
+	void updateExact(User user) @safe pure nothrow {
+		users[user.nickname] = user;
+	}
+	///
 	void renameTo(User user, string newNick) @safe pure nothrow {
 		assert(user.nickname in users);
 		users[newNick] = users[user.nickname];

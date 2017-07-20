@@ -562,6 +562,12 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 						target.mask.host = split.front;
 						recChgHost(source, target, metadata);
 						break;
+					case IRCV3Commands.account:
+						if (!split.empty) {
+							auto newAccount = split.front;
+							recAccount(source, newAccount, metadata);
+						}
+						break;
 					case Numeric.RPL_WELCOME:
 						isRegistered = true;
 						auto meUser = User();
@@ -969,6 +975,16 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void recUnknownNumeric(const string cmd, const MessageMetadata metadata) {
 		debug(verboseirc) import std.stdio : writeln;
 		debug(verboseirc) writeln(metadata.time, " Unhandled numeric: ", cast(Numeric)cmd, " ", metadata.original);
+	}
+	private void recAccount(const User user, const string account, const MessageMetadata metadata) {
+		internalAddressList.update(user);
+		auto newUser = internalAddressList[user.nickname];
+		if (account == "*") {
+			newUser.account.nullify();
+		} else {
+			newUser.account = account;
+		}
+		internalAddressList.updateExact(newUser);
 	}
 }
 version(unittest) {
@@ -1709,6 +1725,19 @@ version(unittest) {
 		with(privmsgUsers[2]) {
 			assert(account == "bob");
 		}
+		assert(client.internalAddressList["user"].account == "bob");
+	}
+	{ //account-notify - http://ircv3.net/specs/extensions/account-notify-3.1.html
+		auto client = spawnNoBufferClient();
+		//User[] privmsgUsers;
+		//client.onMessage = (const User user, const Target, const Message, const MessageMetadata) {
+		//	privmsgUsers ~= user;
+		//};
+		initialize(client);
+		client.put(":nick!user@host ACCOUNT accountname");
+		assert(client.internalAddressList["nick"].account == "accountname");
+		client.put(":nick!user@host ACCOUNT *");
+		assert(client.internalAddressList["nick"].account.isNull);
 	}
 	{ //monitor - http://ircv3.net/specs/core/monitor-3.2.html
 		auto client = spawnNoBufferClient();
