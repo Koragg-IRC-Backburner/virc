@@ -45,14 +45,12 @@ enum CapabilityClientSubcommands {
 struct Capability {
 	///
 	string name;
-	///
-	bool isVendorSpecific;
-	///
+	///DEPRECATED - indicates that the capability cannot be disabled
 	bool isSticky;
-	///
+	///Indicates that the capability is being disabled
 	bool isDisabled;
-	///
-	bool isAcked;
+	///DEPRECATED - indicates that the client must acknowledge this cap via CAP ACK
+	bool mustAck;
 	///
 	string value;
 
@@ -61,16 +59,18 @@ struct Capability {
 	@disable this();
 
 	///
-	this(string str) @safe pure @nogc {
-		import std.algorithm.comparison : among;
-		import std.algorithm.searching : canFind, findSplit;
-		import std.range : empty, front, popFront;
-		import std.utf : byCodeUnit;
+	this(string str) @safe pure @nogc in {
+		import std.range : empty;
 		assert(!str.empty);
+	} body {
+		import std.algorithm.comparison : among;
+		import std.algorithm.searching : findSplit;
+		import std.range : front, popFront;
+		import std.utf : byCodeUnit;
 		auto prefix = str.byCodeUnit.front;
 		switch (prefix) {
 			case '~':
-				isAcked = true;
+				mustAck = true;
 				break;
 			case '=':
 				isSticky = true;
@@ -85,9 +85,22 @@ struct Capability {
 			str.popFront();
 		}
 		auto split = str.findSplit("=");
-		name = split[0];
-		value = split[2];
-		isVendorSpecific = name.byCodeUnit.canFind('/');
+		this(split[0], split[2]);
+	}
+	///
+	this(string key, string val) @safe pure @nogc nothrow {
+		name = key;
+		value = val;
+	}
+	/++
+	+ Indicates whether or not this is a vendor-specific capability.
+	+
+	+ Often these are draft implementations of not-yet-accepted capabilities.
+	+/
+	bool isVendorSpecific() @safe pure @nogc nothrow {
+		import std.algorithm.searching : canFind;
+		import std.utf : byCodeUnit;
+		return name.byCodeUnit.canFind('/');
 	}
 	///
 	string toString() const pure @safe {
@@ -100,7 +113,7 @@ struct Capability {
 	{
 		auto cap = Capability("~account-notify");
 		assert(cap.name == "account-notify");
-		assert(cap.isAcked);
+		assert(cap.mustAck);
 	}
 	{
 		auto cap = Capability("=account-notify");

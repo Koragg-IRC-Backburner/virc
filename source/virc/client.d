@@ -1014,7 +1014,7 @@ version(unittest) {
 		assert(client.server.iSupport.userhostsInNames == true);
 	}
 	void initializeCaps(T)(ref T client) {
-		initializeWithCaps(client, [Capability("multi-prefix"), Capability("server-time"), Capability("sasl", false, false, false, "EXTERNAL")]);
+		initializeWithCaps(client, [Capability("multi-prefix"), Capability("server-time"), Capability("sasl", "EXTERNAL")]);
 	}
 	void initializeWithCaps(T)(ref T client, Capability[] caps) {
 		foreach (i, cap; caps) {
