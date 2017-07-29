@@ -1809,6 +1809,12 @@ version(unittest) {
 			assert(user == User("dan-!d@localhost"));
 			assert(message == "Quit: Bye for now!");
 		}
+		client.put(":nomessage QUIT");
+		assert(quits.length == 2);
+		with(quits[1]) {
+			assert(user == User("nomessage"));
+			assert(message == "");
+		}
 	}
 	{ //Batch stuff
 		auto client = spawnNoBufferClient();
