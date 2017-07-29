@@ -779,7 +779,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		return internalAddressList[nickname];
 	}
 	//Message parsing functions follow
-	private void recCap(T)(T tokens, MessageMetadata metadata) if (isInputRange!T && is(ElementType!T == string)) {
+	private void recCap(T)(T tokens, const MessageMetadata metadata) if (isInputRange!T && is(ElementType!T == string)) {
 		immutable username = tokens.front; //Unused?
 		tokens.popFront();
 		immutable subCommand = tokens.front;
@@ -850,7 +850,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 			capAcknowledgementCommon(caps.length);
 		}
 	}
-	private void capAcknowledgementCommon(size_t count) {
+	private void capAcknowledgementCommon(const size_t count) {
 		capReqCount -= count;
 		if (capReqCount == 0) {
 			endRegistration();
