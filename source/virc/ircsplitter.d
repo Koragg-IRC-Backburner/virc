@@ -50,7 +50,9 @@ struct IRCSplitter {
 		return str.length == 0 && !blankColon;
 	}
 	///
-	auto front() {
+	auto front() in {
+		assert(!empty);
+	} body {
 		return str[0..upper];
 	}
 	///
