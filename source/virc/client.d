@@ -483,18 +483,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 						recCap(split, metadata);
 						break;
 					case RFC1459Commands.join:
-						Channel channel;
-						channel.name = split.front;
-						split.popFront();
-						if (isEnabled(Capability("extended-join"))) {
-							if (split.front != "*") {
-								source.account = split.front;
-							}
-							split.popFront();
-							source.realName = split.front;
-							split.popFront();
-						}
-						recJoin(source, channel, metadata);
+						recJoin(source, metadata, split);
 						break;
 					case RFC1459Commands.part:
 						Channel channel;
@@ -893,8 +882,19 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 			tryCall!"onMode"(user, channel, mode, metadata);
 		}
 	}
-	private void recJoin(const User user, const Channel channel, const MessageMetadata metadata) {
-		tryCall!"onJoin"(user, channel, metadata);
+	private void recJoin(T)(User source, const MessageMetadata metadata, T split) if (isInputRange!T) {
+		Channel channel;
+		channel.name = split.front;
+		split.popFront();
+		if (isEnabled(Capability("extended-join"))) {
+			if (split.front != "*") {
+				source.account = split.front;
+			}
+			split.popFront();
+			source.realName = split.front;
+			split.popFront();
+		}
+		tryCall!"onJoin"(source, channel, metadata);
 	}
 	private void recPart(const User user, const Channel channel, const string msg, const MessageMetadata metadata) {
 		tryCall!"onPart"(user, channel, msg, metadata);
