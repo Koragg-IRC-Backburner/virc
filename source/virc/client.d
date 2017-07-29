@@ -26,6 +26,7 @@ import virc.internaladdresslist;
 import virc.ircsplitter;
 import virc.modes;
 import virc.numerics;
+import virc.sasl;
 import virc.tags;
 import virc.usermask;
 
@@ -64,6 +65,7 @@ enum supportedCaps = AliasSeq!(
 	//"metadata", // http://ircv3.net/specs/core/metadata-3.2.html
 	//"monitor", // http://ircv3.net/specs/core/monitor-3.2.html
 	"multi-prefix", // http://ircv3.net/specs/extensions/multi-prefix-3.1.html
+	"sasl", // http://ircv3.net/specs/extensions/sasl-3.1.html and http://ircv3.net/specs/extensions/sasl-3.2.html
 	"server-time", // http://ircv3.net/specs/extensions/server-time-3.2.html
 	"userhost-in-names", // http://ircv3.net/specs/extensions/userhost-in-names-3.2.html
 );
@@ -71,7 +73,7 @@ enum supportedCaps = AliasSeq!(
 /++
 +
 +/
-auto ircClient(alias mix, T)(ref T output, NickInfo info, string password = string.init) {
+auto ircClient(alias mix, T)(ref T output, NickInfo info, SASLMechanism[] saslMechs = [], string password = string.init) {
 	auto client = IRCClient!(mix, T)(output);
 	client.username = info.username;
 	client.realname = info.realname;
@@ -79,11 +81,13 @@ auto ircClient(alias mix, T)(ref T output, NickInfo info, string password = stri
 	if (password != string.init) {
 		client.password = password;
 	}
+	client.saslMechs = saslMechs;
 	client.initialize();
 	return client;
 }
-auto ircClient(T)(ref T output, NickInfo info, string password = string.init) {
-	return ircClient!null(output, info, password);
+///ditto
+auto ircClient(T)(ref T output, NickInfo info, SASLMechanism[] saslMechs = [], string password = string.init) {
+	return ircClient!null(output, info, saslMechs, password);
 }
 /++
 +
@@ -325,6 +329,8 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private string realname;
 	private Nullable!string password;
 
+	///SASL mechanisms available for usage
+	SASLMechanism[] saslMechs;
 	///
 	InternalAddressList internalAddressList;
 
@@ -408,6 +414,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private bool isRegistered;
 	private ulong capReqCount = 0;
 	private BatchProcessor batchProcessor;
+	private bool isAuthenticating;
 	void initialize() {
 		invalid = false;
 		write("CAP LS 302");
@@ -542,6 +549,9 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 								recInvite(inviter, invited, channel, metadata);
 							}
 						}
+						break;
+					case IRCV3Commands.authenticate:
+						isAuthenticating = true;
 						break;
 					case IRCV3Commands.chghost:
 						User target;
@@ -852,7 +862,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	private void capAcknowledgementCommon(const size_t count) {
 		capReqCount -= count;
-		if (capReqCount == 0) {
+		if (capReqCount == 0 && !isAuthenticating) {
 			endRegistration();
 		}
 	}
@@ -1025,11 +1035,11 @@ version(unittest) {
 	}
 	auto spawnNoBufferClient(string password = string.init) {
 		auto buffer = appender!(string);
-		return ircClient(buffer, testUser, password);
+		return ircClient(buffer, testUser, [], password);
 	}
 	auto spawnNoBufferClient(alias mix)(string password = string.init) {
 		auto buffer = appender!(string);
-		return ircClient!mix(buffer, testUser, password);
+		return ircClient!mix(buffer, testUser, [], password);
 	}
 }
 ///Test the basics
@@ -1064,7 +1074,7 @@ version(unittest) {
 	//Request capabilities (IRC v3.2)
 	{
 		auto client = spawnNoBufferClient();
-		client.put(":localhost CAP * LS :multi-prefix sasl=EXTERNAL");
+		client.put(":localhost CAP * LS :multi-prefix");
 		client.put(":localhost CAP * ACK :multi-prefix");
 
 		auto lineByLine = client.output.data.lineSplitter;
@@ -1086,7 +1096,7 @@ version(unittest) {
 		client.onReceiveCapNak = (const Capability cap, const MessageMetadata) {
 			capabilities ~= cap;
 		};
-		client.put(":localhost CAP * LS :multi-prefix sasl=EXTERNAL");
+		client.put(":localhost CAP * LS :multi-prefix");
 		client.put(":localhost CAP * NAK :multi-prefix");
 
 
