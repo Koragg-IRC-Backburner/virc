@@ -9,11 +9,6 @@ struct IRCSplitter {
 	private string str;
 	private size_t upper;
 	private bool blankColon = false;
-	/++
-	+ This typically marks the command's main payload. No arguments will come
-	+ after this one.
-	+/
-	bool isColonParameter = false;
 	///
 	this(string input) @nogc @safe pure nothrow {
 		str = input;
@@ -30,7 +25,6 @@ struct IRCSplitter {
 			str = str[upper..$];
 			upper = 0;
 			if ((str.length > 0) && (str[0] == ':')) {
-				isColonParameter = true;
 				str = str[1..$];
 				upper = str.length;
 				if (str.length == 0) {

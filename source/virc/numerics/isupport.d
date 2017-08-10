@@ -3,6 +3,8 @@
 +/
 module virc.numerics.isupport;
 
+import std.range.primitives : isForwardRange;
+
 import virc.numerics.definitions;
 
 /++
@@ -1233,10 +1235,11 @@ private auto keyValuePair(string token) pure @safe {
 /++
 +
 +/
-void parseNumeric(Numeric numeric: Numeric.RPL_ISUPPORT, T)(T input, ref ISupport iSupport) {
+void parseNumeric(Numeric numeric: Numeric.RPL_ISUPPORT, T)(T input, ref ISupport iSupport) if (isForwardRange!T) {
+	import std.range : drop;
 	import std.typecons : Nullable;
 	input.popFront();
-	while (!input.empty && !input.isColonParameter) {
+	while (!input.empty && !input.drop(1).empty) {
 		iSupport.insertToken(keyValuePair(input.front));
 		input.popFront();
 	}
@@ -1252,30 +1255,30 @@ auto parseNumeric(Numeric numeric: Numeric.RPL_ISUPPORT, T)(T input) {
 ///
 @safe pure /+nothrow @nogc+/ unittest { //Numeric.RPL_ISUPPORT
 	import std.exception : assertNotThrown, assertThrown;
-	import virc.ircsplitter : IRCSplitter;
+	import std.range : only;
 	import virc.modes : ModeType;
 	{
-		auto support = parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone STATUSMSG=~&@%+ CHANLIMIT=#:2 CHANMODES=a,b,c,d CHANTYPES=# :are supported by this server"));
+		auto support = parseNumeric!(Numeric.RPL_ISUPPORT)(only("someone", "STATUSMSG=~&@%+", "CHANLIMIT=#:2", "CHANMODES=a,b,c,d", "CHANTYPES=#", "are supported by this server"));
 		assert(support.statusMessage == "~&@%+");
 		assert(support.chanLimits == ['#': 2UL]);
 		assert(support.channelTypes == "#");
 		assert(support.channelModeTypes == ['a':ModeType.a, 'b':ModeType.b, 'c':ModeType.c, 'd':ModeType.d]);
-		parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone -STATUSMSG -CHANLIMIT -CHANMODES -CHANTYPES :are supported by this server"), support);
+		parseNumeric!(Numeric.RPL_ISUPPORT)(only("someone", "-STATUSMSG", "-CHANLIMIT", "-CHANMODES", "-CHANTYPES", "are supported by this server"), support);
 		assert(support.statusMessage == support.statusMessage.init);
 		assert(support.chanLimits == support.chanLimits.init);
 		assert(support.channelTypes == "#&!+");
 		assert(support.channelModeTypes == support.channelModeTypes.init);
 	}
 	{
-		auto support = parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone SILENCE=4 :are supported by this server"));
+		auto support = parseNumeric!(Numeric.RPL_ISUPPORT)(only("someone", "SILENCE=4", "are supported by this server"));
 		assert(support.silence == 4);
-		parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone SILENCE :are supported by this server"), support);
+		parseNumeric!(Numeric.RPL_ISUPPORT)(only("someone", "SILENCE", "are supported by this server"), support);
 		assert(support.silence == ulong.max);
-		parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone SILENCE=6 :are supported by this server"), support);
-		parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone -SILENCE :are supported by this server"), support);
+		parseNumeric!(Numeric.RPL_ISUPPORT)(only("someone", "SILENCE=6", "are supported by this server"), support);
+		parseNumeric!(Numeric.RPL_ISUPPORT)(only("someone" ,"-SILENCE", "are supported by this server"), support);
 		assert(support.silence.isNull);
 	}
 	{
-		assertNotThrown(parseNumeric!(Numeric.RPL_ISUPPORT)(IRCSplitter("someone :are supported by this server")));
+		assertNotThrown(parseNumeric!(Numeric.RPL_ISUPPORT)(only("someone", "are supported by this server")));
 	}
 }
