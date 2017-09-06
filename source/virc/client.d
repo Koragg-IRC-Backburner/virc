@@ -724,13 +724,19 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	public void notice(Target target, Message message) {
 		notice(target.text, message.text);
 	}
+	private void user(string username_, string realname_) {
+		write!"USER %s 0 * :%s"(username_, realname_);
+	}
+	private void pass(string pass) {
+		write!"PASS :%s"(pass);
+	}
 	private void register() {
 		assert(!isRegistered);
 		if (!password.isNull) {
-			write!"PASS :%s"(password);
+			pass(password);
 		}
 		changeNickname(nickname);
-		write!"USER %s 0 * :%s"(username, realname);
+		user(username, realname);
 	}
 	private void write(string fmt, T...)(T args) {
 		import std.range : put;
