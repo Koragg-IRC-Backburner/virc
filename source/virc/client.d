@@ -724,6 +724,10 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	public void notice(Target target, Message message) {
 		notice(target.text, message.text);
 	}
+	public void oper(string name, string pass) {
+		assert(!name.canFind(" ") && !pass.canFind(" "));
+		write!"OPER %s %s"(name, pass);
+	}
 	private void user(string username_, string realname_) {
 		write!"USER %s 0 * :%s"(username_, realname_);
 	}
