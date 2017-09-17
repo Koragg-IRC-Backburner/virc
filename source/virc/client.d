@@ -661,6 +661,11 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	void put(immutable(ubyte)[] rawString) {
 		put(rawString.toUTF8String);
 	}
+	private void tryEndRegistration() {
+		if (capReqCount == 0 && !isAuthenticating && !isRegistered) {
+			endRegistration();
+		}
+	}
 	private void endRegistration() {
 		write("CAP END");
 	}
@@ -873,9 +878,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	private void capAcknowledgementCommon(const size_t count) {
 		capReqCount -= count;
-		if (capReqCount == 0 && !isAuthenticating) {
-			endRegistration();
-		}
+		tryEndRegistration();
 	}
 	private void recCapNew(T)(T caps, const MessageMetadata metadata) if (is(ElementType!T == Capability)) {
 		auto requestCaps = caps.filter!(among!supportedCaps);
