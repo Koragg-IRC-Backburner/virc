@@ -226,6 +226,11 @@ auto splitTag(string input) {
 		assert("account" in splitStr.tags);
 		assert(splitStr.tags["account"] == "hax0r");
 	}
+	{
+		auto splitStr = `@testk=test\ :user QUIT :bye`.splitTag;
+		assert("testk" in splitStr.tags);
+		assert(splitStr.tags["testk"] == "test");
+	}
 }
 ///
 @safe /+pure nothrow @nogc+/ unittest {
@@ -260,6 +265,9 @@ T replaceEscape(T, replacements...)(T input) {
 	} else {
 		T output;
 		enum findStrs = aliasSeqOf!([replacements].map!((x) => x[0].byCodeUnit));
+		if ((input.length > 0) && (input[$-1] == '\\')) {
+			input = input[0..$-1];
+		}
 		for (size_t position = 0; position < input.length; position++) {
 			final switch(input[position..$].byCodeUnit.startsWith(findStrs)) {
 				case 0:
