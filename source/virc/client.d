@@ -416,6 +416,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private BatchProcessor batchProcessor;
 	private bool isAuthenticating;
 	void initialize() {
+		debug(verboseirc) writeln("-------------------------");
 		invalid = false;
 		write("CAP LS 302");
 		register();
@@ -436,10 +437,10 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		write!"PONG :%s"(nonce);
 	}
 	public void put(string line) {
+		debug(verboseirc) import std.stdio : writeln;
 		//Chops off terminating \r\n. Everything after is ignored, according to spec.
 		line = findSplitBefore(line, "\r\n")[0];
-		debug(verboseirc) import std.stdio : writeln;
-		debug(verboseirc) writeln("I: ", line);
+		debug(verboseirc) writeln("←: ", line);
 		assert(!invalid);
 		if (line.empty) {
 			return;
@@ -745,7 +746,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void write(string fmt, T...)(T args) {
 		import std.range : put;
 		debug(verboseirc) import std.stdio : writefln;
-		debug(verboseirc) writefln!("O: "~fmt)(args);
+		debug(verboseirc) writefln!("→: "~fmt)(args);
 		formattedWrite!fmt(output, args);
 		put(output, "\r\n");
 		debug {
@@ -756,7 +757,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		}
 	}
 	private void write(T...)(const string fmt, T args) {
-		debug(verboseirc) writefln("O: "~fmt, args);
+		debug(verboseirc) writefln("→: "~fmt, args);
 		formattedWrite(output, fmt, args);
 		std.range.put(output, "\r\n");
 		debug {
