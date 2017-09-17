@@ -415,6 +415,16 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private ulong capReqCount = 0;
 	private BatchProcessor batchProcessor;
 	private bool isAuthenticating;
+	private bool authenticationSucceeded;
+	private string[] supportedSASLMechs;
+	private SASLMechanism selectedSASLMech;
+	private bool autoSelectSASLMech;
+	private string receivedSASLAuthenticationText;
+
+	bool isAuthenticated() {
+		return authenticationSucceeded;
+	}
+
 	void initialize() {
 		debug(verboseirc) writeln("-------------------------");
 		invalid = false;
@@ -437,6 +447,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		write!"PONG :%s"(nonce);
 	}
 	public void put(string line) {
+		import std.base64;
 		debug(verboseirc) import std.stdio : writeln;
 		//Chops off terminating \r\n. Everything after is ignored, according to spec.
 		line = findSplitBefore(line, "\r\n")[0];
@@ -552,7 +563,19 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 						}
 						break;
 					case IRCV3Commands.authenticate:
-						isAuthenticating = true;
+						if (split.front != "+") {
+							receivedSASLAuthenticationText ~= Base64.decode(split.front);
+						}
+						if ((selectedSASLMech) && (split.front == "+" || (split.front.length < 400))) {
+							selectedSASLMech.put(receivedSASLAuthenticationText);
+							if (selectedSASLMech.empty) {
+								write!"AUTHENTICATE +"();
+							} else {
+								write!"AUTHENTICATE %s"(Base64.encode(selectedSASLMech.front.representation));
+								selectedSASLMech.popFront();
+							}
+							receivedSASLAuthenticationText = [];
+						}
 						break;
 					case IRCV3Commands.chghost:
 						User target;
@@ -651,6 +674,24 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 						auto reply = parseNumeric!(Numeric.RPL_TOPICWHOTIME)(split);
 						if (!reply.isNull) {
 							recRPLTopicWhoTime(reply.get, metadata);
+						}
+						break;
+					case Numeric.RPL_SASLSUCCESS:
+						if (selectedSASLMech) {
+							authenticationSucceeded = true;
+						}
+						goto case;
+					case Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED:
+						isAuthenticating = false;
+						tryEndRegistration();
+						break;
+					case Numeric.RPL_LOGGEDIN:
+						import virc.numerics.sasl : parseNumeric;
+						if (isAuthenticating || isAuthenticated) {
+							auto parsed = parseNumeric!(Numeric.RPL_LOGGEDIN)(split);
+							auto user = User(parsed.mask);
+							user.account = parsed.account;
+							internalAddressList.update(user);
 						}
 						break;
 					default: recUnknownCommand(firstToken, metadata); break;
@@ -846,11 +887,17 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 			write!"CAP REQ :%-(%s %)"(requestCaps);
 		}
 		foreach (ref cap; caps) {
+			if (cap == "sasl") {
+				supportedSASLMechs = cap.value.splitter(",").array;
+			}
 			tryCall!"onReceiveCapLS"(cap, metadata);
 		}
 	}
 	private void recCapList(T)(T caps, const MessageMetadata metadata) if (is(ElementType!T == Capability)) {
 		foreach (ref cap; caps) {
+			if (cap == "sasl") {
+				supportedSASLMechs = cap.value.splitter(",").array;
+			}
 			tryCall!"onReceiveCapList"(cap, metadata);
 		}
 	}
@@ -858,6 +905,9 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		import std.range : hasLength;
 		capsEnabled ~= caps.save().array;
 		foreach (ref cap; caps) {
+			if (cap == "sasl") {
+				startSASL();
+			}
 			tryCall!"onReceiveCapAck"(cap, metadata);
 			static if (!hasLength!T) {
 				capAcknowledgementCommon(1);
@@ -903,6 +953,23 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 			}
 			tryCall!"onReceiveCapDel"(cap, metadata);
 		}
+	}
+	private void startSASL() {
+		if (supportedSASLMechs.empty && !saslMechs.empty) {
+			autoSelectSASLMech = true;
+			saslAuth(saslMechs.front);
+		} else if (!supportedSASLMechs.empty && !saslMechs.empty) {
+			foreach (id, mech; saslMechs) {
+				if (supportedSASLMechs.canFind(mech.name)) {
+					saslAuth(mech);
+				}
+			}
+		}
+	}
+	private void saslAuth(SASLMechanism mech) {
+		selectedSASLMech = mech;
+		write!"AUTHENTICATE %s"(mech.name);
+		isAuthenticating = true;
 	}
 	private void recMode(const User user, const Target channel, const typeof(parseModeString("",null)) modes, const MessageMetadata metadata) {
 		foreach (mode; modes) {
@@ -1101,7 +1168,7 @@ version(unittest) {
 		lineByLine.popFront();
 		lineByLine.popFront();
 		//sasl not yet supported
-		assert(lineByLine.front == "CAP REQ :multi-prefix");
+		assert(lineByLine.front == "CAP REQ :multi-prefix sasl");
 		lineByLine.popFront();
 		assert(!lineByLine.empty);
 		assert(lineByLine.front == "CAP END");
@@ -1124,7 +1191,7 @@ version(unittest) {
 		lineByLine.popFront();
 		lineByLine.popFront();
 		//sasl not yet supported
-		assert(lineByLine.front == "CAP REQ :multi-prefix sasl");
+		assert(lineByLine.front == "CAP REQ :multi-prefix");
 		lineByLine.popFront();
 		assert(!lineByLine.empty);
 		assert(lineByLine.front == "CAP END");
@@ -1897,5 +1964,51 @@ version(unittest) {
 			assert(invited.nickname == "Attila");
 			assert(channel == Channel("#channel"));
 		}
+	}
+	{ //SASL test
+		auto client = spawnNoBufferClient();
+		client.saslMechs = [new SASLPlain("jilles", "jilles", "sesame")];
+		client.put(":localhost CAP * LS :sasl");
+		client.put(":localhost CAP whoever ACK :sasl");
+		client.put("AUTHENTICATE +");
+		client.put(":localhost 900 "~testUser.nickname~" "~testUser.nickname~"!"~testUser.username~"@::1 "~testUser.nickname~" :You are now logged in as "~testUser.nickname);
+		client.put(":localhost 903 "~testUser.nickname~" :SASL authentication successful");
+
+		assert(client.output.data.canFind("AUTHENTICATE amlsbGVzAGppbGxlcwBzZXNhbWU="));
+		assert(client.isAuthenticated == true);
+		assert(client.me.account == testUser.nickname);
+	}
+	{ //SASL 3.2 test
+		auto client = spawnNoBufferClient();
+		client.saslMechs = [new SASLPlain("jilles", "jilles", "sesame")];
+		client.put(":localhost CAP * LS :sasl=UNKNOWN,PLAIN,EXTERNAL");
+		client.put(":localhost CAP whoever ACK :sasl");
+		client.put("AUTHENTICATE +");
+		client.put(":localhost 900 "~testUser.nickname~" "~testUser.nickname~"!"~testUser.username~"@::1 "~testUser.nickname~" :You are now logged in as "~testUser.nickname);
+		client.put(":localhost 903 "~testUser.nickname~" :SASL authentication successful");
+
+		assert(client.output.data.canFind("AUTHENTICATE amlsbGVzAGppbGxlcwBzZXNhbWU="));
+		assert(client.isAuthenticated == true);
+		assert(client.me.account == testUser.nickname);
+	}
+	{ //SASL 3.2 test (bogus)
+		auto client = spawnNoBufferClient();
+		client.saslMechs = [new SASLPlain("jilles", "jilles", "sesame")];
+		client.put(":localhost CAP * LS :sasl=UNKNOWN,EXTERNAL");
+		client.put(":localhost CAP whoever ACK :sasl");
+		client.put("AUTHENTICATE +");
+		client.put(":localhost 900 "~testUser.nickname~" "~testUser.nickname~"!"~testUser.username~"@::1 "~testUser.nickname~" :You are now logged in as "~testUser.nickname);
+		client.put(":localhost 903 "~testUser.nickname~" :SASL authentication successful");
+
+		assert(!client.output.data.canFind("AUTHENTICATE amlsbGVzAGppbGxlcwBzZXNhbWU="));
+		assert(client.isAuthenticated == false);
+		//assert(client.me.account.isNull);
+	}
+	{ //SASL post-registration test
+		auto client = spawnNoBufferClient();
+		client.saslMechs = [new SASLExternal()];
+		setupFakeConnection(client);
+		client.capList();
+		client.put(":localhost CAP * LIST :sasl=UNKNOWN,PLAIN,EXTERNAL");
 	}
 }

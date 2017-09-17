@@ -65,6 +65,10 @@ struct User {
 		mask = UserMask(str);
 	}
 	///
+	this(UserMask mask_) @safe pure nothrow @nogc {
+		mask = mask_;
+	}
+	///
 	auto nickname() const {
 		return mask.nickname;
 	}
