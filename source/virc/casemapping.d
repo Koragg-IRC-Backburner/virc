@@ -44,7 +44,6 @@ auto toIRCUpper(CaseMapping caseMapping = CaseMapping.rfc1459)(string input) {
 ///
 @safe pure nothrow unittest {
 	import std.algorithm : equal;
-	import std.utf : byCodeUnit;
 	assert("test".toIRCUpper!(CaseMapping.rfc1459).equal("TEST"d));
 	assert("test".toIRCUpper!(CaseMapping.strictRFC1459).equal("TEST"d));
 	assert("test".toIRCUpper!(CaseMapping.ascii).equal("TEST"d));
@@ -85,4 +84,29 @@ auto toIRCLower(CaseMapping caseMapping = CaseMapping.rfc1459)(string input) {
 	assert("TEST[]\\^".toIRCLower!(CaseMapping.rfc1459).equal("test{}|~"d));
 	assert("TEST[]\\~".toIRCLower!(CaseMapping.strictRFC1459).equal("test{}|~"d));
 	assert("TEST{}|~".toIRCLower!(CaseMapping.ascii).equal("test{}|~"d));
+}
+/++
++
++/
+auto ircCompare(CaseMapping caseMapping = CaseMapping.rfc1459)(string input1, string input2) {
+	import std.range : zip;
+	foreach (characterDiff; zip(input1.toIRCLower!caseMapping, input2.toIRCLower!caseMapping).map!(x => x[0] - x[1])) {
+		if (characterDiff > 0) {
+			return 1;
+		} else if (characterDiff < 0) {
+			return -1;
+		}
+	}
+	return 0;
+}
+///
+@safe pure unittest {
+	assert(ircCompare!(CaseMapping.rfc1459)("TEST", "TEST") == 0);
+	assert(ircCompare!(CaseMapping.rfc1459)("TEST", "test") == 0);
+	assert(ircCompare!(CaseMapping.rfc1459)("[", "{") == 0);
+	assert(ircCompare!(CaseMapping.rfc1459)("]", "}") == 0);
+	assert(ircCompare!(CaseMapping.rfc1459)("\\", "|") == 0);
+	assert(ircCompare!(CaseMapping.rfc1459)("^", "~") == 0);
+	assert(ircCompare!(CaseMapping.strictRFC1459)("^", "~") != 0);
+	assert(ircCompare!(CaseMapping.strictRFC1459)("~", "^") != 0);
 }
