@@ -734,6 +734,9 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		assert(!name.canFind(" ") && !pass.canFind(" "));
 		write!"OPER %s %s"(name, pass);
 	}
+	public void kick(Channel where, User who, string why) {
+		write!"KICK %s %s :%s"(where.text, who.text, why);
+	}
 	private void user(string username_, string realname_) {
 		write!"USER %s 0 * :%s"(username_, realname_);
 	}
