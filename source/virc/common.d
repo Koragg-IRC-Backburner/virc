@@ -124,3 +124,33 @@ struct User {
 	immutable compUser = User("Test!Testo@Testy");
 	assert(user.toHash == compUser.toHash);
 }
+/++
++ Parses a range of tokenized text into a tuple.
++/
+auto toParsedTuple(Tup, Range)(Range range) {
+	import std.conv : to;
+	Nullable!Tup output = Tup();
+	static foreach(i, MemberType; Tup.Types) {
+		if (range.empty) {
+			return Nullable!Tup.init;
+		}
+		try {
+			output[i] = range.front.to!MemberType;
+		} catch (Exception) {
+			return Nullable!Tup.init;
+		}
+		range.popFront();
+	}
+	return output;
+}
+///
+@safe pure nothrow unittest {
+	import std.range : only, takeNone;
+	import std.typecons : Tuple, tuple;
+	assert(toParsedTuple!(Tuple!())(only("hi")) == tuple());
+	assert(toParsedTuple!(Tuple!(string, "test"))(only("text")).test == "text");
+	assert(toParsedTuple!(Tuple!(string, "test"))(takeNone(only("text"))).isNull);
+	assert(toParsedTuple!(Tuple!(int, "test"))(only("100")).test == 100);
+	assert(toParsedTuple!(Tuple!(int, "test", int, "test2", string, "test3"))(only("100", "200", "words")).test2 == 200);
+	assert(toParsedTuple!(Tuple!(int, "test"))(only("aaaa")).isNull);
+}
