@@ -1026,7 +1026,7 @@ version(unittest) {
 			lineReceived = true;
 		}
 	}
-	void initialize(T)(ref T client) {
+	void setupFakeConnection(T)(ref T client) {
 		client.put(":localhost 001 someone :Welcome to the TestNet IRC Network "~testUser.nickname~"!"~testUser.username~"@::1");
 		client.put(":localhost 002 someone :Your host is localhost, running version IRCd-2.0");
 		client.put(":localhost 003 someone :This server was created 20:21:33 Oct  21 2016");
@@ -1045,7 +1045,7 @@ version(unittest) {
 			client.put(":localhost CAP * LS " ~ ((i+1 == caps.length) ? "" : "* ")~ ":" ~ cap.toString);
 			client.put(":localhost CAP * ACK :" ~ cap.name);
 		}
-		initialize(client);
+		setupFakeConnection(client);
 	}
 	auto spawnNoBufferClient(string password = string.init) {
 		auto buffer = appender!(string);
@@ -1088,8 +1088,8 @@ version(unittest) {
 	//Request capabilities (IRC v3.2)
 	{
 		auto client = spawnNoBufferClient();
-		client.put(":localhost CAP * LS :multi-prefix");
-		client.put(":localhost CAP * ACK :multi-prefix");
+		client.put(":localhost CAP * LS :multi-prefix sasl");
+		client.put(":localhost CAP * ACK :multi-prefix sasl");
 
 		auto lineByLine = client.output.data.lineSplitter;
 
@@ -1121,7 +1121,7 @@ version(unittest) {
 		lineByLine.popFront();
 		lineByLine.popFront();
 		//sasl not yet supported
-		assert(lineByLine.front == "CAP REQ :multi-prefix");
+		assert(lineByLine.front == "CAP REQ :multi-prefix sasl");
 		lineByLine.popFront();
 		assert(!lineByLine.empty);
 		assert(lineByLine.front == "CAP END");
@@ -1146,7 +1146,7 @@ version(unittest) {
 		put(client, ":localhost CAP * LS * :cap-notify server-time example.org/dummy-cap=dummyvalue example.org/second-dummy-cap");
 		put(client, ":localhost CAP * LS :userhost-in-names sasl=EXTERNAL,DH-AES,DH-BLOWFISH,ECDSA-NIST256P-CHALLENGE,PLAIN");
 		assert(capabilities.length == 12);
-		initialize(client);
+		setupFakeConnection(client);
 	}
 	//CAP LIST multiline (IRC v3.2)
 	{
@@ -1155,7 +1155,7 @@ version(unittest) {
 		client.onReceiveCapList = (const Capability cap, const MessageMetadata) {
 			capabilities ~= cap;
 		};
-		initialize(client);
+		setupFakeConnection(client);
 		client.capList();
 		client.put(":localhost CAP modernclient LIST * :example.org/example-cap example.org/second-example-cap account-notify");
 		client.put(":localhost CAP modernclient LIST :invite-notify batch example.org/third-example-cap");
@@ -1242,7 +1242,7 @@ version(unittest) {
 			topicReplyReceived = true;
 			topicReply = tr;
 		};
-		initialize(client);
+		setupFakeConnection(client);
 		client.join("#test");
 		client.put(":someone!ident@hostmask JOIN :#test");
 		client.put(":localhost 332 someone #test :a topic");
@@ -1278,7 +1278,7 @@ version(unittest) {
 		client.onList = (const Channel chan, const MessageMetadata) {
 			channels ~= chan;
 		};
-		initialize(client);
+		setupFakeConnection(client);
 		client.list();
 		client.put("321 someone Channel :Users Name");
 		client.put("322 someone #test 4 :[+fnt 200:2] some words");
@@ -1311,7 +1311,7 @@ version(unittest) {
 			channels ~= chan;
 			assert(metadata.time == SysTime(DateTime(2012,06,30,23,59,59), 419.msecs, UTC()));
 		};
-		initialize(client);
+		setupFakeConnection(client);
 		client.put("@time=2012-06-30T23:59:59.419Z :John!~john@1.2.3.4 JOIN #chan");
 		assert(users.length == 1);
 		assert(users[0].nickname == "John");
@@ -1334,7 +1334,7 @@ version(unittest) {
 		client.onError = (const MessageMetadata received) {
 			metadata ~= received;
 		};
-		initialize(client);
+		setupFakeConnection(client);
 		client.put(":localhost 730 someone :John!test@example.net,Bob!test2@example.com");
 		assert(users.length == 2);
 		with (users[0]) {
@@ -1401,7 +1401,7 @@ version(unittest) {
 			lastMsg = msg;
 		};
 
-		initialize(client);
+		setupFakeConnection(client);
 
 		client.put(":WiZ!jto@tolsun.oulu.fi PART #playzone :I lost");
 		immutable user = User("WiZ!jto@tolsun.oulu.fi");
@@ -1419,7 +1419,7 @@ version(unittest) {
 			users ~= newUser;
 		};
 
-		initialize(client);
+		setupFakeConnection(client);
 		client.put(":nick!user@host JOIN #test");
 		assert("nick" in client.internalAddressList);
 		assert(client.internalAddressList["nick"] == User("nick!user@host"));
@@ -1447,7 +1447,7 @@ version(unittest) {
 	{ //PING? PONG!
 		auto client = spawnNoBufferClient();
 
-		initialize(client);
+		setupFakeConnection(client);
 		client.put("PING :words");
 		auto lineByLine = client.output.data.lineSplitter();
 		assert(lineByLine.array[$-1] == "PONG :words");
@@ -1458,7 +1458,7 @@ version(unittest) {
 		client.onMessage = (const User, const Target, const Message msg, const MessageMetadata) {
 			messages ~= msg;
 		};
-		initialize(client);
+		setupFakeConnection(client);
 		client.msg("Attila", "hi");
 		client.put(":"~testUser.nickname~"!"~testUser.username~"@localhost PRIVMSG Attila :hi");
 		assert(messages.length > 0);
@@ -1471,7 +1471,7 @@ version(unittest) {
 	}
 	{ //Test self-tracking
 		auto client = spawnNoBufferClient();
-		initialize(client);
+		setupFakeConnection(client);
 		assert(client.me.nickname == testUser.nickname);
 		client.changeNickname("Testface");
 		client.put(":"~testUser.nickname~" NICK Testface");
@@ -1484,7 +1484,7 @@ version(unittest) {
 		import std.exception : assertThrown;
 		auto client = spawnNoBufferClient();
 
-		initialize(client);
+		setupFakeConnection(client);
 		client.quit("I'm out");
 		auto lineByLine = client.output.data.lineSplitter();
 		assert(lineByLine.array[$-1] == "QUIT :I'm out");
@@ -1500,7 +1500,7 @@ version(unittest) {
 			replies ~= reply;
 		};
 
-		initialize(client);
+		setupFakeConnection(client);
 
 		client.names();
 		client.put(":localhost 353 someone = #channel :User1 User2 @User3 +User4");
@@ -1520,7 +1520,7 @@ version(unittest) {
 			users ~= user;
 			times ~= time;
 		};
-		initialize(client);
+		setupFakeConnection(client);
 		client.put(":localhost 600 someone someoneElse someIdent example.net 911248013 :logged on");
 
 		assert(users.length == 1);
@@ -1558,7 +1558,7 @@ version(unittest) {
 			lUserClientReceived = true;
 			lUserClient = param;
 		};
-		initialize(client);
+		setupFakeConnection(client);
 		client.lUsers();
 		client.put(":localhost 251 someone :There are 8 users and 0 invisible on 2 servers");
 		client.put(":localhost 252 someone 1 :operator(s) online");
@@ -1584,7 +1584,7 @@ version(unittest) {
 			messages ~= tuple!("user", "target", "message")(user, target, msg);
 		};
 
-		initialize(client);
+		setupFakeConnection(client);
 
 		client.put(":someoneElse!somebody@somewhere PRIVMSG someone :words go here");
 		assert(messages.length == 1);
@@ -1681,7 +1681,7 @@ version(unittest) {
 	{ //PING? PONG!
 		auto client = spawnNoBufferClient();
 
-		initialize(client);
+		setupFakeConnection(client);
 		client.ping("hooray");
 		client.put(":localhost PONG localhost :hooray");
 		auto lineByLine = client.output.data.lineSplitter();
@@ -1695,7 +1695,7 @@ version(unittest) {
 			changes ~= tuple!("user", "target", "change")(user, target, mode);
 		};
 
-		initialize(client);
+		setupFakeConnection(client);
 		client.put(":someone!ident@host JOIN #test");
 		client.put(":someoneElse!user@host2 MODE #test +s");
 		client.put(":someoneElse!user@host2 MODE #test -s");
@@ -1733,7 +1733,7 @@ version(unittest) {
 		client.onMessage = (const User user, const Target, const Message, const MessageMetadata) {
 			privmsgUsers ~= user;
 		};
-		initialize(client);
+		setupFakeConnection(client);
 
 		client.put(":user PRIVMSG #atheme :Hello everyone.");
 		client.put(":user ACCOUNT hax0r");
@@ -1757,7 +1757,7 @@ version(unittest) {
 		//client.onMessage = (const User user, const Target, const Message, const MessageMetadata) {
 		//	privmsgUsers ~= user;
 		//};
-		initialize(client);
+		setupFakeConnection(client);
 		client.put(":nick!user@host ACCOUNT accountname");
 		assert(client.internalAddressList["nick"].account == "accountname");
 		client.put(":nick!user@host ACCOUNT *");
@@ -1785,7 +1785,7 @@ version(unittest) {
 			assert(!errorReceived);
 			errorReceived = true;
 		};
-		initialize(client);
+		setupFakeConnection(client);
 		client.put("422 someone :MOTD File is missing");
 		assert(errorReceived);
 	}
@@ -1796,7 +1796,7 @@ version(unittest) {
 			nickChanges ~= tuple!("old", "new_")(old, new_);
 		};
 
-		initialize(client);
+		setupFakeConnection(client);
 		client.put(":WiZ NICK Kilroy");
 
 		assert(nickChanges.length == 1);
@@ -1825,7 +1825,7 @@ version(unittest) {
 			quits ~= tuple!("user", "message")(user, msg);
 		};
 
-		client.initialize();
+		setupFakeConnection(client);
 
 		client.put(":dan-!d@localhost QUIT :Quit: Bye for now!");
 		assert(quits.length == 1);
@@ -1848,7 +1848,7 @@ version(unittest) {
 			quits ~= tuple!("user", "metadata")(user, metadata);
 		};
 
-		client.initialize();
+		setupFakeConnection(client);
 
 		client.put(`:irc.host BATCH +yXNAbvnRHTRBv netsplit irc.hub other.host`);
 		client.put(`@batch=yXNAbvnRHTRBv :aji!a@a QUIT :irc.hub other.host`);
@@ -1873,7 +1873,7 @@ version(unittest) {
 			invites ~= tuple!("inviter", "invited", "channel")(inviter, invited, channel);
 		};
 
-		client.initialize();
+		setupFakeConnection(client);
 
 		//Ensure the internal address list gets used for invited users as well
 		client.internalAddressList.update(User("Wiz!ident@host"));
