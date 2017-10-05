@@ -468,6 +468,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	public void put(string line) {
 		import std.base64;
+		import std.string : representation;
 		debug(verboseirc) import std.experimental.logger : trace;
 		//Chops off terminating \r\n. Everything after is ignored, according to spec.
 		line = findSplitBefore(line, "\r\n")[0];
