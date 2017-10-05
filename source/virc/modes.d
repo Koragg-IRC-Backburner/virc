@@ -99,6 +99,10 @@ auto parseModeString(T)(T input, ModeType[char] channelModeTypes) if (isInputRan
 			if (unsetMode) {
 				auto modeType = mode in channelModeTypes ? channelModeTypes[mode] : ModeType.d;
 				if (modeType.among(ModeType.a, ModeType.b)) {
+					if (input.empty) {
+						changes = [];
+						break;
+					}
 					auto arg = input.front;
 					input.popFront();
 					changes ~= ModeChange(Mode(modeType, mode, Nullable!string(arg)), Change.unset);
@@ -108,6 +112,10 @@ auto parseModeString(T)(T input, ModeType[char] channelModeTypes) if (isInputRan
 			} else {
 				auto modeType = mode in channelModeTypes ? channelModeTypes[mode] : ModeType.d;
 				if (modeType.among(ModeType.a, ModeType.b, ModeType.c)) {
+					if (input.empty) {
+						changes = [];
+						break;
+					}
 					auto arg = input.front;
 					input.popFront();
 					changes ~= ModeChange(Mode(modeType, mode, Nullable!string(arg)), Change.set);
@@ -153,6 +161,11 @@ auto parseModeString(string input, ModeType[char] channelModeTypes) {
 		assert(testParsed.filter!(x => x.change == Change.set).map!(x => x.mode).canFind(Mode(ModeType.b, 'k', Nullable!string("secret"))));
 	}
 	{
+		const testParsed = parseModeString("+kp secret", null);
+		assert(testParsed.filter!(x => x.change == Change.set).map!(x => x.mode).canFind(Mode(ModeType.d, 'p')));
+		assert(testParsed.filter!(x => x.change == Change.set).map!(x => x.mode).canFind(Mode(ModeType.d, 'k')));
+	}
+	{
 		const testParsed = parseModeString("-s+nk secret", ['k': ModeType.b]);
 		assert(testParsed.filter!(x => x.change == Change.set).map!(x => x.mode).canFind(Mode(ModeType.d, 'n')));
 		assert(testParsed.filter!(x => x.change == Change.set).map!(x => x.mode).canFind(Mode(ModeType.b, 'k', Nullable!string("secret"))));
@@ -176,5 +189,13 @@ auto parseModeString(string input, ModeType[char] channelModeTypes) {
 		assert(testParsed.filter!(x => x.change == Change.unset).map!(x => x.mode).canFind(Mode(ModeType.d, 'n')));
 		assert(testParsed.filter!(x => x.change == Change.unset).map!(x => x.mode).canFind(Mode(ModeType.c, 'l')));
 		assert(testParsed.filter!(x => x.change == Change.set).map!(x => x.mode).canFind(Mode(ModeType.d, 's')));
+	}
+	{
+		const testParsed = parseModeString("+kp", ['k': ModeType.b]);
+		assert(testParsed.empty);
+	}
+	{
+		const testParsed = parseModeString("-kp", ['k': ModeType.b]);
+		assert(testParsed.empty);
 	}
 }
