@@ -238,6 +238,23 @@ struct Target {
 			user.get.toString(sink);
 		}
 	}
+	this(Channel chan) {
+		channel = chan;
+	}
+	this(User user_) {
+		user = user_;
+	}
+	/++
+	+
+	+/
+	auto targetText() const {
+		if (!channel.isNull) {
+			return channel.name;
+		} else if (!user.isNull) {
+			return user.nickname;
+		}
+		assert(0, "No target specified");
+	}
 }
 ///
 @safe pure nothrow unittest {
@@ -759,20 +776,29 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 			write!"JOIN %-(%s,%)"(channels);
 		}
 	}
-	public void join(string chan) {
+	public void join(const string chan) {
 		write!"JOIN %s"(chan);
+	}
+	public void join(const Channel chan) {
+		join(chan.text);
 	}
 	public void msg(string target, string message) {
 		write!"PRIVMSG %s :%s"(target, message);
 	}
-	public void msg(Target target, Message message) {
-		msg(target.text, message.text);
+	public void msg(const Target target, const Message message) {
+		msg(target.targetText, message.text);
 	}
-	public void notice(string target, string message) {
+	public void ctcp(const Target target, const string command, const string args) {
+		msg(target, Message("\x01"~command~" "~args~"\x01"));
+	}
+	public void ctcpReply(const Target target, const string command, const string args) {
+		notice(target, Message("\x01"~command~" "~args~"\x01"));
+	}
+	public void notice(const string target, const string message) {
 		write!"NOTICE %s :%s"(target, message);
 	}
-	public void notice(Target target, Message message) {
-		notice(target.text, message.text);
+	public void notice(const Target target, const Message message) {
+		notice(target.targetText, message.text);
 	}
 	public void oper(string name, string pass) {
 		assert(!name.canFind(" ") && !pass.canFind(" "));
