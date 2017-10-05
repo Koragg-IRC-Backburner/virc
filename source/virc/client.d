@@ -895,6 +895,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		auto args = tokens
 			.front
 			.splitter(" ")
+			.filter!(x => x != "")
 			.map!(x => Capability(x));
 		final switch (cast(CapabilityServerSubcommands) subCommand) {
 			case CapabilityServerSubcommands.ls:
@@ -1494,6 +1495,12 @@ version(unittest) {
 		users = [];
 		client.put(":nick!user@host JOIN #channelname * :Real Name");
 		assert(users.front == user);
+	}
+	{ //test for blank caps
+		auto client = spawnNoBufferClient();
+		put(client, ":localhost CAP * LS * : ");
+		setupFakeConnection(client);
+		assert(client.isRegistered);
 	}
 	{ //example taken from RFC2812, section 3.2.2
 		auto client = spawnNoBufferClient();
