@@ -556,7 +556,13 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 					case RFC1459Commands.mode:
 						Target target = parseTarget(split.front);
 						split.popFront();
-						auto modes = parseModeString(split, server.iSupport.channelModeTypes);
+						ModeType[char] modeTypes;
+						if (target.isChannel) {
+							modeTypes = server.iSupport.channelModeTypes;
+						} else {
+							//there are no user mode types.
+						}
+						auto modes = parseModeString(split, modeTypes);
 						recMode(source, target, modes, metadata);
 						break;
 					case RFC1459Commands.nick:
@@ -1801,8 +1807,9 @@ version(unittest) {
 		client.put(":someoneElse!user@host2 MODE #test -s");
 		client.put(":someoneElse!user@host2 MODE #test +kp 2");
 		client.put(":someoneElse!user@host2 MODE someone +r");
+		client.put(":someoneElse!user@host2 MODE someone +k");
 
-		assert(changes.length == 5);
+		assert(changes.length == 6);
 		with (changes[0]) {
 			assert(target == Channel("#test"));
 			assert(user == User("someoneElse!user@host2"));
@@ -1822,6 +1829,11 @@ version(unittest) {
 
 		}
 		with (changes[4]) {
+			assert(target == User("someone"));
+			assert(user == User("someoneElse!user@host2"));
+
+		}
+		with (changes[5]) {
 			assert(target == User("someone"));
 			assert(user == User("someoneElse!user@host2"));
 
