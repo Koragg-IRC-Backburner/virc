@@ -42,31 +42,37 @@ struct MyInfo {
 +/
 //004 <username> <server_name> <version> <user_modes> <chan_modes> [<channel_modes_with_params> <user_modes_with_params> <server_modes> <server_modes_with_params>]
 auto parseNumeric(Numeric numeric : Numeric.RPL_MYINFO, T)(T input) {
-	MyInfo server;
-	input.popFront();
-	server.name = input.front;
-	input.popFront();
-	server.version_ = input.front;
-	input.popFront();
-	server.userModes = input.front;
-	input.popFront();
-	server.channelModes = input.front;
-	input.popFront();
-	if (!input.empty) {
-		server.channelModesWithParams = input.front;
-		input.popFront();
+	import std.range : drop;
+	import std.typecons : Nullable, Tuple;
+	import virc.common : toParsedTuple, User;
+
+	Nullable!MyInfo server;
+	const tuple = toParsedTuple!(Tuple!(User, "self", string, "name", string, "version_", string, "userModes", string, "channelModes"))(input);
+	if (tuple.isNull) {
+		return server.init;
+	} else {
+		server = MyInfo();
+		server.name = tuple.name;
+		server.version_ = tuple.version_;
+		server.userModes = tuple.userModes;
+		server.channelModes = tuple.channelModes;
 	}
-	if (!input.empty) {
-		server.userModesWithParams = input.front;
-		input.popFront();
+	auto extras = input.drop(5);
+	if (!extras.empty) {
+		server.channelModesWithParams = extras.front;
+		extras.popFront();
 	}
-	if (!input.empty) {
-		server.serverModes = input.front;
-		input.popFront();
+	if (!extras.empty) {
+		server.userModesWithParams = extras.front;
+		extras.popFront();
 	}
-	if (!input.empty) {
-		server.serverModesWithParams = input.front;
-		input.popFront();
+	if (!extras.empty) {
+		server.serverModes = extras.front;
+		extras.popFront();
+	}
+	if (!extras.empty) {
+		server.serverModesWithParams = extras.front;
+		extras.popFront();
 	}
 	return server;
 }
@@ -95,6 +101,10 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_MYINFO, T)(T input) {
 		assert(info.serverModes == "w");
 		assert(info.serverModesWithParams == "x");
 	}
+	{
+		immutable info = parseNumeric!(Numeric.RPL_MYINFO)(only("someone", "localhost", "IRCd-2.0", "BGHIRSWcdgikorswx ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz FIJLYabefghjkloqv"));
+		assert(info.isNull);
+	}
 }
 /++
 + Parser for RPL_TRACESERVICE.
@@ -102,44 +112,9 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_MYINFO, T)(T input) {
 + Format is `207 <client> Service <class> <name> <type> <active_type>`
 +/
 auto parseNumeric(Numeric numeric : Numeric.RPL_TRACESERVICE, T)(T input) if (is(ElementType!T : string)) {
-	import std.range : empty, front, popFront;
-	import std.typecons : Nullable, Tuple;
-	Tuple!(string, "class_", string, "name", string, "type", string, "activeType") output;
-	//Drop client token
-	if (input.empty) {
-		return Nullable!(typeof(output)).init;
-	}
-	input.popFront();
-	//Drop Service token
-	if (input.empty) {
-		return Nullable!(typeof(output)).init;
-	}
-	input.popFront();
-
-
-	if (input.empty) {
-		return Nullable!(typeof(output)).init;
-	}
-	output.class_ = input.front;
-	input.popFront();
-
-	if (input.empty) {
-		return Nullable!(typeof(output)).init;
-	}
-	output.name = input.front;
-	input.popFront();
-
-	if (input.empty) {
-		return Nullable!(typeof(output)).init;
-	}
-	output.type = input.front;
-	input.popFront();
-
-	if (input.empty) {
-		return Nullable!(typeof(output)).init;
-	}
-	output.activeType = input.front;
-	return Nullable!(typeof(output))(output);
+	import std.typecons : Tuple;
+	import virc.common : toParsedTuple, User;
+	return toParsedTuple!(Tuple!(User, "self", string, "service", string, "class_", string, "name", string, "type", string, "activeType"))(input);
 }
 ///
 @safe pure @nogc nothrow unittest {
@@ -183,31 +158,9 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_TRACESERVICE, T)(T input) if (is
 + Format is `209 <client> Class <class> <count>`
 +/
 auto parseNumeric(Numeric numeric : Numeric.RPL_TRACECLASS, T)(T input) {
-	import std.range : empty, front, popFront;
-	import std.typecons : Nullable, Tuple;
-	Tuple!(string, "class_", string, "count") output;
-	if (input.empty) {
-		return Nullable!(typeof(output)).init;
-	}
-	//Drop client token
-	input.popFront();
-	if (input.empty) {
-		return Nullable!(typeof(output)).init;
-	}
-	//Drop Class token
-	input.popFront();
-
-	if (input.empty) {
-		return Nullable!(typeof(output)).init;
-	}
-	output.class_ = input.front;
-	input.popFront();
-
-	if (input.empty) {
-		return Nullable!(typeof(output)).init;
-	}
-	output.count = input.front;
-	return Nullable!(typeof(output))(output);
+	import std.typecons : Tuple;
+	import virc.common : toParsedTuple, User;
+	return toParsedTuple!(Tuple!(User, "self", string, "__class", string, "class_", string, "count"))(input);
 }
 ///
 @safe pure unittest {

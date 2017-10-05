@@ -29,34 +29,14 @@ struct TopicWhoTime {
 + Format is `333 <user> <channel> <setter> <timestamp>`
 +/
 auto parseNumeric(Numeric numeric : Numeric.RPL_TOPICWHOTIME, T)(T input) {
-	import std.conv : to;
-	import std.datetime : SysTime, UTC;
-	import std.typecons : nullable, Nullable;
-	import virc.common : User;
-	auto output = TopicWhoTime();
-	if (input.empty) {
+	import std.datetime : SysTime;
+	import std.typecons : Nullable, Tuple;
+	import virc.common : toParsedTuple, User;
+	auto tuple = toParsedTuple!(Tuple!(User, "self", string, "channel", User, "setter", SysTime, "timestamp"))(input);
+	if (tuple.isNull) {
 		return Nullable!TopicWhoTime.init;
 	}
-	input.popFront();
-	if (input.empty) {
-		return Nullable!TopicWhoTime.init;
-	}
-	output.channel = input.front;
-	input.popFront();
-	if (input.empty) {
-		return Nullable!TopicWhoTime.init;
-	}
-	output.setter = User(input.front);
-	input.popFront();
-	if (input.empty) {
-		return Nullable!TopicWhoTime.init;
-	}
-	try {
-		output.timestamp = SysTime.fromUnixTime(input.front.to!ulong, UTC());
-	} catch (Exception) {
-		return Nullable!TopicWhoTime.init;
-	}
-	return nullable(output);
+	return Nullable!TopicWhoTime(TopicWhoTime(tuple.channel, tuple.setter, tuple.timestamp));
 }
 ///
 @safe pure nothrow unittest {

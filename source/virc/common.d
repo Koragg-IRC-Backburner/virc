@@ -132,14 +132,21 @@ struct User {
 + Parses a range of tokenized text into a tuple.
 +/
 auto toParsedTuple(Tup, Range)(Range range) {
+	import std.array : empty, front, popFront;
 	import std.conv : to;
+	import std.datetime : SysTime, UTC;
 	Nullable!Tup output = Tup();
+	static immutable utc = UTC();
 	static foreach(i, MemberType; Tup.Types) {
 		if (range.empty) {
 			return Nullable!Tup.init;
 		}
 		try {
-			output[i] = range.front.to!MemberType;
+			static if (is(MemberType == SysTime)) {
+				output[i] = SysTime.fromUnixTime(range.front.to!ulong, utc);
+			} else {
+				output[i] = range.front.to!MemberType;
+			}
 		} catch (Exception) {
 			return Nullable!Tup.init;
 		}
@@ -149,6 +156,7 @@ auto toParsedTuple(Tup, Range)(Range range) {
 }
 ///
 @safe pure nothrow unittest {
+	import std.datetime : DateTime, SysTime, UTC;
 	import std.range : only, takeNone;
 	import std.typecons : Tuple, tuple;
 	assert(toParsedTuple!(Tuple!())(only("hi")) == tuple());
@@ -157,4 +165,6 @@ auto toParsedTuple(Tup, Range)(Range range) {
 	assert(toParsedTuple!(Tuple!(int, "test"))(only("100")).test == 100);
 	assert(toParsedTuple!(Tuple!(int, "test", int, "test2", string, "test3"))(only("100", "200", "words")).test2 == 200);
 	assert(toParsedTuple!(Tuple!(int, "test"))(only("aaaa")).isNull);
+	static immutable timeTest = SysTime(DateTime(2017, 05, 29, 23, 52, 24), UTC());
+	assert(toParsedTuple!(Tuple!(SysTime, "test"))(only("1496101944")).test == timeTest);
 }
