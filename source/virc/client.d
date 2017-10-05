@@ -426,7 +426,10 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 
 	void initialize() {
-		debug(verboseirc) writeln("-------------------------");
+		debug(verboseirc) {
+			import std.experimental.logger : trace;
+			trace("-------------------------");
+		}
 		invalid = false;
 		write("CAP LS 302");
 		register();
@@ -451,7 +454,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		debug(verboseirc) import std.stdio : writeln;
 		//Chops off terminating \r\n. Everything after is ignored, according to spec.
 		line = findSplitBefore(line, "\r\n")[0];
-		debug(verboseirc) writeln("←: ", line);
+		debug(verboseirc) trace("←: ", line);
 		assert(!invalid);
 		if (line.empty) {
 			return;
@@ -794,8 +797,8 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	private void write(string fmt, T...)(T args) {
 		import std.range : put;
-		debug(verboseirc) import std.stdio : writefln;
-		debug(verboseirc) writefln!("→: "~fmt)(args);
+		debug(verboseirc) import std.experimental.logger : tracef;
+		debug(verboseirc) tracef("→: "~fmt, args);
 		formattedWrite!fmt(output, args);
 		put(output, "\r\n");
 		debug {
@@ -806,7 +809,8 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		}
 	}
 	private void write(T...)(const string fmt, T args) {
-		debug(verboseirc) writefln("→: "~fmt, args);
+		debug(verboseirc) import std.experimental.logger : tracef;
+		debug(verboseirc) tracef("→: "~fmt, args);
 		formattedWrite(output, fmt, args);
 		std.range.put(output, "\r\n");
 		debug {
@@ -1056,19 +1060,19 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		tryCall!"onQuit"(user, msg, metadata);
 	}
 	private void recUnknownCommand(const string cmd, const MessageMetadata metadata) {
-		debug(verboseirc) import std.stdio : writeln;
 		if (cmd.filter!(x => !x.isDigit).empty) {
 			recUnknownNumeric(cmd, metadata);
 		} else {
-			debug(verboseirc) writeln(metadata.time, " Unknown command - ", metadata.original);
+			debug(verboseirc) import std.experimental.logger : trace;
+			debug(verboseirc) trace(" Unknown command: ", metadata.original);
 		}
 	}
 	private void recRPLNamReply(const NamesReply x, const MessageMetadata metadata) {
 		tryCall!"onNamesReply"(x, metadata);
 	}
 	private void recUnknownNumeric(const string cmd, const MessageMetadata metadata) {
-		debug(verboseirc) import std.stdio : writeln;
-		debug(verboseirc) writeln(metadata.time, " Unhandled numeric: ", cast(Numeric)cmd, " ", metadata.original);
+		debug(verboseirc) import std.experimental.logger : trace;
+		debug(verboseirc) trace("Unhandled numeric: ", cast(Numeric)cmd, " ", metadata.original);
 	}
 	private void recAccount(const User user, const string account, const MessageMetadata metadata) {
 		internalAddressList.update(user);
