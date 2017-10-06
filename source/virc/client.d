@@ -667,12 +667,6 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 						auto user = parseNumeric!(Numeric.RPL_MONLIST)(split);
 						recMonitorList(user, metadata);
 						break;
-					case Numeric.ERR_MONLISTFULL:
-						recMonListFull(parseNumeric!(Numeric.ERR_MONLISTFULL)(split), metadata);
-						break;
-					case Numeric.ERR_NOMOTD:
-						tryCall!"onError"(metadata);
-						break;
 					case Numeric.RPL_LUSERCLIENT:
 						tryCall!"onLUserClient"(parseNumeric!(Numeric.RPL_LUSERCLIENT)(split), metadata);
 						break;
@@ -708,10 +702,6 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 							authenticationSucceeded = true;
 						}
 						goto case;
-					case Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED:
-						isAuthenticating = false;
-						tryEndRegistration();
-						break;
 					case Numeric.RPL_LOGGEDIN:
 						import virc.numerics.sasl : parseNumeric;
 						if (isAuthenticating || isAuthenticated) {
@@ -720,6 +710,16 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 							user.account = parsed.account;
 							internalAddressList.update(user);
 						}
+						break;
+					case Numeric.ERR_MONLISTFULL:
+						recMonListFull(parseNumeric!(Numeric.ERR_MONLISTFULL)(split), metadata);
+						break;
+					case Numeric.ERR_NOMOTD:
+						tryCall!"onError"(metadata);
+						break;
+					case Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED:
+						isAuthenticating = false;
+						tryEndRegistration();
 						break;
 					default: recUnknownCommand(firstToken, metadata); break;
 				}
