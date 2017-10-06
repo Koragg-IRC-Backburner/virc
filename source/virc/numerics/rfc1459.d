@@ -279,7 +279,7 @@ enum NamReplyFlag : string {
 +/
 auto parseNumeric(Numeric numeric : Numeric.RPL_NAMREPLY, T)(T input) {
 	import std.algorithm : splitter;
-	import std.typecons : Nullable, Tuple;
+	import std.typecons : Nullable;
 	Nullable!NamesReply output = NamesReply();
 	if (input.empty) {
 		output.nullify();
