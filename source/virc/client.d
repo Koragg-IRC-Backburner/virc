@@ -701,7 +701,8 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 						if (selectedSASLMech) {
 							authenticationSucceeded = true;
 						}
-						goto case;
+						endAuthentication();
+						break;
 					case Numeric.RPL_LOGGEDIN:
 						import virc.numerics.sasl : parseNumeric;
 						if (isAuthenticating || isAuthenticated) {
@@ -718,8 +719,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 						tryCall!"onError"(metadata);
 						break;
 					case Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED:
-						isAuthenticating = false;
-						tryEndRegistration();
+						endAuthentication();
 						break;
 					default: recUnknownCommand(firstToken, metadata); break;
 				}
@@ -733,6 +733,10 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		if (capReqCount == 0 && !isAuthenticating && !isRegistered) {
 			endRegistration();
 		}
+	}
+	private void endAuthentication() {
+		isAuthenticating = false;
+		tryEndRegistration();
 	}
 	private void endRegistration() {
 		write("CAP END");
