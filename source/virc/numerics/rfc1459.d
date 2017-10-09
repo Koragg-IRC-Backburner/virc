@@ -58,6 +58,17 @@ struct LUserOp {
 		message = msg;
 	}
 }
+/++
++ RPL_VERSION reply contents.
++/
+struct VersionReply {
+	///The responding server's version string.
+	string version_;
+	///The server hostmask responding to the version query
+	string server;
+	///Contents depend on server, but are usually related to version
+	string comments;
+}
 
 /++
 +
@@ -270,6 +281,56 @@ enum NamReplyFlag : string {
 	public_ = "=",
 	///ditto
 	other = public_
+}
+/++
++ Parser for RPL_VERSION
++
++ Format is `351 <client> <version> <server> :<comments>`
++/
+auto parseNumeric(Numeric numeric : Numeric.RPL_VERSION, T)(T input) {
+	import std.typecons : Nullable, Tuple;
+	import virc.common : toParsedTuple, User;
+
+	Nullable!VersionReply output;
+	const tuple = toParsedTuple!(Tuple!(User, "self", string, "version_", string, "server", string, "comments"))(input);
+	if (tuple.isNull) {
+		return output.init;
+	} else {
+		output = VersionReply();
+		output.version_ = tuple.version_;
+		output.server = tuple.server;
+		output.comments = tuple.comments;
+		return output;
+	}
+}
+///
+@safe pure nothrow @nogc unittest {
+	import std.algorithm.searching : canFind;
+	import std.array : array;
+	import std.range : only, takeNone;
+	import virc.ircsplitter : IRCSplitter;
+	{
+		auto versionReply = parseNumeric!(Numeric.RPL_VERSION)(only("Someone", "ircd-seven-1.1.4(20170104-717fbca8dbac,charybdis-3.4-dev)", "localhost", "eHIKMpSZ6 TS6ow 7IZ"));
+		assert(versionReply.version_ == "ircd-seven-1.1.4(20170104-717fbca8dbac,charybdis-3.4-dev)");
+		assert(versionReply.server == "localhost");
+		assert(versionReply.comments == "eHIKMpSZ6 TS6ow 7IZ");
+	}
+	{
+		immutable versionReply = parseNumeric!(Numeric.RPL_VERSION)(takeNone(only("")));
+		assert(versionReply.isNull);
+	}
+	{
+		immutable versionReply = parseNumeric!(Numeric.RPL_VERSION)(only("Someone"));
+		assert(versionReply.isNull);
+	}
+	{
+		immutable versionReply = parseNumeric!(Numeric.RPL_VERSION)(only("Someone", "ircd-seven-1.1.4(20170104-717fbca8dbac,charybdis-3.4-dev)"));
+		assert(versionReply.isNull);
+	}
+	{
+		immutable versionReply = parseNumeric!(Numeric.RPL_VERSION)(only("Someone", "", "localhost"));
+		assert(versionReply.isNull);
+	}
 }
 
 /++

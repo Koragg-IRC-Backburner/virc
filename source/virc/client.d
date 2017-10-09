@@ -417,6 +417,8 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		///
 		void delegate(const TopicWhoTime, const MessageMetadata) @safe onTopicWhoTimeReply;
 		///
+		void delegate(const VersionReply, const MessageMetadata) @safe onVersionReply;
+		///
 		void delegate(const MessageMetadata) @safe onError;
 		///
 		void delegate(const MessageMetadata) @safe onRaw;
@@ -712,6 +714,9 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 							internalAddressList.update(user);
 						}
 						break;
+					case Numeric.RPL_VERSION:
+						recVersionReply(parseNumeric!(Numeric.RPL_VERSION)(split), metadata);
+						break;
 					case Numeric.ERR_MONLISTFULL:
 						recMonListFull(parseNumeric!(Numeric.ERR_MONLISTFULL)(split), metadata);
 						break;
@@ -817,6 +822,12 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	public void kick(Channel where, User who, string why) {
 		write!"KICK %s %s :%s"(where.text, who.text, why);
+	}
+	public void version_() {
+		write!"VERSION"();
+	}
+	public void version_(string serverMask) {
+		write!"VERSION %s"(serverMask);
 	}
 	private void user(string username_, string realname_) {
 		write!"USER %s 0 * :%s"(username_, realname_);
@@ -1070,6 +1081,9 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	private void recMonListFull(const typeof(parseNumeric!(Numeric.ERR_MONLISTFULL)([""])), const MessageMetadata metadata) {
 		tryCall!"onError"(metadata);
+	}
+	private void recVersionReply(const typeof(parseNumeric!(Numeric.RPL_VERSION)([""])) versionReply, const MessageMetadata metadata) {
+		tryCall!"onVersionReply"(versionReply, metadata);
 	}
 	private void recLogon(const User user, const SysTime timeOccurred, const MessageMetadata metadata) {
 		tryCall!"onUserOnline"(user, timeOccurred, metadata);
@@ -2017,6 +2031,31 @@ version(unittest) {
 			assert(inviter.nickname == "ChanServ");
 			assert(invited.nickname == "Attila");
 			assert(channel == Channel("#channel"));
+		}
+	}
+	{ //VERSION tests
+		auto client = spawnNoBufferClient();
+
+		VersionReply[] replies;
+		client.onVersionReply = (const VersionReply reply, const MessageMetadata) {
+			replies ~= reply;
+		};
+
+		setupFakeConnection(client);
+
+		client.version_();
+		client.put(format!":localhost 351 %s example-1.0 localhost :not a beta"(testUser.nickname));
+		with (replies[0]) {
+			assert(version_ == "example-1.0");
+			assert(server == "localhost");
+			assert(comments == "not a beta");
+		}
+		client.version_("*.example");
+		client.put(format!":localhost 351 %s example-1.0 test.example :not a beta"(testUser.nickname));
+		with (replies[1]) {
+			assert(version_ == "example-1.0");
+			assert(server == "test.example");
+			assert(comments == "not a beta");
 		}
 	}
 	{ //SASL test
