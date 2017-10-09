@@ -598,9 +598,9 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 						if ((selectedSASLMech) && (split.front == "+" || (split.front.length < 400))) {
 							selectedSASLMech.put(receivedSASLAuthenticationText);
 							if (selectedSASLMech.empty) {
-								write!"AUTHENTICATE +"();
+								sendAuthenticatePayload("");
 							} else {
-								write!"AUTHENTICATE %s"(Base64.encode(selectedSASLMech.front.representation));
+								sendAuthenticatePayload(selectedSASLMech.front);
 								selectedSASLMech.popFront();
 							}
 							receivedSASLAuthenticationText = [];
@@ -828,6 +828,23 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	public void version_(string serverMask) {
 		write!"VERSION %s"(serverMask);
+	}
+	private void sendAuthenticatePayload(string payload) {
+		import std.base64 : Base64;
+		import std.range : chunks;
+		if (payload == "") {
+			write!"AUTHENTICATE +"();
+		} else {
+			auto str = Base64.encode(payload.representation);
+			size_t lastChunkSize = 0;
+			foreach (chunk; str.byCodeUnit.chunks(400)) {
+				write!"AUTHENTICATE %s"(chunk);
+				lastChunkSize = chunk.length;
+			}
+			if (lastChunkSize == 400) {
+				write!"AUTHENTICATE +"();
+			}
+		}
 	}
 	private void user(string username_, string realname_) {
 		write!"USER %s 0 * :%s"(username_, realname_);
@@ -2081,6 +2098,19 @@ version(unittest) {
 		client.put(":localhost 903 "~testUser.nickname~" :SASL authentication successful");
 
 		assert(client.output.data.canFind("AUTHENTICATE amlsbGVzAGppbGxlcwBzZXNhbWU="));
+		assert(client.isAuthenticated == true);
+		assert(client.me.account == testUser.nickname);
+	}
+	{ //SASL 3.2 test
+		auto client = spawnNoBufferClient();
+		client.saslMechs = [new SASLExternal];
+		client.put(":localhost CAP * LS :sasl=UNKNOWN,EXTERNAL");
+		client.put(":localhost CAP whoever ACK :sasl");
+		client.put("AUTHENTICATE +");
+		client.put(":localhost 900 "~testUser.nickname~" "~testUser.nickname~"!"~testUser.username~"@::1 "~testUser.nickname~" :You are now logged in as "~testUser.nickname);
+		client.put(":localhost 903 "~testUser.nickname~" :SASL authentication successful");
+
+		assert(client.output.data.canFind("AUTHENTICATE +"));
 		assert(client.isAuthenticated == true);
 		assert(client.me.account == testUser.nickname);
 	}
