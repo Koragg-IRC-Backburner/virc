@@ -1,7 +1,7 @@
 /++
 + IRCv3 tags capability support.
 +/
-module virc.tags;
+module virc.ircv3.tags;
 
 
 import core.time : Duration, seconds;
@@ -15,7 +15,7 @@ import std.traits : isArray;
 import std.typecons : Nullable;
 import std.utf;
 
-import virc.batch;
+import virc.ircv3.batch;
 /++
 +
 +/
@@ -271,7 +271,8 @@ T replaceEscape(T, replacements...)(T input) {
 		for (size_t position = 0; position < input.length; position++) {
 			final switch(input[position..$].byCodeUnit.startsWith(findStrs)) {
 				case 0:
-					output ~= input[position]; break;
+					output ~= input[position];
+					break;
 				foreach (index, replacement; replacements) {
 					static assert(replacements[index][0].length >= 1);
 					case index+1:

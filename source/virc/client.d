@@ -19,15 +19,15 @@ import std.traits : Parameters, Unqual;
 import std.typecons : Nullable;
 import std.utf : byCodeUnit;
 
-import virc.batch;
 import virc.common;
 import virc.encoding;
 import virc.internaladdresslist;
 import virc.ircsplitter;
+import virc.ircv3.batch;
+import virc.ircv3.sasl;
+import virc.ircv3.tags;
 import virc.modes;
 import virc.numerics;
-import virc.sasl;
-import virc.tags;
 import virc.usermask;
 
 /++

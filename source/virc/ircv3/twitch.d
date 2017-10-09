@@ -1,14 +1,14 @@
 /++
 + Module handling various IRC extensions used by Twitch.
 +/
-module virc.twitch;
+module virc.ircv3.twitch;
 
 import std.algorithm;
 import std.conv : to;
 import std.range :  chain, choose, drop, only, takeNone;
 import std.typecons : Nullable;
 
-import virc.tags;
+import virc.ircv3.tags;
 
 ///
 alias banReason = stringTag!"ban-reason";

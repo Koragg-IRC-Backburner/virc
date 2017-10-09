@@ -1,8 +1,8 @@
 /++
 + Module for supporting IRCv3's BATCH capability.
 +/
-module virc.batch;
-import virc.tags;
+module virc.ircv3.batch;
+import virc.ircv3.tags;
 /++
 +
 +/

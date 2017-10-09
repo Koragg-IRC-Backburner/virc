@@ -1,7 +1,7 @@
 /++
 + Module for IRCv3 core features.
 +/
-module virc.ircv3;
+module virc.ircv3.base;
 
 /++
 +

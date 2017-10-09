@@ -1,5 +1,5 @@
 ///SASL support module
-module virc.sasl;
+module virc.ircv3.sasl;
 
 /++
 + Interface for SASL authentication mechanisms.
@@ -26,12 +26,12 @@ class SASLExternal : SASLMechanism {
 	override string name() @safe pure @nogc nothrow { return "EXTERNAL"; }
 	override bool empty() @safe pure @nogc nothrow { return popped; }
 	override string front() @safe pure @nogc nothrow { assert(!popped); return ""; }
-	override void popFront() @safe pure @nogc nothrow { popped = true; }
+	override void popFront() @safe pure @nogc nothrow { assert(!popped); popped = true; }
 	override void put(string) @safe pure @nogc nothrow {}
 }
 /++
-+ PLAIN SASL mechanism support. For authentication with plaintext username and
-+ password combination.
++ PLAIN SASL mechanism support. For authentication with plaintext username(s)
++ and password combination.
 +/
 class SASLPlain : SASLMechanism {
 	private bool popped;
