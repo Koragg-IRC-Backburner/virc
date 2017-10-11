@@ -832,6 +832,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void sendAuthenticatePayload(string payload) {
 		import std.base64 : Base64;
 		import std.range : chunks;
+		import std.string : representation;
 		if (payload == "") {
 			write!"AUTHENTICATE +"();
 		} else {
