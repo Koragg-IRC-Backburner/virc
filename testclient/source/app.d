@@ -1,9 +1,12 @@
-import std.stdio;
 import std.range;
-import virc;
-import vibe.stream.wrapper;
+import std.stdio;
+import vibe.core.core;
+import vibe.core.net;
+import vibe.stream.operations;
 import vibe.stream.stdio;
-import vibe.d;
+import vibe.stream.tls;
+import vibe.stream.wrapper;
+import virc;
 
 mixin template Bot() {
 	import std.stdio : writefln;
