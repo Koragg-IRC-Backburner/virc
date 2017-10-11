@@ -6,13 +6,7 @@ import vibe.stream.stdio;
 import vibe.d;
 
 mixin template Bot() {
-	void onRaw(const MessageMetadata line) @safe {
-		//writeln("I: ", line);
-	}
-	void onSend(const string line) @safe {
-		//writeln("O: ", line);
-	}
-
+	import std.stdio : writefln;
 	void onMessage(const User user, const Target target, const Message msg, const MessageMetadata metadata) {
 		if (msg.isCTCP) {
 			if (msg.ctcpCommand == "ACTION") {
@@ -22,10 +16,10 @@ mixin template Bot() {
 			} else {
 				writefln("<%s> [%s:%s] %s", metadata.time, user, msg.ctcpCommand, msg.ctcpArgs);
 			}
-		} else if (msg.isNotice) {
-			writefln("<%s> -%s- %s", metadata.time, user, msg.msg);
-		} else if (msg.isPrivmsg) {
-			writefln("<%s> <%s:%s> %s", metadata.time, user, target, msg.msg);
+		} else if (!msg.isReplyable) {
+			writefln("<%s> -%s- %s", metadata.time, user.nickname, msg.msg);
+		} else if (msg.isReplyable) {
+			writefln("<%s> <%s:%s> %s", metadata.time, user.nickname, target, msg.msg);
 		}
 	}
 
@@ -41,7 +35,7 @@ mixin template Bot() {
 		writefln("<%s> *** %s quit IRC: %s", metadata.time, user, message);
 	}
 
-	void onNick(const User user, const string newname, const MessageMetadata metadata) @safe {
+	void onNick(const User user, const User newname, const MessageMetadata metadata) @safe {
 		writefln("<%s> *** %s changed name to %s", metadata.time, user, newname);
 	}
 
@@ -80,27 +74,46 @@ mixin template Bot() {
 	}
 }
 
-static this() {
-	auto conn = connectTCP("2001:470:1d:284:2a0:98ff:fefe:390c", 6697);
-	auto sslctx = createTLSContext(TLSContextKind.client);
-	sslctx.peerValidationMode = TLSPeerValidationMode.none;
-	auto stream = createTLSStream(conn, sslctx);
-
-	auto output = new StreamOutputRange(stream);
-	auto client = ircClient!(typeof(output), Bot)(output, NickInfo("testy", "testo", "testa"));
-
-	void readText() {
-		while(!stream.empty) {
-			put(client, stream.readLine());
+void main() {
+	import std.file : exists, readText;
+	import std.json : JSON_TYPE, parseJSON;
+	if (exists("settings.json")) {
+		auto settings = readText("settings.json").parseJSON();
+		auto conn = connectTCP(settings["address"].str, cast(ushort)settings["port"].integer);
+		Stream stream;
+		if (settings["ssl"].type == JSON_TYPE.TRUE) {
+			auto sslctx = createTLSContext(TLSContextKind.client);
+			sslctx.peerValidationMode = TLSPeerValidationMode.none;
+			stream = createTLSStream(conn, sslctx);
+		} else {
+			stream = conn;
 		}
+		class Wrap {
+			alias wrapped this;
+			StreamOutputRange!Stream wrapped;
+			this() {
+				wrapped = streamOutputRange(stream);
+			}
+		}
+		auto output = new Wrap;
+		auto client = ircClient!Bot(output, NickInfo(settings["nickname"].str, settings["identd"].str, settings["real name"].str));
+
+		void readIRC() {
+			while(!stream.empty) {
+				put(client, stream.readLine().idup);
+			}
+		}
+		void readCLI() {
+			auto standardInput = new StdinStream;
+			while (true) {
+				auto str = cast(string)readLine(standardInput);
+				client.writeLine(str);
+			}
+		}
+		runTask(&readIRC);
+		runTask(&readCLI);
+		runApplication();
+	} else {
+		stderr.writeln("No settings file found");
 	}
-	void readCLI() {
-		//auto standardInput = new StdinStream;
-		//while (true) {
-		//	auto str = cast(string)readLine(standardInput);
-		//	client.writeLine(str);
-		//}
-	}
-	runTask(&readText);
-	//runTask(&readCLI);
 }
