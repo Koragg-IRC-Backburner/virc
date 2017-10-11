@@ -10,3 +10,4 @@ dub.selections.json
 *.dll
 *.lst
 docs
+settings.json
