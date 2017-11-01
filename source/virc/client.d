@@ -331,6 +331,13 @@ enum RFC1459Commands {
 enum RFC2812Commands {
 	service = "SERVICE"
 }
+
+/++
++
++/
+struct ChannelState {
+
+}
 /++
 +
 +/
@@ -345,6 +352,8 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private string username;
 	private string realname;
 	private Nullable!string password;
+	///
+	ChannelState[string] channels;
 
 	///SASL mechanisms available for usage
 	SASLMechanism[] saslMechs;
@@ -399,7 +408,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		///
 		void delegate(const User, const Target, const Message, const MessageMetadata) @safe onMessage;
 		///
-		void delegate(const Channel, const MessageMetadata) @safe onList;
+		void delegate(const ChannelListResult, const MessageMetadata) @safe onList;
 		///
 		void delegate(const User, const User, const MessageMetadata) @safe onChgHost;
 		///
@@ -1076,7 +1085,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		}
 		tryCall!"onMessage"(user, target, msg, metadata);
 	}
-	private void recList(const Channel channel, const MessageMetadata metadata) {
+	private void recList(const ChannelListResult channel, const MessageMetadata metadata) {
 		tryCall!"onList"(channel, metadata);
 	}
 	private void recPing(const string pingStr, const MessageMetadata) {
@@ -1418,8 +1427,8 @@ version(unittest) {
 	}
 	{ //Channel list example
 		auto client = spawnNoBufferClient();
-		const(Channel)[] channels;
-		client.onList = (const Channel chan, const MessageMetadata) {
+		const(ChannelListResult)[] channels;
+		client.onList = (const ChannelListResult chan, const MessageMetadata) {
 			channels ~= chan;
 		};
 		setupFakeConnection(client);

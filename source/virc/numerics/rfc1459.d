@@ -148,6 +148,14 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERME, T)(T input) {
 	}
 }
 
+struct ChannelListResult {
+	import virc.common : Topic, Mode;
+	string name;
+	uint userCount;
+	Topic topic;
+	Mode[] modes;
+}
+
 /++
 +
 +/
@@ -160,7 +168,7 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LIST, T)(T input, ModeType[char]
 	import virc.common : Change, Channel, parseModeString, Topic;
 	//Note: RFC2812 makes no mention of the modes being included.
 	//Seems to be a de-facto standard, supported by several softwares.
-	Channel channel;
+	ChannelListResult channel;
 	//username doesn't really help us here. skip it
 	input.popFront();
 	channel.name = input.front;

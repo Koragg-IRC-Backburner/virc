@@ -16,15 +16,42 @@ import virc.usermask;
 struct Channel {
 	///
 	string name;
-	///
-	ulong userCount;
-	///
-	Topic topic;
-	///
-	Mode[] modes;
 	void toString(T)(T sink) const if (isOutputRange!(T, const(char))) {
 		put(sink, name);
 	}
+	this(string str) @safe pure nothrow @nogc {
+		name = str;
+	}
+	this(string str, string modePrefixes, string chanPrefixes) in {
+		import std.algorithm : canFind;
+		import std.array : front;
+		assert(str.length > 0);
+		assert(modePrefixes.canFind(str.front) || chanPrefixes.canFind(str.front));
+	} do {
+		import std.algorithm : canFind;
+		import std.array : empty, front, popFront;
+		if (modePrefixes.canFind(str.front)) {
+			auto tmpCopy = str;
+			tmpCopy.popFront();
+			if (!tmpCopy.empty && chanPrefixes.canFind(tmpCopy.front)) {
+				name = tmpCopy;
+			} else {
+				name = str;
+			}
+		} else {
+			name = str;
+		}
+	}
+}
+///
+unittest {
+	assert(Channel("#test").name == "#test");
+	assert(Channel("#test", "@%+", "#").name == "#test");
+	assert(Channel("+test", "@%+", "+").name == "+test");
+	assert(Channel("++test", "@%+", "+").name == "+test");
+	assert(Channel("@+test", "@%+", "#+").name == "+test");
+	assert(Channel("@+", "@%+", "#+").name == "+");
+	assert(Channel("+", "@%+", "#+").name == "+");
 }
 /++
 + Channel topic metadata. A message is guaranteed, but the time and user
