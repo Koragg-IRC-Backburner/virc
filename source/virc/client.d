@@ -207,6 +207,14 @@ struct Target {
 	bool isChannel() @safe pure nothrow @nogc const {
 		return !channel.isNull;
 	}
+	/++
+	+ Mode prefixes present in target. May be present on both channels and users.
+	+
+	+ Channel mode prefixes are used when targetting a subset of users on that
+	+ channel (all voiced users, for example), while user mode prefixes are found
+	+ mainly in responses from the server.
+	+/
+	Nullable!string prefixes;
 	///
 	bool isNickname() @safe pure nothrow @nogc const {
 		return !user.isNull;
@@ -238,11 +246,38 @@ struct Target {
 			user.get.toString(sink);
 		}
 	}
+	/++
+	+
+	+/
 	this(Channel chan) {
 		channel = chan;
 	}
+	/++
+	+
+	+/
 	this(User user_) {
 		user = user_;
+	}
+	private this(string str, string modePrefixes, string channelPrefixes) @safe pure nothrow {
+		import std.array : empty, front, popFront;
+		import std.algorithm : canFind;
+		import std.utf : byDchar;
+		if (str.empty) {
+			return;
+		}
+		auto tmpStr = str;
+		while (modePrefixes.byDchar.canFind(tmpStr.byDchar.front)) {
+			if (prefixes.isNull) {
+				prefixes = "";
+			}
+			prefixes ~= tmpStr.byDchar.front;
+			tmpStr.popFront();
+		}
+		if (!tmpStr.empty && channelPrefixes.byDchar.canFind(tmpStr.byDchar.front)) {
+			channel = Channel(tmpStr);
+		} else {
+			user = User(tmpStr);
+		}
 	}
 	/++
 	+
@@ -278,6 +313,28 @@ struct Target {
 		assert(target != User("test"));
 		assert(target != "test");
 		assert(target != "#hello");
+	}
+	assert(Target("Hello", "+@%", "#&")  == User("Hello"));
+	{
+		auto target = Target("+Hello", "+@%", "#&");
+		assert(target == User("Hello"));
+		assert(target.prefixes == "+");
+	}
+	assert(Target("#Hello", "+@%", "#&")  == Channel("#Hello"));
+	{
+		auto target = Target("+#Hello", "+@%", "#&");
+		assert(target == Channel("#Hello"));
+		assert(target.prefixes == "+");
+	}
+	{
+		auto target = Target("+@#Hello", "+@%", "#&");
+		assert(target == Channel("#Hello"));
+		assert(target.prefixes == "+@");
+	}
+	{
+		auto target = Target("", "", "");
+		assert(target.channel.isNull);
+		assert(target.user.isNull);
 	}
 }
 /++
@@ -554,19 +611,19 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 						recPing(split.front, metadata);
 						break;
 					case RFC1459Commands.notice:
-						Target target = parseTarget(split.front);
+						auto target = Target(split.front, server.iSupport.statusMessage, server.iSupport.channelTypes);
 						split.popFront();
 						auto message = Message(split.front, MessageType.notice);
 						recNotice(source, target, message, metadata);
 						break;
 					case RFC1459Commands.privmsg:
-						Target target = parseTarget(split.front);
+						auto target = Target(split.front, server.iSupport.statusMessage, server.iSupport.channelTypes);
 						split.popFront();
 						auto message = Message(split.front, MessageType.privmsg);
 						recPrivmsg(source, target, message, metadata);
 						break;
 					case RFC1459Commands.mode:
-						Target target = parseTarget(split.front);
+						auto target = Target(split.front, server.iSupport.statusMessage, server.iSupport.channelTypes);
 						split.popFront();
 						ModeType[char] modeTypes;
 						if (target.isChannel) {
@@ -913,15 +970,6 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		} else static if(hasMember!(typeof(this), func)) {
 			__traits(getMember, this, func)(params);
 		}
-	}
-	private Target parseTarget(string str) {
-		Target output;
-		if (server.iSupport.channelTypes.canFind(str.front)) {
-			output.channel = Channel(str);
-		} else {
-			output.user = User(str);
-		}
-		return output;
 	}
 	auto me() {
 		assert(nickname in internalAddressList);
