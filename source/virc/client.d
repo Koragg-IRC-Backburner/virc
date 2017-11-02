@@ -1469,6 +1469,9 @@ version(unittest) {
 		}
 
 		with (topicWhoTime) {
+			//TODO: remove when lack of these imports no longer produces warnings
+			import std.datetime : SysTime;
+			import virc.common : User;
 			assert(channel == "#test");
 			assert(setter == User("someoneElse"));
 			assert(timestamp == SysTime(DateTime(2017, 06, 07, 07, 53, 03), UTC()));
@@ -1492,16 +1495,22 @@ version(unittest) {
 		client.put("323 someone :End of channel list.");
 		assert(channels.length == 3);
 		with(channels[0]) {
+			//TODO: remove when lack of import no longer produces a warning
+			import virc.common : Topic;
 			assert(name == "#test");
 			assert(userCount == 4);
 			assert(topic == Topic("some words"));
 		}
 		with(channels[1]) {
+			//TODO: remove when lack of import no longer produces a warning
+			import virc.common : Topic;
 			assert(name == "#test2");
 			assert(userCount == 6);
 			assert(topic == Topic("some more words"));
 		}
 		with(channels[2]) {
+			//TODO: remove when lack of import no longer produces a warning
+			import virc.common : Topic;
 			assert(name == "#test3");
 			assert(userCount == 1);
 			assert(topic == Topic("no modes?"));
