@@ -895,6 +895,10 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	public void version_(string serverMask) {
 		write!"VERSION %s"(serverMask);
 	}
+	public void kick(const Channel chan, const User nick, const string message = "") {
+		assert(message.length < server.iSupport.kickLength, "Kick message length exceeded");
+		write!"KICK %s %s :%s"(chan, nick, message);
+	}
 	private void sendAuthenticatePayload(string payload) {
 		import std.base64 : Base64;
 		import std.range : chunks;
@@ -2191,5 +2195,12 @@ version(unittest) {
 		setupFakeConnection(client);
 		client.capList();
 		client.put(":localhost CAP * LIST :sasl=UNKNOWN,PLAIN,EXTERNAL");
+	}
+	{ //KICK test
+		auto client = spawnNoBufferClient();
+		setupFakeConnection(client);
+		client.kick(Channel("#test"), User("Example"), "message");
+		auto lineByLine = client.output.data.lineSplitter();
+		assert(lineByLine.array[$-1] == "KICK #test Example :message");
 	}
 }
