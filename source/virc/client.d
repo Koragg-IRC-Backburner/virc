@@ -389,6 +389,57 @@ enum RFC2812Commands {
 	service = "SERVICE"
 }
 
+import virc.ircv3 : IRCV3Commands;
+alias ClientNoOpCommands = AliasSeq!(
+	RFC1459Commands.server,
+	RFC1459Commands.user,
+	RFC1459Commands.pass,
+	RFC1459Commands.whois,
+	RFC1459Commands.whowas,
+	RFC1459Commands.kill,
+	RFC1459Commands.who,
+	RFC1459Commands.oper,
+	RFC1459Commands.squit,
+	RFC1459Commands.summon,
+	RFC1459Commands.topic, //UNIMPLEMENTED
+	RFC1459Commands.pong, //UNIMPLEMENTED
+	RFC1459Commands.error, //UNIMPLEMENTED
+	RFC1459Commands.kick, //UNIMPLEMENTED
+	RFC1459Commands.wallops, //UNIMPLEMENTED
+	RFC1459Commands.userhost,
+	RFC1459Commands.version_,
+	RFC1459Commands.names,
+	RFC1459Commands.away,
+	RFC1459Commands.connect,
+	RFC1459Commands.trace,
+	RFC1459Commands.links,
+	RFC1459Commands.stats,
+	RFC1459Commands.ison,
+	RFC1459Commands.restart,
+	RFC1459Commands.users,
+	RFC1459Commands.list,
+	RFC1459Commands.admin,
+	RFC1459Commands.rehash,
+	RFC1459Commands.time,
+	RFC1459Commands.info,
+	RFC2812Commands.service,
+	IRCV3Commands.starttls, //DO NOT IMPLEMENT
+	IRCV3Commands.batch, //SPECIAL CASE
+	IRCV3Commands.metadata, //UNIMPLEMENTED
+	IRCV3Commands.monitor,
+	Numeric.RPL_HOSTHIDDEN,
+	Numeric.RPL_ENDOFNAMES,
+	Numeric.RPL_ENDOFMONLIST,
+	Numeric.RPL_LOCALUSERS,
+	Numeric.RPL_GLOBALUSERS,
+	Numeric.RPL_YOURHOST,
+	Numeric.RPL_YOURID,
+	Numeric.RPL_CREATED,
+	Numeric.RPL_LISTSTART,
+	Numeric.RPL_LISTEND,
+	Numeric.RPL_TEXT,
+);
+
 /++
 +
 +/
@@ -535,8 +586,10 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		write!"PONG :%s"(nonce);
 	}
 	public void put(string line) {
-		import std.base64;
+		import std.conv : asOriginalType;
+		import std.meta : NoDuplicates;
 		import std.string : representation;
+		import std.traits : EnumMembers;
 		debug(verboseirc) import std.experimental.logger : trace;
 		//Chops off terminating \r\n. Everything after is ignored, according to spec.
 		line = findSplitBefore(line, "\r\n")[0];
@@ -586,212 +639,18 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 
 				auto firstToken = split.front;
 				split.popFront();
-				switch (firstToken) {
-					case IRCV3Commands.cap:
-						recCap(split, metadata);
-						break;
-					case RFC1459Commands.join:
-						recJoin(source, metadata, split);
-						break;
-					case RFC1459Commands.part:
-						Channel channel;
-						channel.name = split.front;
-						split.popFront();
-						auto msg = split.front;
-						recPart(source, channel, msg, metadata);
-						break;
-					case RFC1459Commands.quit:
-						string msg;
-						if (!split.empty) {
-							msg = split.front;
-						}
-						recQuit(source, msg, metadata);
-						break;
-					case RFC1459Commands.ping:
-						recPing(split.front, metadata);
-						break;
-					case RFC1459Commands.notice:
-						auto target = Target(split.front, server.iSupport.statusMessage, server.iSupport.channelTypes);
-						split.popFront();
-						auto message = Message(split.front, MessageType.notice);
-						recNotice(source, target, message, metadata);
-						break;
-					case RFC1459Commands.privmsg:
-						auto target = Target(split.front, server.iSupport.statusMessage, server.iSupport.channelTypes);
-						split.popFront();
-						auto message = Message(split.front, MessageType.privmsg);
-						recPrivmsg(source, target, message, metadata);
-						break;
-					case RFC1459Commands.mode:
-						auto target = Target(split.front, server.iSupport.statusMessage, server.iSupport.channelTypes);
-						split.popFront();
-						ModeType[char] modeTypes;
-						if (target.isChannel) {
-							modeTypes = server.iSupport.channelModeTypes;
-						} else {
-							//there are no user mode types.
-						}
-						auto modes = parseModeString(split, modeTypes);
-						recMode(source, target, modes, metadata);
-						break;
-					case RFC1459Commands.nick:
-						if (!split.empty) {
-							User old = source;
-							internalAddressList.renameTo(source, split.front);
-							recNick(old, internalAddressList[split.front], metadata);
-						}
-						break;
-					case RFC1459Commands.invite:
-						if (!split.empty) {
-							User inviter = source;
-							User invited;
-							if (split.front in internalAddressList) {
-								invited = internalAddressList[split.front];
-							} else {
-								invited = User(split.front);
+				switchy: switch (firstToken) {
+					//TOO MANY TEMPLATE INSTANTIATIONS! uncomment when compiler fixes this!
+					//alias Numerics = NoDuplicates!(EnumMembers!Numeric);
+					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED);
+
+					static foreach (cmd; AliasSeq!(NoDuplicates!(EnumMembers!IRCV3Commands), NoDuplicates!(EnumMembers!RFC1459Commands), NoDuplicates!(EnumMembers!RFC2812Commands), Numerics)) {
+						case cmd:
+							static if (!cmd.asOriginalType.among(ClientNoOpCommands)) {
+								rec!cmd(source, split, metadata);
 							}
-							split.popFront();
-							if (!split.empty) {
-								auto channel = Channel(split.front);
-								recInvite(inviter, invited, channel, metadata);
-							}
-						}
-						break;
-					case IRCV3Commands.authenticate:
-						if (split.front != "+") {
-							receivedSASLAuthenticationText ~= Base64.decode(split.front);
-						}
-						if ((selectedSASLMech) && (split.front == "+" || (split.front.length < 400))) {
-							selectedSASLMech.put(receivedSASLAuthenticationText);
-							if (selectedSASLMech.empty) {
-								sendAuthenticatePayload("");
-							} else {
-								sendAuthenticatePayload(selectedSASLMech.front);
-								selectedSASLMech.popFront();
-							}
-							receivedSASLAuthenticationText = [];
-						}
-						break;
-					case IRCV3Commands.chghost:
-						User target;
-						target.mask.nickname = source.nickname;
-						target.mask.ident = split.front;
-						split.popFront();
-						target.mask.host = split.front;
-						recChgHost(source, target, metadata);
-						break;
-					case IRCV3Commands.account:
-						if (!split.empty) {
-							auto newAccount = split.front;
-							recAccount(source, newAccount, metadata);
-						}
-						break;
-					case Numeric.RPL_WELCOME:
-						isRegistered = true;
-						auto meUser = User();
-						meUser.mask.nickname = nickname;
-						meUser.mask.ident = username;
-						internalAddressList.update(meUser);
-						tryCall!"onConnect"();
-						break;
-					case Numeric.RPL_ISUPPORT:
-						switch (split.save().canFind("UHNAMES", "NAMESX")) {
-							case 1:
-								if (!isEnabled(Capability("userhost-in-names"))) {
-									write("PROTOCTL UHNAMES");
-								}
-								break;
-							case 2:
-								if (!isEnabled(Capability("multi-prefix"))) {
-									write("PROTOCTL NAMESX");
-								}
-								break;
-							default: break;
-						}
-						parseNumeric!(Numeric.RPL_ISUPPORT)(split, server.iSupport);
-						break;
-					case Numeric.RPL_LIST:
-						auto channel = parseNumeric!(Numeric.RPL_LIST)(split, server.iSupport.channelModeTypes);
-						recList(channel, metadata);
-						break;
-					case Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT:
-						break;
-					case Numeric.RPL_MYINFO:
-						server.myInfo = parseNumeric!(Numeric.RPL_MYINFO)(split);
-						break;
-					case Numeric.RPL_LOGON:
-						auto reply = parseNumeric!(Numeric.RPL_LOGON)(split);
-						recLogon(reply.user, reply.timeOccurred, metadata);
-						break;
-					case Numeric.RPL_MONONLINE:
-						auto user = parseNumeric!(Numeric.RPL_MONONLINE)(split);
-						recMonitorOnline(user, metadata);
-						break;
-					case Numeric.RPL_MONOFFLINE:
-						auto user = parseNumeric!(Numeric.RPL_MONOFFLINE)(split);
-						recMonitorOffline(user, metadata);
-						break;
-					case Numeric.RPL_MONLIST:
-						auto user = parseNumeric!(Numeric.RPL_MONLIST)(split);
-						recMonitorList(user, metadata);
-						break;
-					case Numeric.RPL_LUSERCLIENT:
-						tryCall!"onLUserClient"(parseNumeric!(Numeric.RPL_LUSERCLIENT)(split), metadata);
-						break;
-					case Numeric.RPL_LUSEROP:
-						tryCall!"onLUserOp"(parseNumeric!(Numeric.RPL_LUSEROP)(split), metadata);
-						break;
-					case Numeric.RPL_LUSERCHANNELS:
-						tryCall!"onLUserChannels"(parseNumeric!(Numeric.RPL_LUSERCHANNELS)(split), metadata);
-						break;
-					case Numeric.RPL_LUSERME:
-						tryCall!"onLUserMe"(parseNumeric!(Numeric.RPL_LUSERME)(split), metadata);
-						break;
-					case Numeric.RPL_TOPIC:
-						auto reply = parseNumeric!(Numeric.RPL_TOPIC)(split);
-						if (!reply.isNull) {
-							recTopic(reply.get, metadata);
-						}
-						break;
-					case Numeric.RPL_NAMREPLY:
-						auto reply = parseNumeric!(Numeric.RPL_NAMREPLY)(split);
-						if (!reply.isNull) {
-							recRPLNamReply(reply.get, metadata);
-						}
-						break;
-					case Numeric.RPL_TOPICWHOTIME:
-						auto reply = parseNumeric!(Numeric.RPL_TOPICWHOTIME)(split);
-						if (!reply.isNull) {
-							recRPLTopicWhoTime(reply.get, metadata);
-						}
-						break;
-					case Numeric.RPL_SASLSUCCESS:
-						if (selectedSASLMech) {
-							authenticationSucceeded = true;
-						}
-						endAuthentication();
-						break;
-					case Numeric.RPL_LOGGEDIN:
-						import virc.numerics.sasl : parseNumeric;
-						if (isAuthenticating || isAuthenticated) {
-							auto parsed = parseNumeric!(Numeric.RPL_LOGGEDIN)(split);
-							auto user = User(parsed.mask);
-							user.account = parsed.account;
-							internalAddressList.update(user);
-						}
-						break;
-					case Numeric.RPL_VERSION:
-						recVersionReply(parseNumeric!(Numeric.RPL_VERSION)(split), metadata);
-						break;
-					case Numeric.ERR_MONLISTFULL:
-						recMonListFull(parseNumeric!(Numeric.ERR_MONLISTFULL)(split), metadata);
-						break;
-					case Numeric.ERR_NOMOTD:
-						tryCall!"onError"(metadata);
-						break;
-					case Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED:
-						endAuthentication();
-						break;
+							break switchy;
+					}
 					default: recUnknownCommand(firstToken, metadata); break;
 				}
 			}
@@ -980,7 +839,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		return internalAddressList[nickname];
 	}
 	//Message parsing functions follow
-	private void recCap(T)(T tokens, const MessageMetadata metadata) if (isInputRange!T && is(ElementType!T == string)) {
+	private void rec(string cmd : IRCV3Commands.cap, T)(User, T tokens, const MessageMetadata metadata) if (isInputRange!T && is(ElementType!T == string)) {
 		immutable username = tokens.front; //Unused?
 		tokens.popFront();
 		immutable subCommand = tokens.front;
@@ -1103,12 +962,21 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		write!"AUTHENTICATE %s"(mech.name);
 		isAuthenticating = true;
 	}
-	private void recMode(const User user, const Target channel, const typeof(parseModeString("",null)) modes, const MessageMetadata metadata) {
+	private void rec(string cmd : RFC1459Commands.mode, T)(User source, T split, const MessageMetadata metadata) {
+		auto target = Target(split.front, server.iSupport.statusMessage, server.iSupport.channelTypes);
+		split.popFront();
+		ModeType[char] modeTypes;
+		if (target.isChannel) {
+			modeTypes = server.iSupport.channelModeTypes;
+		} else {
+			//there are no user mode types.
+		}
+		auto modes = parseModeString(split, modeTypes);
 		foreach (mode; modes) {
-			tryCall!"onMode"(user, channel, mode, metadata);
+			tryCall!"onMode"(source, target, mode, metadata);
 		}
 	}
-	private void recJoin(T)(User source, const MessageMetadata metadata, T split) if (isInputRange!T) {
+	private void rec(string cmd : RFC1459Commands.join, T)(User source, T split, const MessageMetadata metadata) if (isInputRange!T) {
 		Channel channel;
 		channel.name = split.front;
 		split.popFront();
@@ -1122,14 +990,23 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		}
 		tryCall!"onJoin"(source, channel, metadata);
 	}
-	private void recPart(const User user, const Channel channel, const string msg, const MessageMetadata metadata) {
+	private void rec(string cmd : RFC1459Commands.part, T)(const User user, T split, const MessageMetadata metadata) {
+		auto channel = Channel(split.front);
+		split.popFront();
+		auto msg = split.front;
 		tryCall!"onPart"(user, channel, msg, metadata);
 	}
-	private void recNotice(const User user, const Target target, Message msg, const MessageMetadata metadata) {
-		recMessageCommon(user, target, msg, metadata);
+	private void rec(string cmd : RFC1459Commands.notice, T)(const User user, T split, const MessageMetadata metadata) {
+		auto target = Target(split.front, server.iSupport.statusMessage, server.iSupport.channelTypes);
+		split.popFront();
+		auto message = Message(split.front, MessageType.notice);
+		recMessageCommon(user, target, message, metadata);
 	}
-	private void recPrivmsg(const User user, const Target target, Message msg, const MessageMetadata metadata) {
-		recMessageCommon(user, target, msg, metadata);
+	private void rec(string cmd : RFC1459Commands.privmsg, T)(const User user, T split, const MessageMetadata metadata) {
+		auto target = Target(split.front, server.iSupport.statusMessage, server.iSupport.channelTypes);
+		split.popFront();
+		auto message = Message(split.front, MessageType.privmsg);
+		recMessageCommon(user, target, message, metadata);
 	}
 	private void recMessageCommon(const User user, const Target target, Message msg, const MessageMetadata metadata) {
 		if (user.nickname == nickname) {
@@ -1137,56 +1014,154 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		}
 		tryCall!"onMessage"(user, target, msg, metadata);
 	}
-	private void recList(const ChannelListResult channel, const MessageMetadata metadata) {
+	private void rec(string cmd : Numeric.RPL_ISUPPORT, T)(const Nullable!User, T split, const MessageMetadata metadata) {
+		switch (split.save().canFind("UHNAMES", "NAMESX")) {
+			case 1:
+				if (!isEnabled(Capability("userhost-in-names"))) {
+					write("PROTOCTL UHNAMES");
+				}
+				break;
+			case 2:
+				if (!isEnabled(Capability("multi-prefix"))) {
+					write("PROTOCTL NAMESX");
+				}
+				break;
+			default: break;
+		}
+		parseNumeric!(Numeric.RPL_ISUPPORT)(split, server.iSupport);
+	}
+	private void rec(string cmd : Numeric.RPL_WELCOME, T)(const Nullable!User, T split, const MessageMetadata metadata) {
+		isRegistered = true;
+		auto meUser = User();
+		meUser.mask.nickname = nickname;
+		meUser.mask.ident = username;
+		internalAddressList.update(meUser);
+		tryCall!"onConnect"();
+	}
+	private void rec(string cmd : Numeric.RPL_LOGGEDIN, T)(const Nullable!User, T split, const MessageMetadata metadata) {
+		import virc.numerics.sasl : parseNumeric;
+		if (isAuthenticating || isAuthenticated) {
+			auto parsed = parseNumeric!(Numeric.RPL_LOGGEDIN)(split);
+			auto user = User(parsed.mask);
+			user.account = parsed.account;
+			internalAddressList.update(user);
+		}
+	}
+	private void rec(string cmd, T)(const Nullable!User, T split, const MessageMetadata metadata) if (cmd.among(Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED)) {
+		endAuthentication();
+	}
+	private void rec(string cmd : Numeric.RPL_MYINFO, T)(const Nullable!User, T split, const MessageMetadata metadata) {
+		server.myInfo = parseNumeric!(Numeric.RPL_MYINFO)(split);
+	}
+	private void rec(string cmd : Numeric.RPL_LUSERCLIENT, T)(const Nullable!User, T split, const MessageMetadata metadata) {
+		tryCall!"onLUserClient"(parseNumeric!(Numeric.RPL_LUSERCLIENT)(split), metadata);
+	}
+	private void rec(string cmd : Numeric.RPL_LUSEROP, T)(const Nullable!User, T split, const MessageMetadata metadata) {
+		tryCall!"onLUserOp"(parseNumeric!(Numeric.RPL_LUSEROP)(split), metadata);
+	}
+	private void rec(string cmd : Numeric.RPL_LUSERCHANNELS, T)(const Nullable!User, T split, const MessageMetadata metadata) {
+		tryCall!"onLUserChannels"(parseNumeric!(Numeric.RPL_LUSERCHANNELS)(split), metadata);
+	}
+	private void rec(string cmd : Numeric.RPL_LUSERME, T)(const Nullable!User, T split, const MessageMetadata metadata) {
+		tryCall!"onLUserMe"(parseNumeric!(Numeric.RPL_LUSERME)(split), metadata);
+	}
+	private void rec(string cmd : Numeric.ERR_NOMOTD, T)(const Nullable!User, T split, const MessageMetadata metadata) {
+		tryCall!"onError"(metadata);
+	}
+	private void rec(string cmd : Numeric.RPL_SASLSUCCESS, T)(const Nullable!User, T split, const MessageMetadata metadata) {
+		if (selectedSASLMech) {
+			authenticationSucceeded = true;
+		}
+		endAuthentication();
+	}
+	private void rec(string cmd : Numeric.RPL_LIST, T)(const Nullable!User, T split, const MessageMetadata metadata) {
+		auto channel = parseNumeric!(Numeric.RPL_LIST)(split, server.iSupport.channelModeTypes);
 		tryCall!"onList"(channel, metadata);
 	}
-	private void recPing(const string pingStr, const MessageMetadata) {
-		pong(pingStr);
+	private void rec(string cmd : RFC1459Commands.ping, T)(const Nullable!User, T split, const MessageMetadata) {
+		pong(split.front);
 	}
-	private void recMonitorOnline(T)(T users, const MessageMetadata metadata) if (isInputRange!T && is(ElementType!T == User)) {
+	private void rec(string cmd : Numeric.RPL_MONONLINE, T)(User , T split, const MessageMetadata metadata) if (isInputRange!T) {
+		auto users = parseNumeric!(Numeric.RPL_MONONLINE)(split);
 		foreach (user; users) {
 			tryCall!"onUserOnline"(user, SysTime.init, metadata);
 		}
 	}
-	private void recMonitorOffline(T)(T users, const MessageMetadata metadata) if (isInputRange!T && is(ElementType!T == User)) {
+	private void rec(string cmd : Numeric.RPL_MONOFFLINE, T)(User, T split, const MessageMetadata metadata) if (isInputRange!T) {
+		auto users = parseNumeric!(Numeric.RPL_MONOFFLINE)(split);
 		foreach (user; users) {
 			tryCall!"onUserOffline"(user, metadata);
 		}
 	}
-	private void recMonitorList(T)(T users, const MessageMetadata metadata) if (isInputRange!T && is(ElementType!T == User)) {
+	private void rec(string cmd : Numeric.RPL_MONLIST,  T)(User, T split, const MessageMetadata metadata) if (isInputRange!T) {
+		auto users = parseNumeric!(Numeric.RPL_MONLIST)(split);
 		foreach (user; users) {
 			tryCall!"onMonitorList"(user, metadata);
 		}
 	}
-	private void recMonListFull(const typeof(parseNumeric!(Numeric.ERR_MONLISTFULL)([""])), const MessageMetadata metadata) {
+	private void rec(string cmd : Numeric.ERR_MONLISTFULL, T)(const Nullable!User, T split, const MessageMetadata metadata) {
+		auto err = parseNumeric!(Numeric.ERR_MONLISTFULL)(split);
 		tryCall!"onError"(metadata);
 	}
-	private void recVersionReply(const typeof(parseNumeric!(Numeric.RPL_VERSION)([""])) versionReply, const MessageMetadata metadata) {
+	private void rec(string cmd : Numeric.RPL_VERSION, T)(const Nullable!User, T split, const MessageMetadata metadata) {
+		auto versionReply = parseNumeric!(Numeric.RPL_VERSION)(split);
 		tryCall!"onVersionReply"(versionReply, metadata);
 	}
-	private void recLogon(const User user, const SysTime timeOccurred, const MessageMetadata metadata) {
-		tryCall!"onUserOnline"(user, timeOccurred, metadata);
+	private void rec(string cmd : Numeric.RPL_LOGON, T)(const User user, T split, const MessageMetadata metadata) {
+		auto reply = parseNumeric!(Numeric.RPL_LOGON)(split);
+		tryCall!"onUserOnline"(reply.user, reply.timeOccurred, metadata);
 	}
-	private void recChgHost(const User user, const User target, const MessageMetadata metadata) {
+	private void rec(string cmd : IRCV3Commands.chghost, T)(const User user, T split, const MessageMetadata metadata) {
+		User target;
+		target.mask.nickname = user.nickname;
+		target.mask.ident = split.front;
+		split.popFront();
+		target.mask.host = split.front;
 		internalAddressList.update(target);
 		tryCall!"onChgHost"(user, target, metadata);
 	}
-	private void recRPLTopicWhoTime(const TopicWhoTime twt, const MessageMetadata metadata) {
-		tryCall!"onTopicWhoTimeReply"(twt, metadata);
-	}
-	private void recTopic(const TopicReply tr, const MessageMetadata metadata) {
-		tryCall!"onTopicReply"(tr, metadata);
-	}
-	private void recNick(const User old, const User new_, const MessageMetadata metadata) {
-		if (old.nickname == nickname) {
-			nickname = new_.nickname;
+	private void rec(string cmd : Numeric.RPL_TOPICWHOTIME, T)(const User, T split, const MessageMetadata metadata) {
+		auto reply = parseNumeric!(Numeric.RPL_TOPICWHOTIME)(split);
+		if (!reply.isNull) {
+			tryCall!"onTopicWhoTimeReply"(reply, metadata);
 		}
-		tryCall!"onNick"(old, new_, metadata);
 	}
-	private void recInvite(const User inviter, const User invited, const Channel channel, const MessageMetadata metadata) {
-		tryCall!"onInvite"(inviter, invited, channel, metadata);
+	private void rec(string cmd : Numeric.RPL_TOPIC, T)(const User, T split, const MessageMetadata metadata) {
+		auto reply = parseNumeric!(Numeric.RPL_TOPIC)(split);
+		if (!reply.isNull) {
+			tryCall!"onTopicReply"(reply, metadata);
+		}
 	}
-	private void recQuit(const User user, const string msg, const MessageMetadata metadata) {
+	private void rec(string cmd : RFC1459Commands.nick, T)(const User old, T split, const MessageMetadata metadata) {
+		if (!split.empty) {
+			internalAddressList.renameTo(old, split.front);
+			auto new_ = internalAddressList[split.front];
+			if (old.nickname == nickname) {
+				nickname = new_.nickname;
+			}
+			tryCall!"onNick"(old, new_, metadata);
+		}
+	}
+	private void rec(string cmd : RFC1459Commands.invite, T)(const User inviter, T split, const MessageMetadata metadata) {
+		if (!split.empty) {
+			User invited;
+			if (split.front in internalAddressList) {
+				invited = internalAddressList[split.front];
+			} else {
+				invited = User(split.front);
+			}
+			split.popFront();
+			if (!split.empty) {
+				auto channel = Channel(split.front);
+				tryCall!"onInvite"(inviter, invited, channel, metadata);
+			}
+		}
+	}
+	private void rec(string cmd : RFC1459Commands.quit ,T)(const User user, T split, const MessageMetadata metadata) {
+		string msg;
+		if (!split.empty) {
+			msg = split.front;
+		}
 		internalAddressList.invalidate(user.nickname);
 		tryCall!"onQuit"(user, msg, metadata);
 	}
@@ -1198,22 +1173,44 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 			debug(verboseirc) trace(" Unknown command: ", metadata.original);
 		}
 	}
-	private void recRPLNamReply(const NamesReply x, const MessageMetadata metadata) {
-		tryCall!"onNamesReply"(x, metadata);
+	private void rec(string cmd : Numeric.RPL_NAMREPLY, T)(const User, T split, const MessageMetadata metadata) {
+		auto reply = parseNumeric!(Numeric.RPL_NAMREPLY)(split);
+		if (!reply.isNull) {
+			tryCall!"onNamesReply"(reply, metadata);
+		}
 	}
 	private void recUnknownNumeric(const string cmd, const MessageMetadata metadata) {
 		debug(verboseirc) import std.experimental.logger : trace;
 		debug(verboseirc) trace("Unhandled numeric: ", cast(Numeric)cmd, " ", metadata.original);
 	}
-	private void recAccount(const User user, const string account, const MessageMetadata metadata) {
-		internalAddressList.update(user);
-		auto newUser = internalAddressList[user.nickname];
-		if (account == "*") {
-			newUser.account.nullify();
-		} else {
-			newUser.account = account;
+	private void rec(string cmd : IRCV3Commands.account, T)(const User user, T split, const MessageMetadata metadata) {
+		if (!split.empty) {
+			auto newAccount = split.front;
+			internalAddressList.update(user);
+			auto newUser = internalAddressList[user.nickname];
+			if (newAccount == "*") {
+				newUser.account.nullify();
+			} else {
+				newUser.account = newAccount;
+			}
+			internalAddressList.updateExact(newUser);
 		}
-		internalAddressList.updateExact(newUser);
+	}
+	private void rec(string cmd : IRCV3Commands.authenticate, T)(const Nullable!User, T split, const MessageMetadata metadata) {
+		import std.base64 : Base64;
+		if (split.front != "+") {
+			receivedSASLAuthenticationText ~= Base64.decode(split.front);
+		}
+		if ((selectedSASLMech) && (split.front == "+" || (split.front.length < 400))) {
+			selectedSASLMech.put(receivedSASLAuthenticationText);
+			if (selectedSASLMech.empty) {
+				sendAuthenticatePayload("");
+			} else {
+				sendAuthenticatePayload(selectedSASLMech.front);
+				selectedSASLMech.popFront();
+			}
+			receivedSASLAuthenticationText = [];
+		}
 	}
 }
 version(unittest) {
