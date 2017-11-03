@@ -1580,7 +1580,6 @@ version(unittest) {
 	{ //extended-join http://ircv3.net/specs/extensions/extended-join-3.1.html
 		auto client = spawnNoBufferClient();
 
-
 		User[] users;
 		client.onJoin = (const User user, const Channel, const MessageMetadata) {
 			users ~= user;
@@ -1607,7 +1606,6 @@ version(unittest) {
 	}
 	{ //example taken from RFC2812, section 3.2.2
 		auto client = spawnNoBufferClient();
-
 
 		User[] users;
 		const(Channel)[] channels;
@@ -1932,22 +1930,18 @@ version(unittest) {
 		with (changes[2]) {
 			assert(target == Channel("#test"));
 			assert(user == User("someoneElse!user@host2"));
-
 		}
 		with (changes[3]) {
 			assert(target == Channel("#test"));
 			assert(user == User("someoneElse!user@host2"));
-
 		}
 		with (changes[4]) {
 			assert(target == User("someone"));
 			assert(user == User("someoneElse!user@host2"));
-
 		}
 		with (changes[5]) {
 			assert(target == User("someone"));
 			assert(user == User("someoneElse!user@host2"));
-
 		}
 	}
 	{ //account-tag examples from http://ircv3.net/specs/extensions/account-tag-3.2.html
