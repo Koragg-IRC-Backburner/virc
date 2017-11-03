@@ -56,7 +56,7 @@ struct InternalAddressList {
 	}
 	///
 	auto opIn_r(string name) {
-		return ((name in users) !is null);
+		return name in users;
 	}
 }
 ///
