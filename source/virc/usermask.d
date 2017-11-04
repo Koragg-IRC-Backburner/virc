@@ -23,10 +23,18 @@ struct UserMask {
 	this(string maskString) @safe pure nothrow @nogc {
 		auto split = maskString.findSplit("!");
 		nickname = split[0];
-		if (split[2].length > 0) {
+		if ((split[1] == "!") && (split[2].length > 0)) {
 			auto split2 = split[2].findSplit("@");
 			ident = split2[0];
-			host = split2[2];
+			if (split2[1] == "@") {
+				host = split2[2];
+			}
+		} else {
+			auto split2 = maskString.findSplit("@");
+			nickname = split2[0];
+			if (split2[1] == "@") {
+				host = split2[2];
+			}
 		}
 	}
 	void toString(T)(T sink) const if (isOutputRange!(T, const(char))) {
@@ -68,6 +76,16 @@ struct UserMask {
 		assert(nickname == "user");
 		assert(ident == "id!");
 		assert(host == "ex@mple!!!.net");
+	}
+	with (UserMask("user!id")) {
+		assert(nickname == "user");
+		assert(ident == "id");
+		assert(host.isNull);
+	}
+	with (UserMask("user@example.net")) {
+		assert(nickname == "user");
+		assert(ident.isNull);
+		assert(host == "example.net");
 	}
 }
 @safe pure unittest {
