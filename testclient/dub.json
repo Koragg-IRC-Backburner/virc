@@ -7,6 +7,9 @@
 		"virc": "*",
 		"vibe-d:core": "~>0.8.0",
 		"vibe-d:stream": "~>0.8.0",
-		"vibe-d:tls": "~>0.8.0"
-	}
+		"vibe-d:tls": "~>0.8.0",
+        	"gen-package-version": "~>1.0.5"
+	},
+	"preGenerateCommands":
+		["dub run gen-package-version -- testclient --root=$PACKAGE_DIR --dub"]
 }

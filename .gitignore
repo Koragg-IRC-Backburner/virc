@@ -11,3 +11,4 @@ dub.selections.json
 *.lst
 docs
 settings.json
+packageVersion.d

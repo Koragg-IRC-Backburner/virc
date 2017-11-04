@@ -1,3 +1,5 @@
+module testclient.app;
+
 import std.range;
 import std.stdio;
 import vibe.core.core;
@@ -9,13 +11,15 @@ import vibe.stream.wrapper;
 import virc;
 
 mixin template Bot() {
+	import testclient.packageVersion;
 	import std.stdio : writefln;
+	string[] channelsToJoin;
 	void onMessage(const User user, const Target target, const Message msg, const MessageMetadata metadata) {
 		if (msg.isCTCP) {
 			if (msg.ctcpCommand == "ACTION") {
 				writefln("<%s> * %s %s", metadata.time, user, msg.ctcpArgs);
-			} if (msg.ctcpCommand == "RAW") {
-				write(msg.ctcpArgs);
+			} else if (msg.ctcpCommand == "VERSION") {
+				ctcpReply(Target(user), "VERSION", packageName~" "~packageVersion);
 			} else {
 				writefln("<%s> [%s:%s] %s", metadata.time, user, msg.ctcpCommand, msg.ctcpArgs);
 			}
@@ -62,22 +66,27 @@ mixin template Bot() {
 		writefln("<%s> *** %s is no longer away", metadata.time, user);
 	}
 
-	void onTopic(const User user, const Channel channel, const MessageMetadata metadata) @safe {
-		writefln("<%s> *** %s changed topic on %s to %s", metadata.time, user, channel, channel.topic);
+	void onTopic(const User user, const Channel channel, const string topic, const MessageMetadata metadata) @safe {
+		writefln("<%s> *** %s changed topic on %s to %s", metadata.time, user, channel, topic);
 	}
 
 	void onMode(const User user, const Target target, const ModeChange mode, const MessageMetadata metadata) @safe {
 		writefln("<%s> *** %s changed modes on %s: %s", metadata.time, user, target, mode);
 	}
 	void onConnect() {
-		join("#test");
+		foreach (channel; channelsToJoin) {
+			join(channel);
+		}
 	}
 	void writeLine(string line) {
 		write(line);
 	}
+	void autoJoinChannel(string chan) {
+		channelsToJoin ~= chan;
+	}
 }
 
-void main() {
+int main() {
 	import std.file : exists, readText;
 	import std.json : JSON_TYPE, parseJSON;
 	if (exists("settings.json")) {
@@ -100,6 +109,9 @@ void main() {
 		}
 		auto output = new Wrap;
 		auto client = ircClient!Bot(output, NickInfo(settings["nickname"].str, settings["identd"].str, settings["real name"].str));
+		foreach (channel; settings["channels to join"].array) {
+			client.autoJoinChannel(channel.str);
+		}
 
 		void readIRC() {
 			while(!stream.empty) {
@@ -115,8 +127,9 @@ void main() {
 		}
 		runTask(&readIRC);
 		runTask(&readCLI);
-		runApplication();
+		return runApplication();
 	} else {
 		stderr.writeln("No settings file found");
+		return 1;
 	}
 }
