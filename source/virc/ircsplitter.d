@@ -74,13 +74,14 @@ struct IRCSplitter_(RFC2812Compliance RFC2812) {
 	}
 }
 ///
-@safe pure nothrow unittest {
+@safe pure nothrow @nogc unittest {
 	import std.algorithm : equal;
+	import std.range : only;
 	assert(IRCSplitter("").empty);
-	assert(IRCSplitter("test").equal(["test"]));
-	assert(IRCSplitter("test word2").equal(["test", "word2"]));
-	assert(IRCSplitter("test :word2 word3").equal(["test", "word2 word3"]));
-	assert(IRCSplitter("test :word2 :word3").equal(["test", "word2 :word3"]));
-	assert(IRCSplitter(":").equal([""]));
-	assert(IRCSplitter_!(RFC2812Compliance.yes)("COMMAND word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12 word13 word14 word15 word16 word17").equal(["COMMAND", "word1", "word2", "word3", "word4", "word5", "word6", "word7", "word8", "word9", "word10", "word11", "word12", "word13", "word14", "word15 word16 word17"]));
+	assert(IRCSplitter("test").equal(only("test")));
+	assert(IRCSplitter("test word2").equal(only("test", "word2")));
+	assert(IRCSplitter("test :word2 word3").equal(only("test", "word2 word3")));
+	assert(IRCSplitter("test :word2 :word3").equal(only("test", "word2 :word3")));
+	assert(IRCSplitter(":").equal(only("")));
+	assert(IRCSplitter_!(RFC2812Compliance.yes)("COMMAND word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12 word13 word14 word15 word16 word17").equal(only("COMMAND", "word1", "word2", "word3", "word4", "word5", "word6", "word7", "word8", "word9", "word10", "word11", "word12", "word13", "word14", "word15 word16 word17")));
 }
