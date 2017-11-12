@@ -153,7 +153,8 @@ struct Message {
 	auto ctcpArgs() const in {
 		assert(isCTCP, "This is not a CTCP message!");
 	} body {
-		return msg.find(" ")[1..$-1];
+		auto split = msg[1..$-1].findSplit(" ");
+		return split[2];
 	}
 	bool opEquals(string str) @safe pure nothrow @nogc const {
 		return str == msg;
@@ -181,6 +182,12 @@ struct Message {
 		assert(msg.isCTCP);
 		assert(msg.ctcpCommand == "ACTION");
 		assert(msg.ctcpArgs == "does a thing");
+	}
+	{
+		auto msg = Message("\x01VERSION\x01", MessageType.privmsg);
+		assert(msg.isCTCP);
+		assert(msg.ctcpCommand == "VERSION");
+		assert(msg.ctcpArgs == "");
 	}
 }
 @system pure nothrow @nogc unittest {
