@@ -6,10 +6,12 @@ module virc.common;
 
 import std.datetime : SysTime;
 import std.range : isOutputRange, put;
-import std.typecons : Nullable;
+import std.typecons : Flag, Nullable;
 
 import virc.modes;
 import virc.usermask;
+
+alias RFC2812Compliance = Flag!"RFC2812Compliance";
 /++
 + Metadata for an IRC channel.
 +/
