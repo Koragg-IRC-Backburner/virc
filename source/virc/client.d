@@ -451,7 +451,17 @@ alias ClientNoOpCommands = AliasSeq!(
 +
 +/
 struct ChannelState {
-
+	Channel channel;
+	string topic;
+	User*[] users;
+	void toString(T)(T sink) const if (isOutputRange!(T, const(char))) {
+		formattedWrite!"Channel: %s\n"(sink, channel);
+		formattedWrite!"\tTopic: %s\n"(sink, topic);
+		formattedWrite!"\tUsers:\n"(sink);
+		foreach (user; users) {
+			formattedWrite!"\t\t%s\n"(sink, *user);
+		}
+	}
 }
 /++
 +
@@ -517,7 +527,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		///
 		void delegate(const User, const string, const MessageMetadata) @safe onQuit;
 		///
-		void delegate(const User, const Channel, const MessageMetadata) @safe onTopic;
+		void delegate(const User, const Channel, const string, const MessageMetadata) @safe onTopic;
 		///
 		void delegate(const User, const Target, const ModeChange, const MessageMetadata) @safe onMode;
 		///
@@ -995,12 +1005,27 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 			source.realName = split.front;
 			split.popFront();
 		}
+		if (channel.name !in channels) {
+			channels[channel.name] = ChannelState();
+		}
+		internalAddressList.update(source);
+		channels[channel.name].users ~= source.nickname in internalAddressList;
 		tryCall!"onJoin"(source, channel, metadata);
 	}
 	private void rec(string cmd : RFC1459Commands.part, T)(const User user, T split, const MessageMetadata metadata) {
+		import std.algorithm.mutation : remove;
+		import std.algorithm.searching : countUntil;
 		auto channel = Channel(split.front);
 		split.popFront();
 		auto msg = split.front;
+		if (channel.name in channels) {
+			if (user.nickname in internalAddressList) {
+				auto index = channels[channel.name].users.countUntil(user.nickname in internalAddressList);
+				if (index > 0) {
+					channels[channel.name].users.remove(index);
+				}
+			}
+		}
 		tryCall!"onPart"(user, channel, msg, metadata);
 	}
 	private void rec(string cmd : RFC1459Commands.notice, T)(const User user, T split, const MessageMetadata metadata) {
