@@ -994,8 +994,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		}
 	}
 	private void rec(string cmd : RFC1459Commands.join, T)(User source, T split, const MessageMetadata metadata) if (isInputRange!T) {
-		Channel channel;
-		channel.name = split.front;
+		auto channel = Channel(split.front);
 		split.popFront();
 		if (isEnabled(Capability("extended-join"))) {
 			if (split.front != "*") {
@@ -1253,7 +1252,8 @@ version(unittest) {
 	import std.string : lineSplitter, representation;
 	import std.typecons : Tuple, tuple;
 	import virc.ircv3 : Capability;
-	static immutable testUser = NickInfo("nick", "ident", "real name!");
+	static immutable testClientInfo = NickInfo("nick", "ident", "real name!");
+	static immutable testUser = User(testClientInfo.nickname, testClientInfo.username, "example.org");
 	mixin template Test() {
 		bool lineReceived;
 		void onRaw(const MessageMetadata) @safe pure {
@@ -1261,7 +1261,7 @@ version(unittest) {
 		}
 	}
 	void setupFakeConnection(T)(ref T client) {
-		client.put(":localhost 001 someone :Welcome to the TestNet IRC Network "~testUser.nickname~"!"~testUser.username~"@::1");
+		client.put(":localhost 001 someone :Welcome to the TestNet IRC Network "~testUser.text);
 		client.put(":localhost 002 someone :Your host is localhost, running version IRCd-2.0");
 		client.put(":localhost 003 someone :This server was created 20:21:33 Oct  21 2016");
 		client.put(":localhost 004 someone localhost IRCd-2.0 BGHIRSWcdgikorswx ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz FIJLYabefghjkloqv");
@@ -1283,11 +1283,11 @@ version(unittest) {
 	}
 	auto spawnNoBufferClient(string password = string.init) {
 		auto buffer = appender!(string);
-		return ircClient(buffer, testUser, [], password);
+		return ircClient(buffer, testClientInfo, [], password);
 	}
 	auto spawnNoBufferClient(alias mix)(string password = string.init) {
 		auto buffer = appender!(string);
-		return ircClient!mix(buffer, testUser, [], password);
+		return ircClient!mix(buffer, testClientInfo, [], password);
 	}
 }
 ///Test the basics
@@ -1656,9 +1656,28 @@ version(unittest) {
 		assert(channels.front == Channel("#playzone"));
 		assert(lastMsg == "I lost");
 	}
-	{ //http://ircv3.net/specs/extensions/chghost-3.2.html
+	{ //PART tests
 		auto client = spawnNoBufferClient();
 
+		Tuple!(const User, "user", const Channel, "channel", string, "message")[] parts;
+		client.onPart = (const User user, const Channel chan, const string msg, const MessageMetadata) {
+			parts ~= tuple!("user", "channel", "message")(user, chan, msg);
+		};
+
+		setupFakeConnection(client);
+
+		assert("#example" !in client.channels);
+		client.put(":"~testUser.text~" PART #example :see ya");
+		assert("#example" !in client.channels);
+
+		with (parts[0]) {
+			assert(user == client.me);
+			assert(channel == Channel("#example"));
+			assert(message == "see ya");
+		}
+	}
+	{ //http://ircv3.net/specs/extensions/chghost-3.2.html
+		auto client = spawnNoBufferClient();
 
 		User[] users;
 		client.onChgHost = (const User user, const User newUser, const MessageMetadata) {
@@ -1707,12 +1726,12 @@ version(unittest) {
 		};
 		setupFakeConnection(client);
 		client.msg("Attila", "hi");
-		client.put(":"~testUser.nickname~"!"~testUser.username~"@localhost PRIVMSG Attila :hi");
+		client.put(":"~testUser.text~" PRIVMSG Attila :hi");
 		assert(messages.length > 0);
 		assert(messages[0].isEcho);
 
 		client.msg("#ircv3", "back from \x02lunch\x0F");
-		client.put(":"~testUser.nickname~"!"~testUser.username~"@localhost PRIVMSG #ircv3 :back from lunch");
+		client.put(":"~testUser.text~" PRIVMSG #ircv3 :back from lunch");
 		assert(messages.length > 1);
 		assert(messages[1].isEcho);
 	}
@@ -1943,6 +1962,8 @@ version(unittest) {
 		};
 
 		setupFakeConnection(client);
+		client.join("#test");
+		client.put(":"~testUser.text~" JOIN #test "~testUser.nickname);
 		client.put(":someone!ident@host JOIN #test");
 		client.put(":someoneElse!user@host2 MODE #test +s");
 		client.put(":someoneElse!user@host2 MODE #test -s");
@@ -2175,7 +2196,7 @@ version(unittest) {
 		client.put(":localhost CAP * LS :sasl");
 		client.put(":localhost CAP whoever ACK :sasl");
 		client.put("AUTHENTICATE +");
-		client.put(":localhost 900 "~testUser.nickname~" "~testUser.nickname~"!"~testUser.username~"@::1 "~testUser.nickname~" :You are now logged in as "~testUser.nickname);
+		client.put(":localhost 900 "~testUser.nickname~" "~testUser.text~" "~testUser.nickname~" :You are now logged in as "~testUser.nickname);
 		client.put(":localhost 903 "~testUser.nickname~" :SASL authentication successful");
 
 		assert(client.output.data.canFind("AUTHENTICATE amlsbGVzAGppbGxlcwBzZXNhbWU="));
@@ -2188,7 +2209,7 @@ version(unittest) {
 		client.put(":localhost CAP * LS :sasl=UNKNOWN,PLAIN,EXTERNAL");
 		client.put(":localhost CAP whoever ACK :sasl");
 		client.put("AUTHENTICATE +");
-		client.put(":localhost 900 "~testUser.nickname~" "~testUser.nickname~"!"~testUser.username~"@::1 "~testUser.nickname~" :You are now logged in as "~testUser.nickname);
+		client.put(":localhost 900 "~testUser.nickname~" "~testUser.text~" "~testUser.nickname~" :You are now logged in as "~testUser.nickname);
 		client.put(":localhost 903 "~testUser.nickname~" :SASL authentication successful");
 
 		assert(client.output.data.canFind("AUTHENTICATE amlsbGVzAGppbGxlcwBzZXNhbWU="));
@@ -2201,7 +2222,7 @@ version(unittest) {
 		client.put(":localhost CAP * LS :sasl=UNKNOWN,EXTERNAL");
 		client.put(":localhost CAP whoever ACK :sasl");
 		client.put("AUTHENTICATE +");
-		client.put(":localhost 900 "~testUser.nickname~" "~testUser.nickname~"!"~testUser.username~"@::1 "~testUser.nickname~" :You are now logged in as "~testUser.nickname);
+		client.put(":localhost 900 "~testUser.nickname~" "~testUser.text~" "~testUser.nickname~" :You are now logged in as "~testUser.nickname);
 		client.put(":localhost 903 "~testUser.nickname~" :SASL authentication successful");
 
 		assert(client.output.data.canFind("AUTHENTICATE +"));
@@ -2214,7 +2235,7 @@ version(unittest) {
 		client.put(":localhost CAP * LS :sasl=UNKNOWN,EXTERNAL");
 		client.put(":localhost CAP whoever ACK :sasl");
 		client.put("AUTHENTICATE +");
-		client.put(":localhost 900 "~testUser.nickname~" "~testUser.nickname~"!"~testUser.username~"@::1 "~testUser.nickname~" :You are now logged in as "~testUser.nickname);
+		client.put(":localhost 900 "~testUser.nickname~" "~testUser.text~" "~testUser.nickname~" :You are now logged in as "~testUser.nickname);
 		client.put(":localhost 903 "~testUser.nickname~" :SASL authentication successful");
 
 		assert(!client.output.data.canFind("AUTHENTICATE amlsbGVzAGppbGxlcwBzZXNhbWU="));

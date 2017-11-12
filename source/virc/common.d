@@ -98,6 +98,12 @@ struct User {
 		mask = mask_;
 	}
 	///
+	this(string nick, string ident, string host) @safe pure nothrow @nogc {
+		mask.nickname = nick;
+		mask.ident = ident;
+		mask.host = host;
+	}
+	///
 	auto nickname() const {
 		return mask.nickname;
 	}
