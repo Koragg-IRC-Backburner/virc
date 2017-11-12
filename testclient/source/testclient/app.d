@@ -14,7 +14,7 @@ mixin template Bot() {
 	import testclient.packageVersion;
 	import std.stdio : writefln;
 	string[] channelsToJoin;
-	void onMessage(const User user, const Target target, const Message msg, const MessageMetadata metadata) {
+	void onMessage(const User user, const Target target, const Message msg, const MessageMetadata metadata) @safe {
 		if (msg.isCTCP) {
 			if (msg.ctcpCommand == "ACTION") {
 				writefln("<%s> * %s %s", metadata.time, user, msg.ctcpArgs);
@@ -73,15 +73,15 @@ mixin template Bot() {
 	void onMode(const User user, const Target target, const ModeChange mode, const MessageMetadata metadata) @safe {
 		writefln("<%s> *** %s changed modes on %s: %s", metadata.time, user, target, mode);
 	}
-	void onConnect() {
+	void onConnect() @safe {
 		foreach (channel; channelsToJoin) {
 			join(channel);
 		}
 	}
-	void writeLine(string line) {
+	void writeLine(string line) @safe {
 		write(line);
 	}
-	void autoJoinChannel(string chan) {
+	void autoJoinChannel(string chan) @safe {
 		channelsToJoin ~= chan;
 	}
 }
@@ -109,16 +109,16 @@ int main() {
 		}
 		auto output = new Wrap;
 		auto client = ircClient!Bot(output, NickInfo(settings["nickname"].str, settings["identd"].str, settings["real name"].str));
-		foreach (channel; settings["channels to join"].array) {
+		foreach (channel; settings["channels to join"].arrayNoRef) {
 			client.autoJoinChannel(channel.str);
 		}
 
-		void readIRC() {
+		void readIRC() @safe {
 			while(!stream.empty) {
 				put(client, stream.readLine().idup);
 			}
 		}
-		void readCLI() {
+		void readCLI() @safe {
 			auto standardInput = new StdinStream;
 			while (true) {
 				auto str = cast(string)readLine(standardInput);
@@ -129,7 +129,7 @@ int main() {
 		runTask(&readCLI);
 		return runApplication();
 	} else {
-		stderr.writeln("No settings file found");
+		writeln("No settings file found");
 		return 1;
 	}
 }
