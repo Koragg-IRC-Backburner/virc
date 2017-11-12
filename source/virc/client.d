@@ -256,13 +256,13 @@ struct Target {
 	/++
 	+
 	+/
-	this(Channel chan) {
+	this(Channel chan) @safe pure nothrow @nogc {
 		channel = chan;
 	}
 	/++
 	+
 	+/
-	this(User user_) {
+	this(User user_) @safe pure nothrow @nogc {
 		user = user_;
 	}
 	private this(string str, string modePrefixes, string channelPrefixes) @safe pure nothrow {
