@@ -4,11 +4,19 @@
 +/
 module virc.ircsplitter;
 
+import virc.common;
+
 ///
-struct IRCSplitter {
+alias IRCSplitter = IRCSplitter_!(RFC2812Compliance.no);
+///
+struct IRCSplitter_(RFC2812Compliance RFC2812) {
 	private string str;
 	private size_t upper;
 	private bool blankColon = false;
+	static if (RFC2812) {
+		size_t position;
+		size_t endOffset = 16;
+	}
 	///
 	this(string input) @nogc @safe pure nothrow {
 		str = input;
@@ -38,9 +46,20 @@ struct IRCSplitter {
 				}
 			}
 		}
+		static if (RFC2812) {
+			position++;
+			if (position == endOffset) {
+				upper = str.length;
+			}
+		}
 	}
 	///
 	auto empty() {
+		static if (RFC2812) {
+			if (position > endOffset) {
+				return true;
+			}
+		}
 		return str.length == 0 && !blankColon;
 	}
 	///
@@ -63,4 +82,5 @@ struct IRCSplitter {
 	assert(IRCSplitter("test :word2 word3").equal(["test", "word2 word3"]));
 	assert(IRCSplitter("test :word2 :word3").equal(["test", "word2 :word3"]));
 	assert(IRCSplitter(":").equal([""]));
+	assert(IRCSplitter_!(RFC2812Compliance.yes)("COMMAND word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12 word13 word14 word15 word16 word17").equal(["COMMAND", "word1", "word2", "word3", "word4", "word5", "word6", "word7", "word8", "word9", "word10", "word11", "word12", "word13", "word14", "word15 word16 word17"]));
 }
