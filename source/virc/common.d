@@ -24,7 +24,7 @@ struct Channel {
 	this(string str) @safe pure nothrow @nogc {
 		name = str;
 	}
-	this(string str, string modePrefixes, string chanPrefixes) in {
+	this(string str, string modePrefixes, string chanPrefixes) @safe pure in {
 		import std.algorithm : canFind;
 		import std.array : front;
 		assert(str.length > 0);
@@ -46,7 +46,7 @@ struct Channel {
 	}
 }
 ///
-unittest {
+@safe pure unittest {
 	assert(Channel("#test").name == "#test");
 	assert(Channel("#test", "@%+", "#").name == "#test");
 	assert(Channel("+test", "@%+", "+").name == "+test");
