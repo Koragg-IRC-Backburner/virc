@@ -411,7 +411,6 @@ alias ClientNoOpCommands = AliasSeq!(
 	RFC1459Commands.topic, //UNIMPLEMENTED
 	RFC1459Commands.pong, //UNIMPLEMENTED
 	RFC1459Commands.error, //UNIMPLEMENTED
-	RFC1459Commands.kick, //UNIMPLEMENTED
 	RFC1459Commands.wallops, //UNIMPLEMENTED
 	RFC1459Commands.userhost,
 	RFC1459Commands.version_,
@@ -978,6 +977,25 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		selectedSASLMech = mech;
 		write!"AUTHENTICATE %s"(mech.name);
 		isAuthenticating = true;
+	}
+	private void rec(string cmd : RFC1459Commands.kick, T)(User source, T split, const MessageMetadata metadata) {
+		if (split.empty) {
+			return;
+		}
+		Channel channel = Channel(split.front);
+		split.popFront();
+		if (split.empty) {
+			return;
+		}
+		User victim = User(split.front);
+		split.popFront();
+		string message;
+
+		if (!split.empty) {
+			message = split.front;
+		}
+
+		tryCall!"onKick"(source, channel, victim, message, metadata);
 	}
 	private void rec(string cmd : RFC1459Commands.mode, T)(User source, T split, const MessageMetadata metadata) {
 		auto target = Target(split.front, server.iSupport.statusMessage, server.iSupport.channelTypes);
@@ -2249,11 +2267,51 @@ version(unittest) {
 		client.capList();
 		client.put(":localhost CAP * LIST :sasl=UNKNOWN,PLAIN,EXTERNAL");
 	}
-	{ //KICK test
+	{ //KICK tests
 		auto client = spawnNoBufferClient();
+		Tuple!(const User, "kickedBy", const User, "kicked",  const Channel, "channel", string, "message")[] kicks;
+		client.onKick = (const User kickedBy, const Channel channel, const User kicked, const string message, const MessageMetadata) {
+			kicks ~= tuple!("kickedBy", "kicked", "channel", "message")(kickedBy, kicked, channel, message);
+		};
 		setupFakeConnection(client);
 		client.kick(Channel("#test"), User("Example"), "message");
 		auto lineByLine = client.output.data.lineSplitter();
 		assert(lineByLine.array[$-1] == "KICK #test Example :message");
+
+		client.put(":WiZ KICK #Finnish John");
+
+		assert(kicks.length == 1);
+		with(kicks[0]) {
+			assert(kickedBy == User("WiZ"));
+			assert(channel == Channel("#Finnish"));
+			assert(kicked == User("John"));
+			assert(message == "");
+		}
+
+		client.put(":Testo KICK #example User :Now with kick message!");
+
+		assert(kicks.length == 2);
+		with(kicks[1]) {
+			assert(kickedBy == User("Testo"));
+			assert(channel == Channel("#example"));
+			assert(kicked == User("User"));
+			assert(message == "Now with kick message!");
+		}
+
+		client.put(":WiZ!jto@tolsun.oulu.fi KICK #Finnish John");
+
+		assert(kicks.length == 3);
+		with(kicks[2]) {
+			assert(kickedBy == User("WiZ!jto@tolsun.oulu.fi"));
+			assert(channel == Channel("#Finnish"));
+			assert(kicked == User("John"));
+			assert(message == "");
+		}
+
+		client.put(":User KICK");
+		assert(kicks.length == 3);
+
+		client.put(":User KICK #channel");
+		assert(kicks.length == 3);
 	}
 }
