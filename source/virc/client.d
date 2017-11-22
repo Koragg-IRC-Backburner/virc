@@ -725,21 +725,21 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	public void changeNickname(const string nick) {
 		write!"NICK %s"(nick);
 	}
-	public void join(T,U = void[])(T channel, U keys = U.init) if (isInputRange!T && isInputRange!U) in {
-		assert(channels.filter!(x => server.iSupport.canFind(x.front)).empty, channel.front~": Not a channel type");
-		assert(!channels.empty, "No channels specified");
-	} body {
-		if (!keys.empty) {
-			write!"JOIN %-(%s,%) %-(%s,%)"(channels, keys);
+	public void join(T,U)(T chans, U keys) if (isInputRange!T && isInputRange!U) {
+		auto filteredKeys = keys.filter!(x => !x.empty);
+		if (!filteredKeys.empty) {
+			write!"JOIN %-(%s,%) %-(%s,%)"(chans, filteredKeys);
 		} else {
-			write!"JOIN %-(%s,%)"(channels);
+			write!"JOIN %-(%s,%)"(chans);
 		}
 	}
-	public void join(const string chan) {
-		write!"JOIN %s"(chan);
+	public void join(const string chan, string key = "") {
+		import std.range : only;
+		join(only(chan), only(key));
 	}
-	public void join(const Channel chan) {
-		join(chan.text);
+	public void join(const Channel chan, string key = "") {
+		import std.range : only;
+		join(only(chan.text), only(key));
 	}
 	public void msg(string target, string message) {
 		write!"PRIVMSG %s :%s"(target, message);
@@ -2016,6 +2016,17 @@ version(unittest) {
 			assert(target == User("someone"));
 			assert(user == User("someoneElse!user@host2"));
 		}
+	}
+	{ //client join stuff
+		auto client = spawnNoBufferClient();
+		client.join("#test");
+		assert(client.output.data.lineSplitter.array[$-1] == "JOIN #test");
+		client.join(Channel("#test2"));
+		assert(client.output.data.lineSplitter.array[$-1] == "JOIN #test2");
+		client.join("#test3", "key");
+		assert(client.output.data.lineSplitter.array[$-1] == "JOIN #test3 key");
+		client.join("#test4", "key2");
+		assert(client.output.data.lineSplitter.array[$-1] == "JOIN #test4 key2");
 	}
 	{ //account-tag examples from http://ircv3.net/specs/extensions/account-tag-3.2.html
 		auto client = spawnNoBufferClient();
