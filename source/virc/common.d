@@ -151,6 +151,7 @@ struct User {
 	user.account = "Testeridoo";
 	compUser.account = "Tototo";
 	assert(user != compUser);
+	assert(User("Test!Testo@Testy") == User("Test", "Testo", "Testy"));
 }
 @safe pure unittest {
 	import std.conv : text;
