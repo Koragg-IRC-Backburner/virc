@@ -322,6 +322,8 @@ struct Target {
 		assert(target != "#hello");
 	}
 	assert(Target("Hello", "+@%", "#&")  == User("Hello"));
+	assert(Target(Channel("#test")) == Channel("#test"));
+	assert(Target(User("Test")) == User("Test"));
 	{
 		auto target = Target("+Hello", "+@%", "#&");
 		assert(target == User("Hello"));
