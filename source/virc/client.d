@@ -463,6 +463,20 @@ struct ChannelState {
 		}
 	}
 }
+enum ErrorType {
+	///Insufficient privileges for command.
+	noPrivs,
+	///Monitor list is full.
+	monListFull,
+	///Server has no MOTD.
+	noMOTD,
+	///Malformed message received from server.
+	malformed
+}
+struct IRCError {
+	ErrorType type;
+	string message;
+}
 /++
 +
 +/
@@ -555,7 +569,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		///
 		void delegate(const VersionReply, const MessageMetadata) @safe onVersionReply;
 		///
-		void delegate(const MessageMetadata) @safe onError;
+		void delegate(const IRCError, const MessageMetadata) @safe onError;
 		///
 		void delegate(const MessageMetadata) @safe onRaw;
 		///
@@ -661,7 +675,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 				switchy: switch (firstToken) {
 					//TOO MANY TEMPLATE INSTANTIATIONS! uncomment when compiler fixes this!
 					//alias Numerics = NoDuplicates!(EnumMembers!Numeric);
-					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED);
+					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED, Numeric.ERR_NOPRIVS);
 
 					static foreach (cmd; AliasSeq!(NoDuplicates!(EnumMembers!IRCV3Commands), NoDuplicates!(EnumMembers!RFC1459Commands), NoDuplicates!(EnumMembers!RFC2812Commands), Numerics)) {
 						case cmd:
@@ -1127,7 +1141,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		tryCall!"onLUserMe"(parseNumeric!(Numeric.RPL_LUSERME)(split), metadata);
 	}
 	private void rec(string cmd : Numeric.ERR_NOMOTD, T)(const Nullable!User, T split, const MessageMetadata metadata) {
-		tryCall!"onError"(metadata);
+		tryCall!"onError"(IRCError(ErrorType.noMOTD), metadata);
 	}
 	private void rec(string cmd : Numeric.RPL_SASLSUCCESS, T)(const Nullable!User, T split, const MessageMetadata metadata) {
 		if (selectedSASLMech) {
@@ -1162,7 +1176,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	private void rec(string cmd : Numeric.ERR_MONLISTFULL, T)(const Nullable!User, T split, const MessageMetadata metadata) {
 		auto err = parseNumeric!(Numeric.ERR_MONLISTFULL)(split);
-		tryCall!"onError"(metadata);
+		tryCall!"onError"(IRCError(ErrorType.monListFull), metadata);
 	}
 	private void rec(string cmd : Numeric.RPL_VERSION, T)(const Nullable!User, T split, const MessageMetadata metadata) {
 		auto versionReply = parseNumeric!(Numeric.RPL_VERSION)(split);
@@ -1238,6 +1252,14 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		auto reply = parseNumeric!(Numeric.RPL_NAMREPLY)(split);
 		if (!reply.isNull) {
 			tryCall!"onNamesReply"(reply, metadata);
+		}
+	}
+	private void rec(string cmd : Numeric.ERR_NOPRIVS, T)(const User, T split, const MessageMetadata metadata) {
+		auto reply = parseNumeric!(Numeric.ERR_NOPRIVS)(split);
+		if (!reply.isNull) {
+			tryCall!"onError"(IRCError(ErrorType.noPrivs, reply.priv), metadata);
+		} else {
+			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
 		}
 	}
 	private void recUnknownNumeric(const string cmd, const MessageMetadata metadata) {
@@ -1604,7 +1626,8 @@ version(unittest) {
 		client.onMonitorList = (const User user, const MessageMetadata) {
 			users ~= user;
 		};
-		client.onError = (const MessageMetadata received) {
+		client.onError = (const IRCError error, const MessageMetadata received) {
+			assert(error.type == ErrorType.monListFull);
 			metadata ~= received;
 		};
 		setupFakeConnection(client);
@@ -2092,9 +2115,10 @@ version(unittest) {
 	{ //No MOTD test
 		auto client = spawnNoBufferClient();
 		bool errorReceived;
-		client.onError = (const MessageMetadata) {
+		client.onError = (const IRCError error, const MessageMetadata) {
 			assert(!errorReceived);
 			errorReceived = true;
+			assert(error.type == ErrorType.noMOTD);
 		};
 		setupFakeConnection(client);
 		client.put("422 someone :MOTD File is missing");
