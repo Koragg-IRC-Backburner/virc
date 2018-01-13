@@ -569,6 +569,8 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		///
 		void delegate(const VersionReply, const MessageMetadata) @safe onVersionReply;
 		///
+		void delegate(const RehashingReply, const MessageMetadata) @safe onServerRehashing;
+		///
 		void delegate(const IRCError, const MessageMetadata) @safe onError;
 		///
 		void delegate(const MessageMetadata) @safe onRaw;
@@ -675,7 +677,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 				switchy: switch (firstToken) {
 					//TOO MANY TEMPLATE INSTANTIATIONS! uncomment when compiler fixes this!
 					//alias Numerics = NoDuplicates!(EnumMembers!Numeric);
-					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED, Numeric.ERR_NOPRIVS);
+					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED, Numeric.RPL_REHASHING, Numeric.ERR_NOPRIVS);
 
 					static foreach (cmd; AliasSeq!(NoDuplicates!(EnumMembers!IRCV3Commands), NoDuplicates!(EnumMembers!RFC1459Commands), NoDuplicates!(EnumMembers!RFC2812Commands), Numerics)) {
 						case cmd:
@@ -783,6 +785,9 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	public void oper(const string name, const string pass) {
 		assert(!name.canFind(" ") && !pass.canFind(" "));
 		write!"OPER %s %s"(name, pass);
+	}
+	public void rehash() {
+		write!"REHASH";
 	}
 	public void version_() {
 		write!"VERSION"();
@@ -1249,6 +1254,12 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		auto reply = parseNumeric!(Numeric.RPL_NAMREPLY)(split);
 		if (!reply.isNull) {
 			tryCall!"onNamesReply"(reply, metadata);
+		}
+	}
+	private void rec(string cmd : Numeric.RPL_REHASHING, T)(const User, T split, const MessageMetadata metadata) {
+		auto reply = parseNumeric!(Numeric.RPL_REHASHING)(split);
+		if (!reply.isNull) {
+			tryCall!"onServerRehashing"(reply, metadata);
 		}
 	}
 	private void rec(string cmd : Numeric.ERR_NOPRIVS, T)(const User, T split, const MessageMetadata metadata) {
@@ -2357,6 +2368,45 @@ version(unittest) {
 
 		client.put(":User KICK #channel");
 		assert(kicks.length == 3);
+	}
+	{ //REHASH tests
+		auto client = spawnNoBufferClient();
+		RehashingReply[] replies;
+		client.onServerRehashing = (const RehashingReply reply, const MessageMetadata) {
+			replies ~= reply;
+		};
+		IRCError[] errors;
+		client.onError = (const IRCError error, const MessageMetadata) {
+			errors ~= error;
+		};
+
+		setupFakeConnection(client);
+		client.rehash();
+		auto lineByLine = client.output.data.lineSplitter();
+		assert(lineByLine.array[$-1] == "REHASH");
+		client.put(":localhost 382 Someone ircd.conf :Rehashing config");
+
+		assert(replies.length == 1);
+		with (replies[0]) {
+			import virc.common : User;
+			assert(me == User("Someone"));
+			assert(configFile == "ircd.conf");
+			assert(message == "Rehashing config");
+		}
+
+		client.put(":localhost 382 Nope");
+
+		assert(replies.length == 1);
+
+		client.put(":localhost 723 Someone rehash :Insufficient oper privileges");
+		client.put(":localhost 723 Someone");
+		assert(errors.length == 2);
+		with(errors[0]) {
+			assert(type == ErrorType.noPrivs);
+		}
+		with(errors[1]) {
+			assert(type == ErrorType.malformed);
+		}
 	}
 	{ //WALLOPS tests
 		auto client = spawnNoBufferClient();
