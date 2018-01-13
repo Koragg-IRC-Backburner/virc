@@ -527,7 +527,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		///
 		void delegate(const User, const MessageMetadata) @safe onLogout;
 		///
-		void delegate(const User, const string, const MessageMetadata) @safe onAway;
+		void delegate(const User, const string, const MessageMetadata) @safe onOtherUserAwayReply;
 		///
 		void delegate(const User, const MessageMetadata) @safe onBack;
 		///
@@ -569,6 +569,10 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		///
 		void delegate(const TopicReply, const MessageMetadata) @safe onTopicReply;
 		///
+		void delegate(const User, const MessageMetadata) @safe onUnAwayReply;
+		///
+		void delegate(const User, const MessageMetadata) @safe onAwayReply;
+		///
 		void delegate(const TopicWhoTime, const MessageMetadata) @safe onTopicWhoTimeReply;
 		///
 		void delegate(const VersionReply, const MessageMetadata) @safe onVersionReply;
@@ -597,6 +601,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private SASLMechanism selectedSASLMech;
 	private bool autoSelectSASLMech;
 	private string receivedSASLAuthenticationText;
+	private bool _isAway;
 
 	bool isAuthenticated() {
 		return authenticationSucceeded;
@@ -683,7 +688,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 				switchy: switch (firstToken) {
 					//TOO MANY TEMPLATE INSTANTIATIONS! uncomment when compiler fixes this!
 					//alias Numerics = NoDuplicates!(EnumMembers!Numeric);
-					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED, Numeric.RPL_REHASHING, Numeric.ERR_NOPRIVS, Numeric.RPL_YOUREOPER, Numeric.ERR_NOSUCHSERVER, Numeric.ERR_NOPRIVILEGES);
+					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED, Numeric.RPL_REHASHING, Numeric.ERR_NOPRIVS, Numeric.RPL_YOUREOPER, Numeric.ERR_NOSUCHSERVER, Numeric.ERR_NOPRIVILEGES, Numeric.RPL_AWAY, Numeric.RPL_UNAWAY, Numeric.RPL_NOWAWAY);
 
 					static foreach (cmd; AliasSeq!(NoDuplicates!(EnumMembers!IRCV3Commands), NoDuplicates!(EnumMembers!RFC1459Commands), NoDuplicates!(EnumMembers!RFC2812Commands), Numerics)) {
 						case cmd:
@@ -718,6 +723,12 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	public void list() {
 		write("LIST");
 	}
+	public void away(const string message) {
+		write!"AWAY :%s"(message);
+	}
+	public void away() {
+		write("AWAY");
+	}
 	public void monitorClear() {
 		assert(monitorIsEnabled);
 		write("MONITOR C");
@@ -737,6 +748,9 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	public void monitorRemove(T)(T users) if (isInputRange!T && is(ElementType!T == User)) {
 		assert(monitorIsEnabled);
 		writeList!("MONITOR - ", ",")(users.map!(x => x.nickname));
+	}
+	public bool isAway() const {
+		return _isAway;
 	}
 	public bool monitorIsEnabled() {
 		return capsEnabled.canFind("MONITOR");
@@ -1215,6 +1229,20 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		if (!reply.isNull) {
 			tryCall!"onTopicWhoTimeReply"(reply, metadata);
 		}
+	}
+	private void rec(string cmd : Numeric.RPL_AWAY, T)(const User, T split, const MessageMetadata metadata) {
+		auto reply = parseNumeric!(Numeric.RPL_AWAY)(split);
+		if (!reply.isNull) {
+			tryCall!"onOtherUserAwayReply"(reply.user, reply.message, metadata);
+		}
+	}
+	private void rec(string cmd : Numeric.RPL_UNAWAY, T)(const User source, T split, const MessageMetadata metadata) {
+		tryCall!"onUnAwayReply"(source, metadata);
+		_isAway = false;
+	}
+	private void rec(string cmd : Numeric.RPL_NOWAWAY, T)(const User source, T split, const MessageMetadata metadata) {
+		tryCall!"onAwayReply"(source, metadata);
+		_isAway = true;
 	}
 	private void rec(string cmd : Numeric.RPL_TOPIC, T)(const User, T split, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.RPL_TOPIC)(split);
@@ -2473,6 +2501,40 @@ version(unittest) {
 		}
 		with(errors[2]) {
 			assert(type == ErrorType.malformed);
+		}
+	}
+	{ //AWAY tests
+		auto client = spawnNoBufferClient();
+		Tuple!(const User, "user", string, "message")[] aways;
+		client.onOtherUserAwayReply = (const User awayUser, const string msg, const MessageMetadata) {
+			aways ~= tuple!("user", "message")(awayUser, msg);
+		};
+		bool unAwayReceived;
+		client.onUnAwayReply = (const User, const MessageMetadata) {
+			unAwayReceived = true;
+		};
+		bool awayReceived;
+		client.onAwayReply = (const User, const MessageMetadata) {
+			awayReceived = true;
+		};
+		setupFakeConnection(client);
+
+		client.away("Laughing at salads");
+		client.put(":localhost 306 Someone :You have been marked as being away");
+		assert(client.isAway);
+		assert(awayReceived);
+
+		client.away();
+		client.put(":localhost 305 Someone :You are no longer marked as being away");
+		assert(!client.isAway);
+		assert(unAwayReceived);
+
+		client.put(":localhost 301 Someone AwayUser :User on fire");
+
+		assert(aways.length == 1);
+		with (aways[0]) {
+			assert(user == User("AwayUser"));
+			assert(message == "User on fire");
 		}
 	}
 	{ //WALLOPS tests

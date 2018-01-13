@@ -477,3 +477,42 @@ auto parseNumeric(Numeric numeric : Numeric.ERR_NOSUCHSERVER, T)(T input) {
 		assert(reply.isNull);
 	}
 }
+struct AwayReply {
+	import virc.common : User;
+	User me;
+	///User that's away.
+	User user;
+	///User's away message.
+	string message;
+}
+/++
++ Parser for RPL_AWAY
++
++ Format is `301 <client> <nick> <message>`
++/
+auto parseNumeric(Numeric numeric : Numeric.RPL_AWAY, T)(T input) {
+	import virc.numerics.magicparser : autoParse;
+	return autoParse!AwayReply(input);
+}
+///
+@safe pure nothrow unittest {
+	import virc.common : User;
+	import std.range : only, takeNone;
+	{
+		auto reply = parseNumeric!(Numeric.RPL_AWAY)(only("someone", "awayuser", "On fire"));
+		assert(reply.user == User("awayuser"));
+		assert(reply.message == "On fire");
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_AWAY)(only("someone", "awayuser"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_AWAY)(only("someone"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_AWAY)(takeNone(only("")));
+		assert(reply.isNull);
+	}
+}
