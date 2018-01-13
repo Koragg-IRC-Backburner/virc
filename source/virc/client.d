@@ -609,13 +609,13 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	public void names() {
 		write("NAMES");
 	}
-	public void ping(string nonce) {
+	public void ping(const string nonce) {
 		write!"PING :%s"(nonce);
 	}
 	public void lUsers() {
 		write!"LUSERS";
 	}
-	private void pong(string nonce) {
+	private void pong(const string nonce) {
 		write!"PONG :%s"(nonce);
 	}
 	public void put(string line) {
@@ -689,7 +689,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 			}
 		}
 	}
-	void put(immutable(ubyte)[] rawString) {
+	void put(const immutable(ubyte)[] rawString) {
 		put(rawString.toUTF8String);
 	}
 	private void tryEndRegistration() {
@@ -748,15 +748,15 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 			write!"JOIN %-(%s,%)"(chans);
 		}
 	}
-	public void join(const string chan, string key = "") {
+	public void join(const string chan, const string key = "") {
 		import std.range : only;
 		join(only(chan), only(key));
 	}
-	public void join(const Channel chan, string key = "") {
+	public void join(const Channel chan, const string key = "") {
 		import std.range : only;
 		join(only(chan.text), only(key));
 	}
-	public void msg(string target, string message) {
+	public void msg(const string target, const string message) {
 		write!"PRIVMSG %s :%s"(target, message);
 	}
 	public void wallops(const string message) {
@@ -780,24 +780,21 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	public void notice(const Target target, const Message message) {
 		notice(target.targetText, message.text);
 	}
-	public void oper(string name, string pass) {
+	public void oper(const string name, const string pass) {
 		assert(!name.canFind(" ") && !pass.canFind(" "));
 		write!"OPER %s %s"(name, pass);
-	}
-	public void kick(Channel where, User who, string why) {
-		write!"KICK %s %s :%s"(where.text, who.text, why);
 	}
 	public void version_() {
 		write!"VERSION"();
 	}
-	public void version_(string serverMask) {
+	public void version_(const string serverMask) {
 		write!"VERSION %s"(serverMask);
 	}
 	public void kick(const Channel chan, const User nick, const string message = "") {
 		assert(message.length < server.iSupport.kickLength, "Kick message length exceeded");
 		write!"KICK %s %s :%s"(chan, nick, message);
 	}
-	private void sendAuthenticatePayload(string payload) {
+	private void sendAuthenticatePayload(const string payload) {
 		import std.base64 : Base64;
 		import std.range : chunks;
 		import std.string : representation;
@@ -815,10 +812,10 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 			}
 		}
 	}
-	private void user(string username_, string realname_) {
+	private void user(const string username_, const string realname_) {
 		write!"USER %s 0 * :%s"(username_, realname_);
 	}
-	private void pass(string pass) {
+	private void pass(const string pass) {
 		write!"PASS :%s"(pass);
 	}
 	private void register() {
@@ -863,7 +860,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private bool isEnabled(const Capability cap) {
 		return capsEnabled.canFind(cap);
 	}
-	private void tryCall(string func, T...)(T params) {
+	private void tryCall(string func, T...)(const T params) {
 		import std.traits : hasMember;
 		static if (!__traits(isTemplate, mix)) {
 			if (__traits(getMember, this, func) !is null) {
@@ -878,7 +875,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		return internalAddressList[nickname];
 	}
 	//Message parsing functions follow
-	private void rec(string cmd : IRCV3Commands.cap, T)(User, T tokens, const MessageMetadata metadata) if (isInputRange!T && is(ElementType!T == string)) {
+	private void rec(string cmd : IRCV3Commands.cap, T)(const User, T tokens, const MessageMetadata metadata) if (isInputRange!T && is(ElementType!T == string)) {
 		immutable username = tokens.front; //Unused?
 		tokens.popFront();
 		immutable subCommand = tokens.front;
@@ -1001,7 +998,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		write!"AUTHENTICATE %s"(mech.name);
 		isAuthenticating = true;
 	}
-	private void rec(string cmd : RFC1459Commands.kick, T)(User source, T split, const MessageMetadata metadata) {
+	private void rec(string cmd : RFC1459Commands.kick, T)(const User source, T split, const MessageMetadata metadata) {
 		if (split.empty) {
 			return;
 		}
@@ -1023,7 +1020,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void rec(string cmd : RFC1459Commands.wallops, T)(const User source, T tokens, const MessageMetadata metadata) if (isInputRange!T && is(ElementType!T == string)) {
 		tryCall!"onWallops"(source, tokens.front, metadata);
 	}
-	private void rec(string cmd : RFC1459Commands.mode, T)(User source, T split, const MessageMetadata metadata) {
+	private void rec(string cmd : RFC1459Commands.mode, T)(const User source, T split, const MessageMetadata metadata) {
 		auto target = Target(split.front, server.iSupport.statusMessage, server.iSupport.channelTypes);
 		split.popFront();
 		ModeType[char] modeTypes;
@@ -1156,19 +1153,19 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void rec(string cmd : RFC1459Commands.ping, T)(const Nullable!User, T split, const MessageMetadata) {
 		pong(split.front);
 	}
-	private void rec(string cmd : Numeric.RPL_MONONLINE, T)(User , T split, const MessageMetadata metadata) if (isInputRange!T) {
+	private void rec(string cmd : Numeric.RPL_MONONLINE, T)(const User, T split, const MessageMetadata metadata) if (isInputRange!T) {
 		auto users = parseNumeric!(Numeric.RPL_MONONLINE)(split);
 		foreach (user; users) {
 			tryCall!"onUserOnline"(user, SysTime.init, metadata);
 		}
 	}
-	private void rec(string cmd : Numeric.RPL_MONOFFLINE, T)(User, T split, const MessageMetadata metadata) if (isInputRange!T) {
+	private void rec(string cmd : Numeric.RPL_MONOFFLINE, T)(const User, T split, const MessageMetadata metadata) if (isInputRange!T) {
 		auto users = parseNumeric!(Numeric.RPL_MONOFFLINE)(split);
 		foreach (user; users) {
 			tryCall!"onUserOffline"(user, metadata);
 		}
 	}
-	private void rec(string cmd : Numeric.RPL_MONLIST,  T)(User, T split, const MessageMetadata metadata) if (isInputRange!T) {
+	private void rec(string cmd : Numeric.RPL_MONLIST,  T)(const User, T split, const MessageMetadata metadata) if (isInputRange!T) {
 		auto users = parseNumeric!(Numeric.RPL_MONLIST)(split);
 		foreach (user; users) {
 			tryCall!"onMonitorList"(user, metadata);
