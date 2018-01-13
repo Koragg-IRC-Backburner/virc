@@ -2035,8 +2035,12 @@ version(unittest) {
 		setupFakeConnection(client);
 		client.ping("hooray");
 		client.put(":localhost PONG localhost :hooray");
+
+		client.put(":localhost PING :hoorah");
+
 		auto lineByLine = client.output.data.lineSplitter();
-		assert(lineByLine.array[$-1] == "PING :hooray");
+		assert(lineByLine.array[$-2] == "PING :hooray");
+		assert(lineByLine.array[$-1] == "PONG :hoorah");
 	}
 	{ //Mode change test
 		auto client = spawnNoBufferClient();
