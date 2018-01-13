@@ -270,37 +270,37 @@ enum Numeric {
 	///
 	ERR_NOSERVICEHOST = "492",
 	//RFC2812 Command responses: https://tools.ietf.org/html/rfc2812#section-5.1
-	///
+	///<client> :Welcome to the Internet Relay Network <nick>!<user>@<host>
 	RPL_WELCOME = "001",
-	///
+	///<client> :Your host is <servername>, running version <version>
 	RPL_YOURHOST = "002",
-	///
+	///<client> :This server was created <date>
 	RPL_CREATED = "003",
-	///
+	///<client> <server_name> <version> <usermodes> <chanmodes> [chanmodes_with_a_parameter]
 	RPL_MYINFO = "004",
-	///
+	///<client> :Try server <server_name>, port <port_number>
 	RPL_BOUNCE = "005",
-	///
+	///<client> Service <class> <name> <type> <active_type>
 	RPL_TRACESERVICE = "207",
-	///
+	///<client> Class <class> <count>
 	RPL_TRACECLASS = "209",
-	///
+	///<client> <name> <server> <mask> <type> <hopcount> <info>
 	RPL_SERVLIST = "234",
-	///
+	///<client> <mask> <type> :<info>
 	RPL_SERVLISTEND = "235",
-	///
+	///???
 	RPL_TRACEEND = "262",
-	///
+	///<client> <server_name> <version>[.<debug_level>] :<info>
 	RPL_TRYAGAIN = "263",
-	///
+	///<client> <channel> <nickname>
 	RPL_UNIQOPIS = "325",
-	///
+	///<client> <channel> <invitemask>
 	RPL_INVITELIST = "346",
-	///
+	///<client> <channel> :<info>
 	RPL_ENDOFINVITELIST = "347",
-	///
+	///<client> <channel> <exceptionmask> [<who> <set-ts>]
 	RPL_EXCEPTLIST = "348",
-	///
+	///<client> <channel> :<info>
 	RPL_ENDOFEXCEPTLIST = "349",
 	//RFC2812 Errors: https://tools.ietf.org/html/rfc2812#section-5.2
 	///
@@ -345,25 +345,29 @@ enum Numeric {
 	RPL_ENDOFMONLIST = "733",
 	///
 	ERR_MONLISTFULL = "734",
-	//Metadata: http://ircv3.net/specs/core/metadata-3.2.html
-	///
+	//Metadata: WIP
+	///	<Target> <Key> <Visibility> :<Value>
 	RPL_WHOISKEYVALUE = "760",
-	///
+	///	<Target> <Key> <Visibility>[ :<Value>]
 	RPL_KEYVALUE = "761",
-	///
+	///	:end of metadata
 	RPL_METADATAEND = "762",
-	///
+	///	<Target> :metadata limit reached
 	ERR_METADATALIMIT = "764",
-	///
+	///	<Target> :invalid metadata target
 	ERR_TARGETINVALID = "765",
-	///
+	///	<Target> <Key> :no matching key
 	ERR_NOMATCHINGKEY = "766",
-	///
+	///	<Key> :invalid metadata key
 	ERR_KEYINVALID = "767",
-	///
+	///	<Target> <Key> :key not set
 	ERR_KEYNOTSET = "768",
-	///
+	///	<Target> <Key> :permission denied
 	ERR_KEYNOPERMISSION = "769",
+	///	<Target> <Key> [<RetryAfter>]
+	ERR_METADATARATELIMIT = "770",
+	///	<Target> [<RetryAfter>]
+	ERR_METADATASYNCLATER = "771",
 	//SASL: http://ircv3.net/specs/extensions/sasl-3.1.html
 	///
 	RPL_LOGGEDIN = "900",
