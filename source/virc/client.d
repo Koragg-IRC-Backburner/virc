@@ -471,7 +471,11 @@ enum ErrorType {
 	///Server has no MOTD.
 	noMOTD,
 	///Malformed message received from server.
-	malformed
+	malformed,
+	///No server matches client-provided server mask.
+	noSuchServer,
+	///User is not an IRC operator.
+	noPrivileges
 }
 struct IRCError {
 	ErrorType type;
@@ -679,7 +683,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 				switchy: switch (firstToken) {
 					//TOO MANY TEMPLATE INSTANTIATIONS! uncomment when compiler fixes this!
 					//alias Numerics = NoDuplicates!(EnumMembers!Numeric);
-					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED, Numeric.RPL_REHASHING, Numeric.ERR_NOPRIVS, Numeric.RPL_YOUREOPER);
+					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED, Numeric.RPL_REHASHING, Numeric.ERR_NOPRIVS, Numeric.RPL_YOUREOPER, Numeric.ERR_NOSUCHSERVER, Numeric.ERR_NOPRIVILEGES);
 
 					static foreach (cmd; AliasSeq!(NoDuplicates!(EnumMembers!IRCV3Commands), NoDuplicates!(EnumMembers!RFC1459Commands), NoDuplicates!(EnumMembers!RFC2812Commands), Numerics)) {
 						case cmd:
@@ -790,6 +794,10 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	public void rehash() {
 		write!"REHASH";
+	}
+	public void squit(const string server, const string reason) {
+		assert(!server.canFind(" "));
+		write!"SQUIT %s :%s"(server, reason);
 	}
 	public void version_() {
 		write!"VERSION"();
@@ -1271,6 +1279,17 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		auto reply = parseNumeric!(Numeric.ERR_NOPRIVS)(split);
 		if (!reply.isNull) {
 			tryCall!"onError"(IRCError(ErrorType.noPrivs, reply.priv), metadata);
+		} else {
+			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
+		}
+	}
+	private void rec(string cmd : Numeric.ERR_NOPRIVILEGES, T)(const User, T split, const MessageMetadata metadata) {
+		tryCall!"onError"(IRCError(ErrorType.noPrivileges), metadata);
+	}
+	private void rec(string cmd : Numeric.ERR_NOSUCHSERVER, T)(const User, T split, const MessageMetadata metadata) {
+		auto reply = parseNumeric!(Numeric.ERR_NOSUCHSERVER)(split);
+		if (!reply.isNull) {
+			tryCall!"onError"(IRCError(ErrorType.noSuchServer, reply.serverMask), metadata);
 		} else {
 			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
 		}
@@ -2426,6 +2445,31 @@ version(unittest) {
 		assert(lineByLine.array[$-1] == "OPER foo bar");
 		client.put(":localhost 381 Someone :You are now an IRC operator");
 		assert(received);
+	}
+	{ //SQUIT tests
+		auto client = spawnNoBufferClient();
+		IRCError[] errors;
+		client.onError = (const IRCError error, const MessageMetadata) {
+			errors ~= error;
+		};
+		setupFakeConnection(client);
+
+		client.squit("badserver.example.net", "Bad link");
+		auto lineByLine = client.output.data.lineSplitter();
+		assert(lineByLine.array[$-1] == "SQUIT badserver.example.net :Bad link");
+		client.put(":localhost 481 Someone :Permission Denied- You're not an IRC operator");
+		client.put(":localhost 402 Someone badserver.example.net :No such server");
+		client.put(":localhost 402 Someone");
+		assert(errors.length == 3);
+		with(errors[0]) {
+			assert(type == ErrorType.noPrivileges);
+		}
+		with(errors[1]) {
+			assert(type == ErrorType.noSuchServer);
+		}
+		with(errors[2]) {
+			assert(type == ErrorType.malformed);
+		}
 	}
 	{ //WALLOPS tests
 		auto client = spawnNoBufferClient();

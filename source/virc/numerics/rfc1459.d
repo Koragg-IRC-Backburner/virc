@@ -438,3 +438,42 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_REHASHING, T)(T input) {
 		assert(reply.isNull);
 	}
 }
+
+struct NoSuchServerError {
+	import virc.common : User;
+	User me;
+	///Server mask that failed to match any servers.
+	string serverMask;
+	///User-readable error message
+	string message;
+}
+/++
++ Parser for ERR_NOSUCHSERVER
++
++ Format is `402 <client> <server> :No such server`
++/
+auto parseNumeric(Numeric numeric : Numeric.ERR_NOSUCHSERVER, T)(T input) {
+	import virc.numerics.magicparser : autoParse;
+	return autoParse!NoSuchServerError(input);
+}
+///
+@safe pure nothrow unittest {
+	import std.range : only, takeNone;
+	{
+		auto reply = parseNumeric!(Numeric.ERR_NOSUCHSERVER)(only("someone", "badserver.example.net", "No such server"));
+		assert(reply.serverMask == "badserver.example.net");
+		assert(reply.message == "No such server");
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.ERR_NOSUCHSERVER)(only("someone", "badserver.example.net"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.ERR_NOSUCHSERVER)(only("someone"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.ERR_NOSUCHSERVER)(takeNone(only("")));
+		assert(reply.isNull);
+	}
+}
