@@ -523,6 +523,8 @@ enum Numeric {
 	RPL_TOPICWHOTIME = "333",
 	///
 	RPL_HOSTHIDDEN = "396",
+	///
+	ERR_NOPRIVS = "723",
 	//ISUPPORT: http://www.irc.org/tech_docs/draft-brocklesby-irc-isupport-03.txt
 	///
 	RPL_ISUPPORT = "005"
