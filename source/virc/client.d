@@ -754,6 +754,9 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	public void ctcp(const Target target, const string command, const string args) {
 		msg(target, Message("\x01"~command~" "~args~"\x01"));
 	}
+	public void ctcp(const Target target, const string command) {
+		msg(target, Message("\x01"~command~"\x01"));
+	}
 	public void ctcpReply(const Target target, const string command, const string args) {
 		notice(target, Message("\x01"~command~" "~args~"\x01"));
 	}
@@ -2350,5 +2353,17 @@ version(unittest) {
 		assert(messages.length == 1);
 		assert(messages[0] == "Test message reply!");
 
+	}
+	{ //CTCP tests
+		auto client = spawnNoBufferClient();
+		setupFakeConnection(client);
+		client.ctcp(Target(User("test")), "ping");
+		client.ctcp(Target(User("test")), "action", "does the thing.");
+		client.ctcpReply(Target(User("test")), "ping", "1000000000");
+
+		auto lineByLine = client.output.data.lineSplitter();
+		assert(lineByLine.array[$-3] == "PRIVMSG test :\x01ping\x01");
+		assert(lineByLine.array[$-2] == "PRIVMSG test :\x01action does the thing.\x01");
+		assert(lineByLine.array[$-1] == "NOTICE test :\x01ping 1000000000\x01");
 	}
 }
