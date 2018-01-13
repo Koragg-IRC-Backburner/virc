@@ -413,7 +413,6 @@ alias ClientNoOpCommands = AliasSeq!(
 	RFC1459Commands.topic, //UNIMPLEMENTED
 	RFC1459Commands.pong, //UNIMPLEMENTED
 	RFC1459Commands.error, //UNIMPLEMENTED
-	RFC1459Commands.wallops, //UNIMPLEMENTED
 	RFC1459Commands.userhost,
 	RFC1459Commands.version_,
 	RFC1459Commands.names,
@@ -533,6 +532,8 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		void delegate(const User, const Target, const ModeChange, const MessageMetadata) @safe onMode;
 		///
 		void delegate(const User, const Target, const Message, const MessageMetadata) @safe onMessage;
+		///
+		void delegate(const User, const string, const MessageMetadata) @safe onWallops;
 		///
 		void delegate(const ChannelListResult, const MessageMetadata) @safe onList;
 		///
@@ -743,6 +744,9 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	public void msg(string target, string message) {
 		write!"PRIVMSG %s :%s"(target, message);
+	}
+	public void wallops(const string message) {
+		write!"WALLOPS :%s"(message);
 	}
 	public void msg(const Target target, const Message message) {
 		msg(target.targetText, message.text);
@@ -998,6 +1002,9 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		}
 
 		tryCall!"onKick"(source, channel, victim, message, metadata);
+	}
+	private void rec(string cmd : RFC1459Commands.wallops, T)(const User source, T tokens, const MessageMetadata metadata) if (isInputRange!T && is(ElementType!T == string)) {
+		tryCall!"onWallops"(source, tokens.front, metadata);
 	}
 	private void rec(string cmd : RFC1459Commands.mode, T)(User source, T split, const MessageMetadata metadata) {
 		auto target = Target(split.front, server.iSupport.statusMessage, server.iSupport.channelTypes);
@@ -2326,5 +2333,22 @@ version(unittest) {
 
 		client.put(":User KICK #channel");
 		assert(kicks.length == 3);
+	}
+	{ //WALLOPS tests
+		auto client = spawnNoBufferClient();
+		string[] messages;
+		client.onWallops = (const User, const string msg, const MessageMetadata) {
+			messages ~= msg;
+		};
+		setupFakeConnection(client);
+
+		client.wallops("Test message!");
+		auto lineByLine = client.output.data.lineSplitter();
+		assert(lineByLine.array[$-1] == "WALLOPS :Test message!");
+
+		client.put(":OtherUser!someone@somewhere WALLOPS :Test message reply!");
+		assert(messages.length == 1);
+		assert(messages[0] == "Test message reply!");
+
 	}
 }
