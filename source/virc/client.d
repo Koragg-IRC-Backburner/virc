@@ -571,6 +571,8 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		///
 		void delegate(const RehashingReply, const MessageMetadata) @safe onServerRehashing;
 		///
+		void delegate(const MessageMetadata) @safe onYoureOper;
+		///
 		void delegate(const IRCError, const MessageMetadata) @safe onError;
 		///
 		void delegate(const MessageMetadata) @safe onRaw;
@@ -677,7 +679,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 				switchy: switch (firstToken) {
 					//TOO MANY TEMPLATE INSTANTIATIONS! uncomment when compiler fixes this!
 					//alias Numerics = NoDuplicates!(EnumMembers!Numeric);
-					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED, Numeric.RPL_REHASHING, Numeric.ERR_NOPRIVS);
+					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED, Numeric.RPL_REHASHING, Numeric.ERR_NOPRIVS, Numeric.RPL_YOUREOPER);
 
 					static foreach (cmd; AliasSeq!(NoDuplicates!(EnumMembers!IRCV3Commands), NoDuplicates!(EnumMembers!RFC1459Commands), NoDuplicates!(EnumMembers!RFC2812Commands), Numerics)) {
 						case cmd:
@@ -1141,6 +1143,9 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	private void rec(string cmd : Numeric.RPL_LUSERME, T)(const Nullable!User, T split, const MessageMetadata metadata) {
 		tryCall!"onLUserMe"(parseNumeric!(Numeric.RPL_LUSERME)(split), metadata);
+	}
+	private void rec(string cmd : Numeric.RPL_YOUREOPER, T)(const Nullable!User, T split, const MessageMetadata metadata) {
+		tryCall!"onYoureOper"(metadata);
 	}
 	private void rec(string cmd : Numeric.ERR_NOMOTD, T)(const Nullable!User, T split, const MessageMetadata metadata) {
 		tryCall!"onError"(IRCError(ErrorType.noMOTD), metadata);
@@ -2407,6 +2412,20 @@ version(unittest) {
 		with(errors[1]) {
 			assert(type == ErrorType.malformed);
 		}
+	}
+	{ //OPER tests
+		auto client = spawnNoBufferClient();
+		bool received;
+		client.onYoureOper = (const MessageMetadata) {
+			received = true;
+		};
+		setupFakeConnection(client);
+
+		client.oper("foo", "bar");
+		auto lineByLine = client.output.data.lineSplitter();
+		assert(lineByLine.array[$-1] == "OPER foo bar");
+		client.put(":localhost 381 Someone :You are now an IRC operator");
+		assert(received);
 	}
 	{ //WALLOPS tests
 		auto client = spawnNoBufferClient();
