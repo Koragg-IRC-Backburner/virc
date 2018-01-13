@@ -62,12 +62,26 @@ struct LUserOp {
 + RPL_VERSION reply contents.
 +/
 struct VersionReply {
+	import virc.common : User;
+	User me;
 	///The responding server's version string.
 	string version_;
 	///The server hostmask responding to the version query
 	string server;
 	///Contents depend on server, but are usually related to version
 	string comments;
+}
+
+/++
++ RPL_REHASHING reply contents.
++/
+struct RehashingReply {
+	import virc.common : User;
+	User me;
+	///The config file being rehashed.
+	string configFile;
+	///Message displayed to user.
+	string message;
 }
 
 /++
@@ -296,20 +310,8 @@ enum NamReplyFlag : string {
 + Format is `351 <client> <version> <server> :<comments>`
 +/
 auto parseNumeric(Numeric numeric : Numeric.RPL_VERSION, T)(T input) {
-	import std.typecons : Nullable, Tuple;
-	import virc.common : toParsedTuple, User;
-
-	Nullable!VersionReply output;
-	const tuple = toParsedTuple!(Tuple!(User, "self", string, "version_", string, "server", string, "comments"))(input);
-	if (tuple.isNull) {
-		return output.init;
-	} else {
-		output = VersionReply();
-		output.version_ = tuple.version_;
-		output.server = tuple.server;
-		output.comments = tuple.comments;
-		return output;
-	}
+	import virc.numerics.magicparser : autoParse;
+	return autoParse!VersionReply(input);
 }
 ///
 @safe pure nothrow @nogc unittest {
@@ -404,5 +406,35 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_NAMREPLY, T)(T input) {
 	{
 		immutable namReply = parseNumeric!(Numeric.RPL_NAMREPLY)(takeNone(only("")));
 		assert(namReply.isNull);
+	}
+}
+/++
++ Parser for RPL_REHASHING
++
++ Format is `382 <client> <config file> :Rehashing]`
++/
+auto parseNumeric(Numeric numeric : Numeric.RPL_REHASHING, T)(T input) {
+	import virc.numerics.magicparser : autoParse;
+	return autoParse!RehashingReply(input);
+}
+///
+@safe pure nothrow unittest {
+	import std.range : only, takeNone;
+	{
+		auto reply = parseNumeric!(Numeric.RPL_REHASHING)(only("someone", "ircd.conf", "Rehashing"));
+		assert(reply.configFile == "ircd.conf");
+		assert(reply.message == "Rehashing");
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_REHASHING)(only("someone", "ircd.conf"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_REHASHING)(only("someone"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_REHASHING)(takeNone(only("")));
+		assert(reply.isNull);
 	}
 }

@@ -16,6 +16,7 @@ auto parseNumeric(Numeric numeric)() if (numeric.among(noInformationNumerics)) {
 struct TopicWhoTime {
 	import std.datetime : SysTime;
 	import virc.common : User;
+	User me;
 	///Channel that the topic was set on.
 	string channel;
 	///The nickname or full mask of the user who set the topic.
@@ -29,14 +30,8 @@ struct TopicWhoTime {
 + Format is `333 <user> <channel> <setter> <timestamp>`
 +/
 auto parseNumeric(Numeric numeric : Numeric.RPL_TOPICWHOTIME, T)(T input) {
-	import std.datetime : SysTime;
-	import std.typecons : Nullable, Tuple;
-	import virc.common : toParsedTuple, User;
-	auto tuple = toParsedTuple!(Tuple!(User, "self", string, "channel", User, "setter", SysTime, "timestamp"))(input);
-	if (tuple.isNull) {
-		return Nullable!TopicWhoTime.init;
-	}
-	return Nullable!TopicWhoTime(TopicWhoTime(tuple.channel, tuple.setter, tuple.timestamp));
+	import virc.numerics.magicparser : autoParse;
+	return autoParse!TopicWhoTime(input);
 }
 ///
 @safe pure nothrow unittest {
@@ -69,6 +64,41 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_TOPICWHOTIME, T)(T input) {
 	}
 	{
 		immutable badResult = parseNumeric!(Numeric.RPL_TOPICWHOTIME)(only("Someone", "#test", "Another!id@hostmask", "invalidTimestamp"));
+		assert(badResult.isNull);
+	}
+}
+
+struct NoPrivsError {
+	import virc.common : User;
+	User me;
+	///The missing privilege that prompted this error reply.
+	string priv;
+	///Human-readable error message.
+	string message;
+}
+/++
++ Parse ERR_NOPRIVS numeric replies.
++
++ Format is `723 <user> <priv> :Insufficient oper privileges.`
++/
+auto parseNumeric(Numeric numeric : Numeric.ERR_NOPRIVS, T)(T input) {
+	import virc.numerics.magicparser : autoParse;
+	return autoParse!NoPrivsError(input);
+}
+///
+@safe pure nothrow unittest {
+	import std.range : only, takeNone;
+	{
+		immutable result = parseNumeric!(Numeric.ERR_NOPRIVS)(only("Someone", "rehash", "Insufficient oper privileges."));
+		assert(result.priv == "rehash");
+		assert(result.message == "Insufficient oper privileges.");
+	}
+	{
+		immutable badResult = parseNumeric!(Numeric.ERR_NOPRIVS)(takeNone(only("")));
+		assert(badResult.isNull);
+	}
+	{
+		immutable badResult = parseNumeric!(Numeric.ERR_NOPRIVS)(only("Someone"));
 		assert(badResult.isNull);
 	}
 }
