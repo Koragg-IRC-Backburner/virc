@@ -3,7 +3,7 @@
 +/
 module virc.style;
 
-///
+///Names for the default colours in mIRC-style control codes.
 enum MIRCColours {
 	///RGB(255,255,255)
 	white = 0,

@@ -463,20 +463,32 @@ struct ChannelState {
 		}
 	}
 }
+unittest {
+	import std.outbuffer;
+	ChannelState(Channel("#test"), "Words").toString(new OutBuffer);
+}
+/++
++ Types of errors.
++/
 enum ErrorType {
-	///Insufficient privileges for command.
+	///Insufficient privileges for command. See message for missing privilege.
 	noPrivs,
 	///Monitor list is full.
 	monListFull,
 	///Server has no MOTD.
 	noMOTD,
-	///Malformed message received from server.
-	malformed,
 	///No server matches client-provided server mask.
 	noSuchServer,
 	///User is not an IRC operator.
-	noPrivileges
+	noPrivileges,
+	///Malformed message received from server.
+	malformed,
+	///Message received unexpectedly.
+	unexpected
 }
+/++
++ Struct holding data about non-fatal errors.
++/
 struct IRCError {
 	ErrorType type;
 	string message;
@@ -1488,6 +1500,11 @@ version(unittest) {
 		}
 	}
 	void setupFakeConnection(T)(ref T client) {
+		if (!client.onError) {
+			client.onError = (const IRCError error, const MessageMetadata metadata) {
+				writeln(metadata, error);
+			};
+		}
 		client.put(":localhost 001 someone :Welcome to the TestNet IRC Network "~testUser.text);
 		client.put(":localhost 002 someone :Your host is localhost, running version IRCd-2.0");
 		client.put(":localhost 003 someone :This server was created 20:21:33 Oct  21 2016");
@@ -1897,11 +1914,16 @@ version(unittest) {
 		assert("#example" !in client.channels);
 		client.put(":"~testUser.text~" PART #example :see ya");
 		assert("#example" !in client.channels);
+		client.put(":"~testUser.text~" PART #example");
 
 		with (parts[0]) {
 			assert(user == client.me);
 			assert(channel == Channel("#example"));
 			assert(message == "see ya");
+		}
+		with (parts[1]) {
+			assert(user == client.me);
+			assert(channel == Channel("#example"));
 		}
 	}
 	{ //http://ircv3.net/specs/extensions/chghost-3.2.html
