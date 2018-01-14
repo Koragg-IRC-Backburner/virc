@@ -516,3 +516,263 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_AWAY, T)(T input) {
 		assert(reply.isNull);
 	}
 }
+/++
++ WHOIS reply containing only a nickname and human-readable message.
++/
+struct InfolessWhoisReply {
+	import virc.common : User;
+	User me;
+	///User whose query is complete.
+	User user;
+	///Human-readable numeric message.
+	string message;
+}
+/++
++ Parser for RPL_ENDOFWHOIS
++
++ Format is `318 <client> <nick> :End of /WHOIS list`
++/
+auto parseNumeric(Numeric numeric : Numeric.RPL_ENDOFWHOIS, T)(T input) {
+	import virc.numerics.magicparser : autoParse;
+	return autoParse!InfolessWhoisReply(input);
+}
+///
+@safe pure nothrow unittest {
+	import virc.common : User;
+	import std.range : only, takeNone;
+	{
+		auto reply = parseNumeric!(Numeric.RPL_ENDOFWHOIS)(only("someone", "whoisuser", "End of /WHOIS list"));
+		assert(reply.user == User("whoisuser"));
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_ENDOFWHOIS)(only("someone", "whoisuser"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_ENDOFWHOIS)(only("someone"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_ENDOFWHOIS)(takeNone(only("")));
+		assert(reply.isNull);
+	}
+}
+/++
++ Parser for RPL_WHOISOPERATOR
++
++ Format is `313 <client> <nick> :is an IRC operator`
++/
+auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISOPERATOR, T)(T input) {
+	import virc.numerics.magicparser : autoParse;
+	return autoParse!InfolessWhoisReply(input);
+}
+///
+@safe pure nothrow unittest {
+	import virc.common : User;
+	import std.range : only, takeNone;
+	{
+		auto reply = parseNumeric!(Numeric.RPL_WHOISOPERATOR)(only("someone", "whoisuser", "is an IRC operator"));
+		assert(reply.user == User("whoisuser"));
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISOPERATOR)(only("someone", "whoisuser"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISOPERATOR)(only("someone"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISOPERATOR)(takeNone(only("")));
+		assert(reply.isNull);
+	}
+}
+/++
++
++/
+struct WhoisUserReply {
+	import virc.common : User;
+	User me;
+	///User whose query is complete.
+	User user;
+	///User's username.
+	string username;
+	///User's hostname.
+	string hostname;
+	//Reserved. Just a *.
+	string reserved;
+	///User's realname.
+	string realname;
+}
+/++
++ Parser for RPL_WHOISUSER
++
++ Format is `311 <client> <nick> <user> <host> * :<real name>`
++/
+auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISUSER, T)(T input) {
+	import virc.numerics.magicparser : autoParse;
+	return autoParse!WhoisUserReply(input);
+}
+///
+@safe pure nothrow unittest {
+	import virc.common : User;
+	import std.range : only, takeNone;
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISUSER)(only("someone", "whoisuser", "someUsername", "someHostname", "*", "a real name"));
+		assert(reply.user == User("whoisuser"));
+		assert(reply.username == "someUsername");
+		assert(reply.hostname == "someHostname");
+		assert(reply.realname == "a real name");
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISUSER)(only("someone", "whoisuser", "someUsername", "someHostname", "*"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISUSER)(only("someone", "whoisuser", "someUsername", "someHostname"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISUSER)(only("someone", "whoisuser", "someUsername"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISUSER)(only("someone", "whoisuser"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISUSER)(only("someone"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISUSER)(takeNone(only("")));
+		assert(reply.isNull);
+	}
+}
+/++
++ Newer form of RPL_WHOISIDLE. Also provides the time at which the user
++ connected.
++/
+struct WhoisIdleReplyNew {
+	import core.time : Duration;
+	import std.datetime.systime : SysTime;
+	import virc.common : User;
+	User me;
+	///User whose query is complete.
+	User user;
+	///How long the user has been idle.
+	Duration idleTime;
+	///Time at which the user connected.
+	SysTime connectedTime;
+	///Human-readable numeric message.
+	string message;
+}
+/++
++ Older form of RPL_WHOISIDLE. Does not have user connection time.
++/
+struct WhoisIdleReplyOld {
+	import core.time : Duration;
+	import virc.common : User;
+	User me;
+	///User whose query is complete.
+	User user;
+	///How long the user has been idle.
+	Duration idleTime;
+	///Human-readable numeric message.
+	string message;
+}
+/++
++ Parser for RPL_WHOISIDLE
++
++ Format is `317 <client> <nick> <idle time in seconds> :seconds idle` or
++ `317 <client> <nick> <idle time in seconds> <time connected> :seconds idle, signon time`
++/
+auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISIDLE, T)(T input) {
+	import virc.numerics.magicparser : autoParse;
+	return autoParse!(WhoisIdleReplyNew, WhoisIdleReplyOld)(input);
+}
+///
+@safe pure nothrow unittest {
+	import core.time : seconds;
+	import std.datetime : DateTime, SysTime, UTC;
+	import std.range : only, takeNone;
+	import virc.common : User;
+	static immutable testTime = SysTime(DateTime(2017, 07, 14, 02, 40, 00), UTC());
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISIDLE)(only("someone", "whoisuser", "1500", "1500000000", "seconds idle, signon time"));
+		assert(reply.user == User("whoisuser"));
+		assert(reply.idleTime == 1500.seconds);
+		assert(reply.connectedTime == testTime);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISIDLE)(only("someone", "whoisuser", "1500", "seconds idle"));
+		assert(reply.user == User("whoisuser"));
+		assert(reply.idleTime == 1500.seconds);
+		assert(reply.connectedTime.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISIDLE)(only("someone", "whoisuser", "1500"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISIDLE)(only("someone", "whoisuser"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISIDLE)(only("someone"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISIDLE)(takeNone(only("")));
+		assert(reply.isNull);
+	}
+}
+/++
++
++/
+struct WhoisServerReply {
+	import virc.common : User;
+	User me;
+	///User whose query is complete.
+	User user;
+	///Hostmask of server the user is connected to.
+	string server;
+	///Server description.
+	string serverDescription;
+}
+/++
++ Parser for RPL_WHOISSERVER
++
++ Format is `312 <client> <nick> <server mask> :<server description>`
++/
+auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISSERVER, T)(T input) {
+	import virc.numerics.magicparser : autoParse;
+	return autoParse!WhoisServerReply(input);
+}
+///
+@safe pure nothrow unittest {
+	import std.range : only, takeNone;
+	import virc.common : User;
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISSERVER)(only("someone", "whoisuser", "example.net", "Mysterious example server"));
+		assert(reply.user == User("whoisuser"));
+		assert(reply.server == "example.net");
+		assert(reply.serverDescription == "Mysterious example server");
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISSERVER)(only("someone", "whoisuser", "example.net"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISSERVER)(only("someone", "whoisuser"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISSERVER)(only("someone"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISSERVER)(takeNone(only("")));
+		assert(reply.isNull);
+	}
+}

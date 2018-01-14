@@ -102,3 +102,110 @@ auto parseNumeric(Numeric numeric : Numeric.ERR_NOPRIVS, T)(T input) {
 		assert(badResult.isNull);
 	}
 }
+/++
++ Parser for RPL_WHOISSECURE
++
++ Format is `671 <client> <nick> :is using a secure connection`
++/
+auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISSECURE, T)(T input) {
+	import virc.numerics.magicparser : autoParse;
+	import virc.numerics.rfc1459 : InfolessWhoisReply;
+	return autoParse!InfolessWhoisReply(input);
+}
+///
+@safe pure nothrow unittest {
+	import virc.common : User;
+	import std.range : only, takeNone;
+	{
+		auto reply = parseNumeric!(Numeric.RPL_WHOISSECURE)(only("someone", "whoisuser", "is using a secure connection"));
+		assert(reply.user == User("whoisuser"));
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISSECURE)(only("someone", "whoisuser"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISSECURE)(only("someone"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISSECURE)(takeNone(only("")));
+		assert(reply.isNull);
+	}
+}
+/++
++ Parser for RPL_WHOISREGNICK
++
++ Format is `307 <client> <nick> :is a registered nick`
++/
+auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISREGNICK, T)(T input) {
+	import virc.numerics.magicparser : autoParse;
+	import virc.numerics.rfc1459 : InfolessWhoisReply;
+	return autoParse!InfolessWhoisReply(input);
+}
+///
+@safe pure nothrow unittest {
+	import virc.common : User;
+	import std.range : only, takeNone;
+	{
+		auto reply = parseNumeric!(Numeric.RPL_WHOISREGNICK)(only("someone", "whoisuser", "is a registered nick"));
+		assert(reply.user == User("whoisuser"));
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISREGNICK)(only("someone", "whoisuser"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISREGNICK)(only("someone"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISREGNICK)(takeNone(only("")));
+		assert(reply.isNull);
+	}
+}
+struct WhoisAccountReply {
+	import virc.common : User;
+	User me;
+	///User who is being queried.
+	User user;
+	///Account name for this user.
+	string account;
+	///Human-readable numeric message.
+	string message;
+}
+/++
++ Parser for RPL_WHOISACCOUNT
++
++ Format is `330 <client> <nick> <account> :is logged in as`
++/
+auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISACCOUNT, T)(T input) {
+	import virc.numerics.magicparser : autoParse;
+	return autoParse!WhoisAccountReply(input);
+}
+///
+@safe pure nothrow unittest {
+	import virc.common : User;
+	import std.range : only, takeNone;
+	{
+		auto reply = parseNumeric!(Numeric.RPL_WHOISACCOUNT)(only("someone", "whoisuser", "accountname", "is logged in as"));
+		assert(reply.user == User("whoisuser"));
+		assert(reply.account == "accountname");
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISACCOUNT)(only("someone", "whoisuser", "accountname"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISACCOUNT)(only("someone", "whoisuser"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISACCOUNT)(only("someone"));
+		assert(reply.isNull);
+	}
+	{
+		immutable reply = parseNumeric!(Numeric.RPL_WHOISACCOUNT)(takeNone(only("")));
+		assert(reply.isNull);
+	}
+}

@@ -482,7 +482,22 @@ struct IRCError {
 	string message;
 }
 /++
-+
++ Full response to a WHOIS.
++/
+struct WhoisResponse {
+	bool isOper;
+	bool isSecure;
+	bool isRegistered;
+	Nullable!string username;
+	Nullable!string hostname;
+	Nullable!string realname;
+	Nullable!SysTime connectedTime;
+	Nullable!Duration idleTime;
+	Nullable!string connectedTo;
+	Nullable!string account;
+}
+/++
++ IRC client implementation.
 +/
 struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	import virc.ircv3 : Capability, CapabilityServerSubcommands, IRCV3Commands;
@@ -551,6 +566,8 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		///
 		void delegate(const User, const Target, const Message, const MessageMetadata) @safe onMessage;
 		///
+		void delegate(const User, const WhoisResponse) @safe onWhois;
+		///
 		void delegate(const User, const string, const MessageMetadata) @safe onWallops;
 		///
 		void delegate(const ChannelListResult, const MessageMetadata) @safe onList;
@@ -602,6 +619,8 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private bool autoSelectSASLMech;
 	private string receivedSASLAuthenticationText;
 	private bool _isAway;
+
+	private WhoisResponse[string] whoisCache;
 
 	bool isAuthenticated() {
 		return authenticationSucceeded;
@@ -688,7 +707,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 				switchy: switch (firstToken) {
 					//TOO MANY TEMPLATE INSTANTIATIONS! uncomment when compiler fixes this!
 					//alias Numerics = NoDuplicates!(EnumMembers!Numeric);
-					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED, Numeric.RPL_REHASHING, Numeric.ERR_NOPRIVS, Numeric.RPL_YOUREOPER, Numeric.ERR_NOSUCHSERVER, Numeric.ERR_NOPRIVILEGES, Numeric.RPL_AWAY, Numeric.RPL_UNAWAY, Numeric.RPL_NOWAWAY);
+					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED, Numeric.RPL_REHASHING, Numeric.ERR_NOPRIVS, Numeric.RPL_YOUREOPER, Numeric.ERR_NOSUCHSERVER, Numeric.ERR_NOPRIVILEGES, Numeric.RPL_AWAY, Numeric.RPL_UNAWAY, Numeric.RPL_NOWAWAY, Numeric.RPL_ENDOFWHOIS, Numeric.RPL_WHOISUSER, Numeric.RPL_WHOISSECURE, Numeric.RPL_WHOISOPERATOR, Numeric.RPL_WHOISREGNICK, Numeric.RPL_WHOISIDLE, Numeric.RPL_WHOISSERVER, Numeric.RPL_WHOISACCOUNT);
 
 					static foreach (cmd; AliasSeq!(NoDuplicates!(EnumMembers!IRCV3Commands), NoDuplicates!(EnumMembers!RFC1459Commands), NoDuplicates!(EnumMembers!RFC2812Commands), Numerics)) {
 						case cmd:
@@ -728,6 +747,9 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	public void away() {
 		write("AWAY");
+	}
+	public void whois(const string nick) {
+		write!"WHOIS %s"(nick);
 	}
 	public void monitorClear() {
 		assert(monitorIsEnabled);
@@ -1318,6 +1340,99 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		auto reply = parseNumeric!(Numeric.ERR_NOSUCHSERVER)(split);
 		if (!reply.isNull) {
 			tryCall!"onError"(IRCError(ErrorType.noSuchServer, reply.serverMask), metadata);
+		} else {
+			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
+		}
+	}
+	private void rec(string cmd : Numeric.RPL_ENDOFWHOIS, T)(const User, T split, const MessageMetadata metadata) {
+		auto reply = parseNumeric!(Numeric.RPL_ENDOFWHOIS)(split);
+		if (!reply.isNull) {
+			if (reply.user.nickname in whoisCache) {
+				tryCall!"onWhois"(reply.user, whoisCache[reply.user.nickname]);
+				whoisCache.remove(reply.user.nickname);
+			} else {
+				tryCall!"onError"(IRCError(ErrorType.unexpected, "empty WHOIS data returned"), metadata);
+			}
+		} else {
+			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
+		}
+	}
+	private void rec(string cmd : Numeric.RPL_WHOISUSER, T)(const User, T split, const MessageMetadata metadata) {
+		auto reply = parseNumeric!(Numeric.RPL_WHOISUSER)(split);
+		if (!reply.isNull) {
+			if (reply.user.nickname !in whoisCache) {
+				whoisCache[reply.user.nickname] = WhoisResponse();
+			}
+			whoisCache[reply.user.nickname].username = reply.username;
+			whoisCache[reply.user.nickname].hostname = reply.hostname;
+			whoisCache[reply.user.nickname].realname = reply.realname;
+		} else {
+			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
+		}
+	}
+	private void rec(string cmd : Numeric.RPL_WHOISSECURE, T)(const User, T split, const MessageMetadata metadata) {
+		auto reply = parseNumeric!(Numeric.RPL_WHOISSECURE)(split);
+		if (!reply.isNull) {
+			if (reply.user.nickname !in whoisCache) {
+				whoisCache[reply.user.nickname] = WhoisResponse();
+			}
+			whoisCache[reply.user.nickname].isSecure = true;
+		} else {
+			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
+		}
+	}
+	private void rec(string cmd : Numeric.RPL_WHOISOPERATOR, T)(const User, T split, const MessageMetadata metadata) {
+		auto reply = parseNumeric!(Numeric.RPL_WHOISOPERATOR)(split);
+		if (!reply.isNull) {
+			if (reply.user.nickname !in whoisCache) {
+				whoisCache[reply.user.nickname] = WhoisResponse();
+			}
+			whoisCache[reply.user.nickname].isOper = true;
+		} else {
+			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
+		}
+	}
+	private void rec(string cmd : Numeric.RPL_WHOISREGNICK, T)(const User, T split, const MessageMetadata metadata) {
+		auto reply = parseNumeric!(Numeric.RPL_WHOISREGNICK)(split);
+		if (!reply.isNull) {
+			if (reply.user.nickname !in whoisCache) {
+				whoisCache[reply.user.nickname] = WhoisResponse();
+			}
+			whoisCache[reply.user.nickname].isRegistered = true;
+		} else {
+			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
+		}
+	}
+	private void rec(string cmd : Numeric.RPL_WHOISIDLE, T)(const User, T split, const MessageMetadata metadata) {
+		auto reply = parseNumeric!(Numeric.RPL_WHOISIDLE)(split);
+		if (!reply.isNull) {
+			if (reply.user.nickname !in whoisCache) {
+				whoisCache[reply.user.nickname] = WhoisResponse();
+			}
+			whoisCache[reply.user.nickname].idleTime = reply.idleTime;
+			whoisCache[reply.user.nickname].connectedTime = reply.connectedTime;
+		} else {
+			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
+		}
+	}
+	private void rec(string cmd : Numeric.RPL_WHOISSERVER, T)(const User, T split, const MessageMetadata metadata) {
+		auto reply = parseNumeric!(Numeric.RPL_WHOISSERVER)(split);
+		if (!reply.isNull) {
+			if (reply.user.nickname !in whoisCache) {
+				whoisCache[reply.user.nickname] = WhoisResponse();
+			}
+			whoisCache[reply.user.nickname].connectedTo = reply.server;
+		} else {
+			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
+		}
+	}
+	private void rec(string cmd : Numeric.RPL_WHOISACCOUNT, T)(const User, T split, const MessageMetadata metadata) {
+		auto reply = parseNumeric!(Numeric.RPL_WHOISACCOUNT)(split);
+		if (!reply.isNull) {
+			if (reply.user.nickname !in whoisCache) {
+				whoisCache[reply.user.nickname] = WhoisResponse();
+			}
+			whoisCache[reply.user.nickname].account = reply.account;
 		} else {
 			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
 		}
@@ -2535,6 +2650,44 @@ version(unittest) {
 		with (aways[0]) {
 			assert(user == User("AwayUser"));
 			assert(message == "User on fire");
+		}
+	}
+	{ //WHOIS tests
+		auto client = spawnNoBufferClient();
+		WhoisResponse[] responses;
+		client.onWhois = (const User, const WhoisResponse whois) {
+			responses ~= whois;
+		};
+		setupFakeConnection(client);
+		client.whois("someoneElse");
+
+		client.put(":localhost 276 Someone someoneElse :has client certificate 0");
+		client.put(":localhost 311 Someone someoneElse someUsername someHostname * :Some Real Name");
+		client.put(":localhost 312 Someone someoneElse example.net :The real world is out there");
+		client.put(":localhost 313 Someone someoneElse :is an IRC operator");
+		client.put(":localhost 317 Someone someoneElse 1000 1500000000 :seconds idle, signon time");
+		client.put(":localhost 319 Someone someoneElse :+#test #test2");
+		client.put(":localhost 330 Someone someoneElse someoneElseAccount :is logged in as");
+		client.put(":localhost 378 Someone someoneElse :is connecting from someoneElse@127.0.0.5 127.0.0.5");
+		client.put(":localhost 671 Someone someoneElse :is using a secure connection");
+		client.put(":localhost 379 Someone someoneElse :is using modes +w");
+		client.put(":localhost 307 Someone someoneElse :is a registered nick");
+
+		assert(responses.length == 0);
+		client.put(":localhost 318 Someone someoneElse :End of /WHOIS list");
+
+		assert(responses.length == 1);
+		with(responses[0]) {
+			assert(isSecure);
+			assert(isOper);
+			assert(isRegistered);
+			assert(username == "someUsername");
+			assert(hostname == "someHostname");
+			assert(realname == "Some Real Name");
+			assert(connectedTime == SysTime(DateTime(2017, 07, 14, 02, 40, 00), UTC()));
+			assert(idleTime == 1000.seconds);
+			assert(connectedTo == "example.net");
+			assert(account == "someoneElseAccount");
 		}
 	}
 	{ //WALLOPS tests

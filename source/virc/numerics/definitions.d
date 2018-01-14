@@ -520,9 +520,15 @@ enum Numeric {
 	///
 	RPL_GLOBALUSERS = "266",
 	///
+	RPL_WHOISREGNICK = "307",
+	///
+	RPL_WHOISACCOUNT = "330",
+	///
 	RPL_TOPICWHOTIME = "333",
 	///
 	RPL_HOSTHIDDEN = "396",
+	///
+	RPL_WHOISSECURE = "671",
 	///
 	ERR_NOPRIVS = "723",
 	//ISUPPORT: http://www.irc.org/tech_docs/draft-brocklesby-irc-isupport-03.txt
