@@ -860,6 +860,13 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		assert(message.length < server.iSupport.kickLength, "Kick message length exceeded");
 		write!"KICK %s %s :%s"(chan, nick, message);
 	}
+	public void admin(const string server = "") {
+		if (server == "") {
+			write!"ADMIN"();
+		} else {
+			write!"ADMIN %s"(server);
+		}
+	}
 	private void sendAuthenticatePayload(const string payload) {
 		import std.base64 : Base64;
 		import std.range : chunks;
@@ -2730,6 +2737,21 @@ version(unittest) {
 			assert(user == User("AwayUser"));
 			assert(message == "User on fire");
 		}
+	}
+	{ //ADMIN tests
+		auto client = spawnNoBufferClient();
+
+		setupFakeConnection(client);
+
+		client.admin("localhost");
+		client.admin();
+		auto lineByLine = client.output.data.lineSplitter();
+		assert(lineByLine.array[$-2] == "ADMIN localhost");
+		assert(lineByLine.array[$-1] == "ADMIN");
+		client.put(":localhost 256 Someone :Administrative info for localhost");
+		client.put(":localhost 257 Someone :Name     - Admin");
+		client.put(":localhost 258 Someone :Nickname - Admin");
+		client.put(":localhost 259 Someone :E-Mail   - Admin@localhost");
 	}
 	{ //WHOIS tests
 		auto client = spawnNoBufferClient();
