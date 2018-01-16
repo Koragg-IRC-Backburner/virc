@@ -58,6 +58,9 @@ struct InternalAddressList {
 	auto opIn_r(string name) {
 		return name in users;
 	}
+	auto list() const {
+		return users.values;
+	}
 }
 ///
 @safe pure nothrow unittest {

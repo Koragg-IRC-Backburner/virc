@@ -453,13 +453,13 @@ alias ClientNoOpCommands = AliasSeq!(
 struct ChannelState {
 	Channel channel;
 	string topic;
-	User*[] users;
+	InternalAddressList users;
 	void toString(T)(T sink) const if (isOutputRange!(T, const(char))) {
 		formattedWrite!"Channel: %s\n"(sink, channel);
 		formattedWrite!"\tTopic: %s\n"(sink, topic);
 		formattedWrite!"\tUsers:\n"(sink);
-		foreach (user; users) {
-			formattedWrite!"\t\t%s\n"(sink, *user);
+		foreach (user; users.list) {
+			formattedWrite!"\t\t%s\n"(sink, user);
 		}
 	}
 }
@@ -843,6 +843,9 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	public void rehash() {
 		write!"REHASH";
 	}
+	public void restart() {
+		write!"RESTART";
+	}
 	public void squit(const string server, const string reason) {
 		assert(!server.canFind(" "));
 		write!"SQUIT %s :%s"(server, reason);
@@ -1112,7 +1115,9 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 			channels[channel.name] = ChannelState();
 		}
 		internalAddressList.update(source);
-		channels[channel.name].users ~= source.nickname in internalAddressList;
+		if (source.nickname in internalAddressList) {
+			channels[channel.name].users.update(internalAddressList[source.nickname]);
+		}
 		tryCall!"onJoin"(source, channel, metadata);
 	}
 	private void rec(string cmd : RFC1459Commands.part, T)(const User user, T split, const MessageMetadata metadata) {
@@ -1120,14 +1125,15 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		import std.algorithm.searching : countUntil;
 		auto channel = Channel(split.front);
 		split.popFront();
-		auto msg = split.front;
-		if (channel.name in channels) {
-			if (user.nickname in internalAddressList) {
-				auto index = channels[channel.name].users.countUntil(user.nickname in internalAddressList);
-				if (index > 0) {
-					channels[channel.name].users.remove(index);
-				}
-			}
+		string msg;
+		if (!split.empty) {
+			msg = split.front;
+		}
+		if ((channel.name in channels) && (user.nickname in channels[channel.name].users)) {
+			channels[channel.name].users.invalidate(user.nickname);
+		}
+		if ((user == me) && (channel.name in channels)) {
+			channels.remove(channel.name);
 		}
 		tryCall!"onPart"(user, channel, msg, metadata);
 	}
@@ -1286,8 +1292,14 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	private void rec(string cmd : RFC1459Commands.nick, T)(const User old, T split, const MessageMetadata metadata) {
 		if (!split.empty) {
-			internalAddressList.renameTo(old, split.front);
-			auto new_ = internalAddressList[split.front];
+			auto newNick = split.front;
+			internalAddressList.renameTo(old, newNick);
+			foreach (ref channel; channels) {
+				if (old.nickname in channel.users) {
+					channel.users.renameTo(old, newNick);
+				}
+			}
+			auto new_ = internalAddressList[newNick];
 			if (old.nickname == nickname) {
 				nickname = new_.nickname;
 			}
@@ -1327,6 +1339,11 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	private void rec(string cmd : Numeric.RPL_NAMREPLY, T)(const User, T split, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.RPL_NAMREPLY)(split);
+		if (reply.channel in channels) {
+			foreach (user; reply.users) {
+				channels[reply.channel].users.update(User(user));
+			}
+		}
 		if (!reply.isNull) {
 			tryCall!"onNamesReply"(reply, metadata);
 		}
@@ -1700,11 +1717,9 @@ version(unittest) {
 	}
 	{ //JOIN
 		auto client = spawnNoBufferClient();
-		User[] users;
-		const(Channel)[] channels;
+		Tuple!(const User, "user", const Channel, "channel")[] joins;
 		client.onJoin = (const User user, const Channel chan, const MessageMetadata) {
-			users ~= user;
-			channels ~= chan;
+			joins ~= tuple!("user", "channel")(user, chan);
 		};
 		TopicWhoTime topicWhoTime;
 		bool topicWhoTimeReceived;
@@ -1729,10 +1744,17 @@ version(unittest) {
 		client.put(":localhost 366 someone #test :End of /NAMES list.");
 		client.put(":localhost 324 someone #test :+nt");
 		client.put(":localhost 329 someone #test :1496821983");
-		assert(users.length == 1);
-		assert(users[0].nickname == "someone");
-		assert(channels.length == 1);
-		assert(channels[0].name == "#test");
+
+		assert(joins.length == 1);
+		with(joins[0]) {
+			assert(user.nickname == "someone");
+			assert(channel.name == "#test");
+		}
+		assert("someone" in client.channels["#test"].users);
+		assert(client.channels["#test"].users["someone"] == User("someone!ident@hostmask"));
+		assert("someone" in client.internalAddressList);
+		assert(client.internalAddressList["someone"] == User("someone!ident@hostmask"));
+
 		assert(topicWhoTimeReceived);
 		assert(topicReplyReceived);
 
@@ -1911,17 +1933,40 @@ version(unittest) {
 
 		setupFakeConnection(client);
 
-		assert("#example" !in client.channels);
+		client.put(":"~testUser.text~" JOIN #example");
+		client.put(":SomeoneElse JOIN #example");
+		assert("#example" in client.channels);
+		assert("SomeoneElse" in client.channels["#example"].users);
+		client.put(":SomeoneElse PART #example :bye forever");
+		assert("SomeoneElse" !in client.channels["#example"].users);
 		client.put(":"~testUser.text~" PART #example :see ya");
 		assert("#example" !in client.channels);
-		client.put(":"~testUser.text~" PART #example");
 
+		client.put(":"~testUser.text~" JOIN #example");
+		client.put(":SomeoneElse JOIN #example");
+		assert("#example" in client.channels);
+		assert("SomeoneElse" in client.channels["#example"].users);
+		client.put(":SomeoneElse PART #example");
+		assert("SomeoneElse" !in client.channels["#example"].users);
+		client.put(":"~testUser.text~" PART #example");
+		assert("#example" !in client.channels);
+
+		assert(parts.length == 4);
 		with (parts[0]) {
+			assert(user == User("SomeoneElse"));
+			assert(channel == Channel("#example"));
+			assert(message == "bye forever");
+		}
+		with (parts[1]) {
 			assert(user == client.me);
 			assert(channel == Channel("#example"));
 			assert(message == "see ya");
 		}
-		with (parts[1]) {
+		with (parts[2]) {
+			assert(user == User("SomeoneElse"));
+			assert(channel == Channel("#example"));
+		}
+		with (parts[3]) {
 			assert(user == client.me);
 			assert(channel == Channel("#example"));
 		}
@@ -2333,6 +2378,10 @@ version(unittest) {
 		};
 
 		setupFakeConnection(client);
+		client.put(":WiZ JOIN #testchan");
+		client.put(":dan- JOIN #testchan");
+
+
 		client.put(":WiZ NICK Kilroy");
 
 		assert(nickChanges.length == 1);
@@ -2341,6 +2390,10 @@ version(unittest) {
 			assert(new_.nickname == "Kilroy");
 		}
 
+		assert("Kilroy" in client.internalAddressList);
+		assert("Kilroy" in client.channels["#testchan"].users);
+		assert("WiZ" !in client.channels["#testchan"].users);
+
 		client.put(":dan-!d@localhost NICK Mamoped");
 
 		assert(nickChanges.length == 2);
@@ -2348,6 +2401,10 @@ version(unittest) {
 			assert(old.nickname == "dan-");
 			assert(new_.nickname == "Mamoped");
 		}
+
+		assert("Mamoped" in client.internalAddressList);
+		assert("Mamoped" in client.channels["#testchan"].users);
+		assert("dan-" !in client.channels["#testchan"].users);
 
 		//invalid, so we shouldn't see anything
 		client.put(":a NICK");
@@ -2711,6 +2768,13 @@ version(unittest) {
 			assert(connectedTo == "example.net");
 			assert(account == "someoneElseAccount");
 		}
+	}
+	{ //RESTART tests
+		auto client = spawnNoBufferClient();
+		setupFakeConnection(client);
+
+		client.restart();
+		assert(lineByLine.array[$-1] == "RESTART");
 	}
 	{ //WALLOPS tests
 		auto client = spawnNoBufferClient();
