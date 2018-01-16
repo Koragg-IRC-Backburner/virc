@@ -10,9 +10,15 @@ import vibe.stream.tls;
 import vibe.stream.wrapper;
 import virc;
 
-mixin template Bot() {
-	import testclient.packageVersion;
-	import std.stdio : writefln;
+mixin template Client() {
+	version(has_gen_package_version) {
+		import testclient.packageVersion;
+	} else {
+		enum packageName = "testclient";
+		enum packageVersion = "Version something or other";
+	}
+	import std.stdio : writefln, writef;
+	string currentChannel;
 	string[] channelsToJoin;
 	void onMessage(const User user, const Target target, const Message msg, const MessageMetadata metadata) @safe {
 		if (msg.isCTCP) {
@@ -32,6 +38,7 @@ mixin template Bot() {
 
 	void onJoin(const User user, const Channel channel, const MessageMetadata metadata) @safe {
 		writefln("<%s> *** %s joined %s", metadata.time, user, channel);
+		currentChannel = channel.name;
 	}
 
 	void onPart(const User user, const Channel channel, const string message, const MessageMetadata metadata) @safe {
@@ -73,13 +80,47 @@ mixin template Bot() {
 	void onMode(const User user, const Target target, const ModeChange mode, const MessageMetadata metadata) @safe {
 		writefln("<%s> *** %s changed modes on %s: %s", metadata.time, user, target, mode);
 	}
+	void onWhois(const User user, const WhoisResponse whoisResponse) @safe {
+		writefln("%s is %s@%s (%s)", user, whoisResponse.username, whoisResponse.hostname, whoisResponse.realname);
+		if (whoisResponse.isOper) {
+			writefln("%s is an IRC operator", user);
+		}
+		if (whoisResponse.isSecure) {
+			writefln("%s is on a secure connection", user);
+		}
+		if (whoisResponse.isRegistered && whoisResponse.account.isNull) {
+			writefln("%s is a registered nick", user);
+		}
+		if (!whoisResponse.account.isNull) {
+			writefln("%s is logged in as %s", user, whoisResponse.account);
+		}
+		if (!whoisResponse.idleTime.isNull) {
+			writefln("%s has been idle for %s", user, whoisResponse.idleTime.get);
+		}
+		if (!whoisResponse.connectedTime.isNull) {
+			writefln("%s connected on %s", user, whoisResponse.connectedTime.get);
+		}
+		if (!whoisResponse.connectedTo.isNull) {
+			writefln("%s is connected to %s", user, whoisResponse.connectedTo);
+		}
+	}
 	void onConnect() @safe {
 		foreach (channel; channelsToJoin) {
 			join(channel);
 		}
 	}
-	void writeLine(string line) @safe {
-		write(line);
+	void writeLine(string line) {
+		import std.string : toLower;
+		if (line.startsWith("/")) {
+			auto split = line[1..$].splitter(" ");
+			switch(split.front.toLower()) {
+				default:
+					write(line[1..$]);
+					break;
+			}
+		} else {
+			msg(currentChannel, line);
+		}
 	}
 	void autoJoinChannel(string chan) @safe {
 		channelsToJoin ~= chan;
@@ -96,7 +137,12 @@ int main() {
 		if (settings["ssl"].type == JSON_TYPE.TRUE) {
 			auto sslctx = createTLSContext(TLSContextKind.client);
 			sslctx.peerValidationMode = TLSPeerValidationMode.none;
-			stream = createTLSStream(conn, sslctx);
+			try {
+				stream = createTLSStream(conn, sslctx);
+			} catch (Exception) {
+				writeln("SSL connection failed!");
+				return;
+			}
 		} else {
 			stream = conn;
 		}
@@ -108,17 +154,17 @@ int main() {
 			}
 		}
 		auto output = new Wrap;
-		auto client = ircClient!Bot(output, NickInfo(settings["nickname"].str, settings["identd"].str, settings["real name"].str));
+		auto client = ircClient!Client(output, NickInfo(settings["nickname"].str, settings["identd"].str, settings["real name"].str));
 		foreach (channel; settings["channels to join"].arrayNoRef) {
 			client.autoJoinChannel(channel.str);
 		}
 
-		void readIRC() @safe {
+		void readIRC() {
 			while(!stream.empty) {
 				put(client, stream.readLine().idup);
 			}
 		}
-		void readCLI() @safe {
+		void readCLI() {
 			auto standardInput = new StdinStream;
 			while (true) {
 				auto str = cast(string)readLine(standardInput);
