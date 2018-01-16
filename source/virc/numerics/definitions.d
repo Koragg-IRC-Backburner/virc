@@ -519,12 +519,18 @@ enum Numeric {
 	RPL_LOCALUSERS = "265",
 	///
 	RPL_GLOBALUSERS = "266",
+	/// <nick> :has client certificate fingerprint <fingerprint>
+	RPL_WHOISCERTFP = "276",
 	///
 	RPL_WHOISREGNICK = "307",
 	///
 	RPL_WHOISACCOUNT = "330",
 	///
 	RPL_TOPICWHOTIME = "333",
+	///
+	RPL_WHOISHOST = "378",
+	/// <nick> :is using modes <modestring>
+	RPL_WHOISMODE = "379",
 	///
 	RPL_HOSTHIDDEN = "396",
 	///

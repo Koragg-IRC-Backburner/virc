@@ -776,3 +776,91 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISSERVER, T)(T input) {
 		assert(reply.isNull);
 	}
 }
+/++
++
++/
+struct WhoisChannelReply {
+	import virc.common : User;
+	User me;
+	///User whose query is complete.
+	User user;
+	///Channel details of this user, including name and prefix.
+	WhoisChannelReplyChannel[] channels;
+}
+/++
++
++/
+struct WhoisChannelReplyChannel {
+	import std.typecons : Nullable;
+	import virc.common : Channel;
+	///Mode prefix applied to this user on this channel.
+	Nullable!string prefix;
+	///Name of the channel.
+	Channel channel;
+}
+/++
++ Parser for RPL_WHOISCHANNELS
++
++ Format is `319 <client> <nick> <server mask> :<server description>`
++/
+auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISCHANNELS, T)(T input, string prefixes, string channelTypes) {
+	import std.algorithm.iteration : splitter;
+	import std.typecons : Nullable;
+	import virc.client : Target;
+	import virc.numerics.magicparser : autoParse;
+	struct Reduced {
+		import virc.common : User;
+		User me;
+		User user;
+		string channels;
+	}
+	Nullable!WhoisChannelReply output;
+	auto parsed = autoParse!Reduced(input);
+	if (!parsed.isNull) {
+		output = WhoisChannelReply();
+		output.me = parsed.me;
+		output.user = parsed.user;
+		auto split = parsed.channels.splitter(" ");
+		foreach (rawChan; split) {
+			auto parsedChannel = Target(rawChan, prefixes, channelTypes);
+			if (parsedChannel.isChannel) {
+				auto channel = WhoisChannelReplyChannel();
+				channel.prefix = parsedChannel.prefixes;
+				channel.channel = parsedChannel.channel;
+				output.channels ~= channel;
+			}
+		}
+	}
+	return output;
+}
+///
+/+@safe pure nothrow +/unittest {
+	import std.range : only, takeNone;
+	import virc.common : User;
+	import virc.numerics.isupport : defaultModePrefixes;
+	{
+		auto reply = parseNumeric!(Numeric.RPL_WHOISCHANNELS)(only("someone", "whoisuser", "#test3 +#test"), defaultModePrefixes, "#");
+		assert(reply.user == User("whoisuser"));
+		assert(reply.channels.length == 2);
+		with(reply.channels[0]) {
+			assert(channel == Channel("#test3"));
+			assert(prefix.isNull);
+		}
+		with(reply.channels[1]) {
+			assert(channel == Channel("#test"));
+			assert(prefix == "+");
+		}
+	}
+	{
+		auto reply = parseNumeric!(Numeric.RPL_WHOISCHANNELS)(only("someone", "whoisuser"), defaultModePrefixes, "#");
+		assert(reply.isNull);
+	}
+	{
+		auto reply = parseNumeric!(Numeric.RPL_WHOISCHANNELS)(only("someone"), defaultModePrefixes, "#");
+		assert(reply.isNull);
+	}
+	{
+		auto reply = parseNumeric!(Numeric.RPL_WHOISCHANNELS)(takeNone(only("")), defaultModePrefixes, "#");
+		assert(reply.isNull);
+	}
+}

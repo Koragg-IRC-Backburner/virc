@@ -258,7 +258,7 @@ struct Target {
 	this(User user_) @safe pure nothrow @nogc {
 		user = user_;
 	}
-	private this(string str, string modePrefixes, string channelPrefixes) @safe pure nothrow {
+	package this(string str, string modePrefixes, string channelPrefixes) @safe pure nothrow {
 		import std.array : empty, front, popFront;
 		import std.algorithm : canFind;
 		import std.utf : byDchar;
@@ -438,6 +438,13 @@ alias ClientNoOpCommands = AliasSeq!(
 	Numeric.RPL_LISTSTART,
 	Numeric.RPL_LISTEND,
 	Numeric.RPL_TEXT,
+	Numeric.RPL_ADMINME,
+	Numeric.RPL_ADMINLOC1,
+	Numeric.RPL_ADMINLOC2,
+	Numeric.RPL_ADMINEMAIL,
+	Numeric.RPL_WHOISCERTFP,
+	Numeric.RPL_WHOISHOST,
+	Numeric.RPL_WHOISMODE
 );
 
 /++
@@ -477,7 +484,9 @@ enum ErrorType {
 	///Malformed message received from server.
 	malformed,
 	///Message received unexpectedly.
-	unexpected
+	unexpected,
+	///Unhandled command or numeric.
+	unrecognized
 }
 /++
 + Struct holding data about non-fatal errors.
@@ -486,6 +495,14 @@ struct IRCError {
 	ErrorType type;
 	string message;
 }
+/++
++ Channels in a WHOIS response.
++/
+struct WhoisChannel {
+	Channel name;
+	string prefix;
+}
+
 /++
 + Full response to a WHOIS.
 +/
@@ -500,6 +517,7 @@ struct WhoisResponse {
 	Nullable!Duration idleTime;
 	Nullable!string connectedTo;
 	Nullable!string account;
+	WhoisChannel[string] channels;
 }
 /++
 + IRC client implementation.
@@ -712,7 +730,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 				switchy: switch (firstToken) {
 					//TOO MANY TEMPLATE INSTANTIATIONS! uncomment when compiler fixes this!
 					//alias Numerics = NoDuplicates!(EnumMembers!Numeric);
-					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED, Numeric.RPL_REHASHING, Numeric.ERR_NOPRIVS, Numeric.RPL_YOUREOPER, Numeric.ERR_NOSUCHSERVER, Numeric.ERR_NOPRIVILEGES, Numeric.RPL_AWAY, Numeric.RPL_UNAWAY, Numeric.RPL_NOWAWAY, Numeric.RPL_ENDOFWHOIS, Numeric.RPL_WHOISUSER, Numeric.RPL_WHOISSECURE, Numeric.RPL_WHOISOPERATOR, Numeric.RPL_WHOISREGNICK, Numeric.RPL_WHOISIDLE, Numeric.RPL_WHOISSERVER, Numeric.RPL_WHOISACCOUNT);
+					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED, Numeric.RPL_REHASHING, Numeric.ERR_NOPRIVS, Numeric.RPL_YOUREOPER, Numeric.ERR_NOSUCHSERVER, Numeric.ERR_NOPRIVILEGES, Numeric.RPL_AWAY, Numeric.RPL_UNAWAY, Numeric.RPL_NOWAWAY, Numeric.RPL_ENDOFWHOIS, Numeric.RPL_WHOISUSER, Numeric.RPL_WHOISSECURE, Numeric.RPL_WHOISOPERATOR, Numeric.RPL_WHOISREGNICK, Numeric.RPL_WHOISIDLE, Numeric.RPL_WHOISSERVER, Numeric.RPL_WHOISACCOUNT, Numeric.RPL_ADMINEMAIL, Numeric.RPL_ADMINLOC1, Numeric.RPL_ADMINLOC2, Numeric.RPL_ADMINME, Numeric.RPL_WHOISHOST, Numeric.RPL_WHOISMODE, Numeric.RPL_WHOISCERTFP, Numeric.RPL_WHOISCHANNELS);
 
 					static foreach (cmd; AliasSeq!(NoDuplicates!(EnumMembers!IRCV3Commands), NoDuplicates!(EnumMembers!RFC1459Commands), NoDuplicates!(EnumMembers!RFC2812Commands), Numerics)) {
 						case cmd:
@@ -1466,7 +1484,30 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
 		}
 	}
+	private void rec(string cmd : Numeric.RPL_WHOISCHANNELS, T)(const User, T split, const MessageMetadata metadata) {
+		string prefixes;
+		foreach (k,v; server.iSupport.prefixes) {
+			prefixes ~= v;
+		}
+		auto reply = parseNumeric!(Numeric.RPL_WHOISCHANNELS)(split, prefixes, server.iSupport.channelTypes);
+		if (!reply.isNull) {
+			if (reply.user.nickname !in whoisCache) {
+				whoisCache[reply.user.nickname] = WhoisResponse();
+			}
+			foreach (channel; reply.channels) {
+				auto whoisChannel = WhoisChannel();
+				whoisChannel.name = channel.channel;
+				if (!channel.prefix.isNull) {
+					whoisChannel.prefix = channel.prefix;
+				}
+				whoisCache[reply.user.nickname].channels[channel.channel.name] = whoisChannel;
+			}
+		} else {
+			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
+		}
+	}
 	private void recUnknownNumeric(const string cmd, const MessageMetadata metadata) {
+		tryCall!"onError"(IRCError(ErrorType.unrecognized, cmd), metadata);
 		debug(verboseirc) import std.experimental.logger : trace;
 		debug(verboseirc) trace("Unhandled numeric: ", cast(Numeric)cmd, " ", metadata.original);
 	}
@@ -1519,7 +1560,7 @@ version(unittest) {
 	void setupFakeConnection(T)(ref T client) {
 		if (!client.onError) {
 			client.onError = (const IRCError error, const MessageMetadata metadata) {
-				writeln(metadata, error);
+				writeln(metadata.time, " - ", error.type, " - ", metadata.original);
 			};
 		}
 		client.put(":localhost 001 someone :Welcome to the TestNet IRC Network "~testUser.text);
@@ -2782,6 +2823,11 @@ version(unittest) {
 			assert(idleTime == 1000.seconds);
 			assert(connectedTo == "example.net");
 			assert(account == "someoneElseAccount");
+			assert(channels.length == 2);
+			assert("#test" in channels);
+			assert(channels["#test"].prefix == "+");
+			assert("#test2" in channels);
+			assert(channels["#test2"].prefix == "");
 		}
 	}
 	{ //RESTART tests
@@ -2789,6 +2835,7 @@ version(unittest) {
 		setupFakeConnection(client);
 
 		client.restart();
+		auto lineByLine = client.output.data.lineSplitter();
 		assert(lineByLine.array[$-1] == "RESTART");
 	}
 	{ //WALLOPS tests
