@@ -7,6 +7,8 @@ import std.range.primitives : isForwardRange;
 
 import virc.numerics.definitions;
 
+enum defaultModePrefixesMap = ['o': '@', 'v': '+'];
+enum defaultModePrefixes = "@+";
 /++
 +
 +/
@@ -385,7 +387,7 @@ struct ISupport {
 						}
 					}
 				} else {
-					prefixes = ['o': '@', 'v': '+'];
+					prefixes = defaultModePrefixesMap;
 				}
 				break;
 			case ISupportToken.chanTypes:

@@ -45,13 +45,6 @@ struct NickInfo {
 /++
 +
 +/
-immutable char[char] defaultPrefixes;
-static this() {
-	defaultPrefixes = ['o': '@', 'v': '+'];
-}
-/++
-+
-+/
 enum supportedCaps = AliasSeq!(
 	"account-notify", // http://ircv3.net/specs/extensions/account-notify-3.1.html
 	"account-tag", // http://ircv3.net/specs/extensions/account-tag-3.2.html
@@ -1558,7 +1551,7 @@ version(unittest) {
 		return ircClient!mix(buffer, testClientInfo, [], password);
 	}
 }
-///Test the basics
+//Test the basics
 @safe unittest {
 	auto client = spawnNoBufferClient!Test();
 	client.put("");
@@ -1573,13 +1566,12 @@ version(unittest) {
 	client.put(":localhost 001 someone :words");
 	assert(client.isRegistered);
 }
-///Auto-decoding test
+//Auto-decoding test
 @system unittest {
 	auto client = spawnNoBufferClient!Test();
 	client.put("\r\n".representation);
 	assert(client.lineReceived == false);
 }
-///
 @safe unittest {
 	import virc.ircv3 : Capability;
 	{ //password test
@@ -1781,6 +1773,7 @@ version(unittest) {
 		//TODO: Add 366, 324, 329 tests
 		auto lineByLine = client.output.data.lineSplitter();
 		assert(lineByLine.array[$-1] == "JOIN #test");
+
 	}
 	{ //Channel list example
 		auto client = spawnNoBufferClient();
@@ -2755,7 +2748,7 @@ version(unittest) {
 	}
 	{ //WHOIS tests
 		auto client = spawnNoBufferClient();
-		WhoisResponse[] responses;
+		const(WhoisResponse)[] responses;
 		client.onWhois = (const User, const WhoisResponse whois) {
 			responses ~= whois;
 		};
