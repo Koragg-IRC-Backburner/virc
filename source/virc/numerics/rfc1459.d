@@ -163,7 +163,8 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LUSERME, T)(T input) {
 }
 
 struct ChannelListResult {
-	import virc.common : Topic, Mode;
+	import virc.common : Topic;
+	import virc.modes : Mode;
 	string name;
 	uint userCount;
 	Topic topic;
@@ -179,7 +180,8 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LIST, T)(T input, ModeType[char]
 	import std.algorithm.searching : findSplitAfter, startsWith;
 	import std.array : array;
 	import std.conv : parse;
-	import virc.common : Change, Channel, parseModeString, Topic;
+	import virc.common : Channel, Topic;
+	import virc.modes : Change, parseModeString;
 	//Note: RFC2812 makes no mention of the modes being included.
 	//Seems to be a de-facto standard, supported by several softwares.
 	ChannelListResult channel;
