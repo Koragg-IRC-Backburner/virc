@@ -198,6 +198,20 @@ struct RGBA32 {
 	auto closestANSIColour() const @safe pure nothrow {
 		return ANSIColours[closestMIRCColour];
 	}
+	static auto randomColour() @safe {
+		import std.random : uniform;
+		return RGBA32(uniform!(typeof(red))(),uniform!(typeof(green))(),uniform!(typeof(blue))(),0);
+	}
+	auto randomComplementaryColour() const @safe {
+		import std.random : uniform;
+		static immutable gamma = 2.2;
+		const L = 0.2126 * (cast(float)red / ubyte.max) +
+			0.7152 * (cast(float)green / ubyte.max) +
+			0.0722 * (cast(float)blue / ubyte.max);
+		return (L > 0.5) ?
+			RGBA32(cast(ubyte)uniform(0,127),cast(ubyte)uniform(0,127),cast(ubyte)uniform(0,127),0) :
+			RGBA32(cast(ubyte)uniform(127, 255),cast(ubyte)uniform(127, 255),cast(ubyte)uniform(127, 255),0);
+	}
 }
 
 ///
