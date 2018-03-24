@@ -696,7 +696,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		//Chops off terminating \r\n. Everything after is ignored, according to spec.
 		line = findSplitBefore(line, "\r\n")[0];
 		debug(verboseirc) trace("←: ", line);
-		assert(!invalid);
+		assert(!invalid, "Received data after invalidation");
 		if (line.empty) {
 			return;
 		}
