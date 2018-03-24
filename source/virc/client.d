@@ -211,6 +211,10 @@ struct Target {
 	bool isChannel() @safe pure nothrow @nogc const {
 		return !channel.isNull;
 	}
+	///
+	bool isUser() @safe pure nothrow @nogc const {
+		return !user.isNull;
+	}
 	/++
 	+ Mode prefixes present in target. May be present on both channels and users.
 	+
