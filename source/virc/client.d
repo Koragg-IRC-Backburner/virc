@@ -632,6 +632,8 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		void delegate(const RehashingReply, const MessageMetadata) @safe onServerRehashing;
 		///
 		void delegate(const MessageMetadata) @safe onYoureOper;
+		///Called when an RPL_ISON message is received
+		void delegate(const User, const MessageMetadata) @safe onIsOn;
 		///
 		void delegate(const IRCError, const MessageMetadata) @safe onError;
 		///
@@ -742,7 +744,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 				switchy: switch (firstToken) {
 					//TOO MANY TEMPLATE INSTANTIATIONS! uncomment when compiler fixes this!
 					//alias Numerics = NoDuplicates!(EnumMembers!Numeric);
-					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED, Numeric.RPL_REHASHING, Numeric.ERR_NOPRIVS, Numeric.RPL_YOUREOPER, Numeric.ERR_NOSUCHSERVER, Numeric.ERR_NOPRIVILEGES, Numeric.RPL_AWAY, Numeric.RPL_UNAWAY, Numeric.RPL_NOWAWAY, Numeric.RPL_ENDOFWHOIS, Numeric.RPL_WHOISUSER, Numeric.RPL_WHOISSECURE, Numeric.RPL_WHOISOPERATOR, Numeric.RPL_WHOISREGNICK, Numeric.RPL_WHOISIDLE, Numeric.RPL_WHOISSERVER, Numeric.RPL_WHOISACCOUNT, Numeric.RPL_ADMINEMAIL, Numeric.RPL_ADMINLOC1, Numeric.RPL_ADMINLOC2, Numeric.RPL_ADMINME, Numeric.RPL_WHOISHOST, Numeric.RPL_WHOISMODE, Numeric.RPL_WHOISCERTFP, Numeric.RPL_WHOISCHANNELS);
+					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED, Numeric.RPL_REHASHING, Numeric.ERR_NOPRIVS, Numeric.RPL_YOUREOPER, Numeric.ERR_NOSUCHSERVER, Numeric.ERR_NOPRIVILEGES, Numeric.RPL_AWAY, Numeric.RPL_UNAWAY, Numeric.RPL_NOWAWAY, Numeric.RPL_ENDOFWHOIS, Numeric.RPL_WHOISUSER, Numeric.RPL_WHOISSECURE, Numeric.RPL_WHOISOPERATOR, Numeric.RPL_WHOISREGNICK, Numeric.RPL_WHOISIDLE, Numeric.RPL_WHOISSERVER, Numeric.RPL_WHOISACCOUNT, Numeric.RPL_ADMINEMAIL, Numeric.RPL_ADMINLOC1, Numeric.RPL_ADMINLOC2, Numeric.RPL_ADMINME, Numeric.RPL_WHOISHOST, Numeric.RPL_WHOISMODE, Numeric.RPL_WHOISCERTFP, Numeric.RPL_WHOISCHANNELS, Numeric.RPL_ISON);
 
 					static foreach (cmd; AliasSeq!(NoDuplicates!(EnumMembers!IRCV3Commands), NoDuplicates!(EnumMembers!RFC1459Commands), NoDuplicates!(EnumMembers!RFC2812Commands), Numerics)) {
 						case cmd:
@@ -882,6 +884,12 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	public void kick(const Channel chan, const User nick, const string message = "") {
 		assert(message.length < server.iSupport.kickLength, "Kick message length exceeded");
 		write!"KICK %s %s :%s"(chan, nick, message);
+	}
+	public void isOn(const string[] nicknames...) {
+		write!"ISON %-(%s %)"(nicknames);
+	}
+	public void isOn(const User[] users...) {
+		write!"ISON %-(%s %)"(users.map!(x => x.nickname));
 	}
 	public void admin(const string server = "") {
 		if (server == "") {
@@ -1254,6 +1262,17 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	private void rec(string cmd : RFC1459Commands.ping, T)(const Nullable!User, T split, const MessageMetadata) {
 		pong(split.front);
+	}
+	private void rec(string cmd : Numeric.RPL_ISON, T)(const User, T split, const MessageMetadata metadata) {
+		auto reply = parseNumeric!(Numeric.RPL_ISON)(split);
+		if (!reply.isNull) {
+			foreach (online; reply.online) {
+				internalAddressList.update(User(online));
+				tryCall!"onIsOn"(internalAddressList[online], metadata);
+			}
+		} else {
+			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
+		}
 	}
 	private void rec(string cmd : Numeric.RPL_MONONLINE, T)(const User, T split, const MessageMetadata metadata) if (isInputRange!T) {
 		auto users = parseNumeric!(Numeric.RPL_MONONLINE)(split);
@@ -2710,6 +2729,29 @@ version(unittest) {
 		with(errors[1]) {
 			assert(type == ErrorType.malformed);
 		}
+	}
+	{ //ISON tests
+		auto client = spawnNoBufferClient();
+		const(User)[] users;
+		client.onIsOn = (const User user, const MessageMetadata) {
+			users ~= user;
+		};
+		setupFakeConnection(client);
+
+		client.isOn("phone", "trillian", "WiZ", "jarlek", "Avalon", "Angel", "Monstah");
+
+		client.put(":localhost 303 Someone :trillian");
+		client.put(":localhost 303 Someone :WiZ");
+		client.put(":localhost 303 Someone :jarlek");
+		client.put(":localhost 303 Someone :Angel");
+		client.put(":localhost 303 Someone :Monstah");
+
+		assert(users.length == 5);
+		assert(users[0].nickname == "trillian");
+		assert(users[1].nickname == "WiZ");
+		assert(users[2].nickname == "jarlek");
+		assert(users[3].nickname == "Angel");
+		assert(users[4].nickname == "Monstah");
 	}
 	{ //OPER tests
 		auto client = spawnNoBufferClient();

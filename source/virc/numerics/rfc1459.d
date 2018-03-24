@@ -866,3 +866,32 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISCHANNELS, T)(T input, strin
 		assert(reply.isNull);
 	}
 }
+
+auto parseNumeric(Numeric numeric : Numeric.RPL_ISON, T)(T input) {
+	import std.algorithm.iteration : splitter;
+	import std.typecons : Nullable, Tuple;
+	import virc.common : User;
+	Nullable!(Tuple!(User, "user", typeof("".splitter(" ")), "online")) output = Tuple!(User, "user", typeof("".splitter(" ")), "online")();
+	if (input.empty) {
+		return output.init;
+	}
+	output.user = User(input.front);
+	input.popFront();
+	if (input.empty) {
+		return output.init;
+	}
+	output.online = input.front.splitter(" ");
+	return output;
+}
+unittest {
+	import std.array : array;
+	import std.range : only, takeNone;
+	import virc.common : User;
+	assert(parseNumeric!(Numeric.RPL_ISON)(takeNone(only(""))).isNull);
+	assert(parseNumeric!(Numeric.RPL_ISON)(only("someone")).isNull);
+	{
+		auto reply = parseNumeric!(Numeric.RPL_ISON)(only("someone", "user1 user2 user3"));
+		assert(reply.user == User("someone"));
+		assert(reply.online.array == ["user1", "user2", "user3"]);
+	}
+}
