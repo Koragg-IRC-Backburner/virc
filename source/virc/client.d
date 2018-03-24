@@ -15,8 +15,8 @@ import std.format : format, formattedWrite;
 import std.meta : AliasSeq;
 import std.range.primitives : ElementType, isInputRange, isOutputRange;
 import std.range : chain, empty, front, put, walkLength;
-import std.traits : Parameters, Unqual;
-import std.typecons : Nullable;
+import std.traits : isCopyable, Parameters, Unqual;
+import std.typecons : Nullable, RefCounted, refCounted;
 import std.utf : byCodeUnit;
 
 import virc.common;
@@ -67,7 +67,11 @@ enum supportedCaps = AliasSeq!(
 +
 +/
 auto ircClient(alias mix, T)(ref T output, NickInfo info, SASLMechanism[] saslMechs = [], string password = string.init) {
-	auto client = IRCClient!(mix, T)(output);
+	static if (isCopyable!T) {
+		auto client = IRCClient!(mix, T)(output);
+	} else {
+		auto client = ircClient!(mix, T)(refCounted(output));
+	}
 	client.username = info.username;
 	client.realname = info.realname;
 	client.nickname = info.nickname;
@@ -524,7 +528,11 @@ struct WhoisResponse {
 +/
 struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	import virc.ircv3 : Capability, CapabilityServerSubcommands, IRCV3Commands;
-	T output;
+	static if (isCopyable!T) {
+		T output;
+	} else {
+		RefCounted!T output;
+	}
 	///
 	Server server;
 	///
