@@ -51,11 +51,15 @@ struct InternalAddressList {
 		users.remove(deadUser);
 	}
 	///
+	auto opIndex(string name) const {
+		return users[name];
+	}
+	///
 	auto opIndex(string name) {
 		return users[name];
 	}
 	///
-	auto opIn_r(string name) {
+	auto opIn_r(string name) const {
 		return name in users;
 	}
 	auto list() const {
