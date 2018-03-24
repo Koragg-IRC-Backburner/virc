@@ -974,7 +974,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 			__traits(getMember, this, func)(params);
 		}
 	}
-	auto me() {
+	auto me() const {
 		assert(nickname in internalAddressList);
 		return internalAddressList[nickname];
 	}
@@ -1214,6 +1214,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		auto meUser = User();
 		meUser.mask.nickname = nickname;
 		meUser.mask.ident = username;
+		meUser.mask.host = "127.0.0.1";
 		internalAddressList.update(meUser);
 		tryCall!"onConnect"();
 	}
