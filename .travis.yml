@@ -1,3 +1,4 @@
+---
 language: d
 sudo: false
 d:
@@ -14,6 +15,7 @@ install:
   - wget -O doveralls "https://github.com/ColdenCullen/doveralls/releases/download/v1.3.1/doveralls_linux_travis"
   - chmod +x doveralls
 script:
+  - "dub build virc:testclient"
   - dub test -b unittest-cov
   - ./doveralls
 before_deploy:
@@ -23,5 +25,5 @@ deploy:
   skip_cleanup: true
   local_dir: docs
   github_token: $GITHUB_TOKEN
-  on:
+  "on":
     tags: true
