@@ -11,12 +11,6 @@ import vibe.stream.wrapper;
 import virc;
 
 mixin template Client() {
-	version(has_gen_package_version) {
-		import testclient.packageVersion;
-	} else {
-		enum packageName = "testclient";
-		enum packageVersion = "Version something or other";
-	}
 	import std.stdio : writefln, writef;
 	string currentChannel;
 	string[] channelsToJoin;
@@ -25,7 +19,7 @@ mixin template Client() {
 			if (msg.ctcpCommand == "ACTION") {
 				writefln("<%s> * %s %s", metadata.time, user, msg.ctcpArgs);
 			} else if (msg.ctcpCommand == "VERSION") {
-				ctcpReply(Target(user), "VERSION", packageName~" "~packageVersion);
+				ctcpReply(Target(user), "VERSION", "virc-testclient");
 			} else {
 				writefln("<%s> [%s:%s] %s", metadata.time, user, msg.ctcpCommand, msg.ctcpArgs);
 			}
@@ -127,6 +121,32 @@ mixin template Client() {
 	}
 }
 
+import std.json;
+auto runClient(T)(JSONValue settings, ref T stream) {
+	import std.typecons;
+	auto output = refCounted(streamOutputRange(stream));
+	auto client = ircClient!Client(output, NickInfo(settings["nickname"].str, settings["identd"].str, settings["real name"].str));
+	foreach (channel; settings["channels to join"].arrayNoRef) {
+		client.autoJoinChannel(channel.str);
+	}
+
+	void readIRC() {
+		while(!stream.empty) {
+			put(client, stream.readLine().idup);
+		}
+	}
+	void readCLI() {
+		auto standardInput = new StdinStream;
+		while (true) {
+			auto str = cast(string)readLine(standardInput);
+			client.writeLine(str);
+		}
+	}
+	runTask(&readIRC);
+	runTask(&readCLI);
+	return runApplication();
+}
+
 int main() {
 	import std.file : exists, readText;
 	import std.json : JSON_TYPE, parseJSON;
@@ -141,39 +161,12 @@ int main() {
 				stream = createTLSStream(conn, sslctx);
 			} catch (Exception) {
 				writeln("SSL connection failed!");
-				return;
+				return 1;
 			}
+			return runClient(settings, stream);
 		} else {
-			stream = conn;
+			return runClient(settings, conn);
 		}
-		class Wrap {
-			alias wrapped this;
-			StreamOutputRange!Stream wrapped;
-			this() {
-				wrapped = streamOutputRange(stream);
-			}
-		}
-		auto output = new Wrap;
-		auto client = ircClient!Client(output, NickInfo(settings["nickname"].str, settings["identd"].str, settings["real name"].str));
-		foreach (channel; settings["channels to join"].arrayNoRef) {
-			client.autoJoinChannel(channel.str);
-		}
-
-		void readIRC() {
-			while(!stream.empty) {
-				put(client, stream.readLine().idup);
-			}
-		}
-		void readCLI() {
-			auto standardInput = new StdinStream;
-			while (true) {
-				auto str = cast(string)readLine(standardInput);
-				client.writeLine(str);
-			}
-		}
-		runTask(&readIRC);
-		runTask(&readCLI);
-		return runApplication();
 	} else {
 		writeln("No settings file found");
 		return 1;
