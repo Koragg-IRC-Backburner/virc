@@ -68,19 +68,7 @@ struct Capability {
 		import std.range : front, popFront;
 		import std.utf : byCodeUnit;
 		auto prefix = str.byCodeUnit.front;
-		switch (prefix) {
-			case '~':
-				mustAck = true;
-				break;
-			case '=':
-				isSticky = true;
-				break;
-			case '-':
-				isDisabled = true;
-				break;
-			default:
-				break;
-		}
+		setFlagsByPrefix(prefix);
 		if (prefix.among('~', '=', '-')) {
 			str.popFront();
 		}
@@ -106,6 +94,21 @@ struct Capability {
 	string toString() const pure @safe {
 		import std.range : empty;
 		return name~(value.empty ? "" : "=")~value;
+	}
+	private void setFlagsByPrefix(char chr) @safe pure @nogc nothrow {
+		switch (chr) {
+			case '~':
+				mustAck = true;
+				break;
+			case '=':
+				isSticky = true;
+				break;
+			case '-':
+				isDisabled = true;
+				break;
+			default:
+				break;
+		}
 	}
 }
 ///
