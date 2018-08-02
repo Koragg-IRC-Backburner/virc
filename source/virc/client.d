@@ -526,7 +526,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 				switchy: switch (firstToken) {
 					//TOO MANY TEMPLATE INSTANTIATIONS! uncomment when compiler fixes this!
 					//alias Numerics = NoDuplicates!(EnumMembers!Numeric);
-					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED, Numeric.RPL_REHASHING, Numeric.ERR_NOPRIVS, Numeric.RPL_YOUREOPER, Numeric.ERR_NOSUCHSERVER, Numeric.ERR_NOPRIVILEGES, Numeric.RPL_AWAY, Numeric.RPL_UNAWAY, Numeric.RPL_NOWAWAY, Numeric.RPL_ENDOFWHOIS, Numeric.RPL_WHOISUSER, Numeric.RPL_WHOISSECURE, Numeric.RPL_WHOISOPERATOR, Numeric.RPL_WHOISREGNICK, Numeric.RPL_WHOISIDLE, Numeric.RPL_WHOISSERVER, Numeric.RPL_WHOISACCOUNT, Numeric.RPL_ADMINEMAIL, Numeric.RPL_ADMINLOC1, Numeric.RPL_ADMINLOC2, Numeric.RPL_ADMINME, Numeric.RPL_WHOISHOST, Numeric.RPL_WHOISMODE, Numeric.RPL_WHOISCERTFP, Numeric.RPL_WHOISCHANNELS, Numeric.RPL_ISON, Numeric.RPL_WHOISKEYVALUE, Numeric.RPL_KEYVALUE, Numeric.ERR_KEYNOPERMISSION, Numeric.ERR_NOMATCHINGKEY, Numeric.RPL_METADATAEND, Numeric.ERR_METADATALIMIT, Numeric.ERR_KEYINVALID, Numeric.ERR_METADATASYNCLATER, Numeric.RPL_METADATASUBOK, Numeric.RPL_METADATAUNSUBOK, Numeric.ERR_METADATATOOMANYSUBS, Numeric.RPL_METADATASUBS);
+					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED, Numeric.RPL_REHASHING, Numeric.ERR_NOPRIVS, Numeric.RPL_YOUREOPER, Numeric.ERR_NOSUCHSERVER, Numeric.ERR_NOPRIVILEGES, Numeric.RPL_AWAY, Numeric.RPL_UNAWAY, Numeric.RPL_NOWAWAY, Numeric.RPL_ENDOFWHOIS, Numeric.RPL_WHOISUSER, Numeric.RPL_WHOISSECURE, Numeric.RPL_WHOISOPERATOR, Numeric.RPL_WHOISREGNICK, Numeric.RPL_WHOISIDLE, Numeric.RPL_WHOISSERVER, Numeric.RPL_WHOISACCOUNT, Numeric.RPL_ADMINEMAIL, Numeric.RPL_ADMINLOC1, Numeric.RPL_ADMINLOC2, Numeric.RPL_ADMINME, Numeric.RPL_WHOISHOST, Numeric.RPL_WHOISMODE, Numeric.RPL_WHOISCERTFP, Numeric.RPL_WHOISCHANNELS, Numeric.RPL_ISON, Numeric.RPL_WHOISKEYVALUE, Numeric.RPL_KEYVALUE, Numeric.ERR_KEYNOPERMISSION, Numeric.ERR_NOMATCHINGKEY, Numeric.RPL_METADATAEND, Numeric.ERR_METADATALIMIT, Numeric.ERR_KEYINVALID, Numeric.ERR_METADATASYNCLATER, Numeric.RPL_METADATASUBOK, Numeric.RPL_METADATAUNSUBOK, Numeric.ERR_METADATATOOMANYSUBS, Numeric.RPL_METADATASUBS, Numeric.ERR_METADATARATELIMIT);
 
 					static foreach (cmd; AliasSeq!(NoDuplicates!(EnumMembers!IRCV3Commands), NoDuplicates!(EnumMembers!RFC1459Commands), NoDuplicates!(EnumMembers!RFC2812Commands), Numerics)) {
 						case cmd:
@@ -1458,6 +1458,14 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 			prefixes ~= v;
 		}
 		auto err = parseNumeric!(Numeric.ERR_METADATASYNCLATER)(split, prefixes, server.iSupport.channelTypes);
+		tryCall!"onError"(IRCError(ErrorType.waitAndRetry), metadata);
+	}
+	private void rec(string cmd : Numeric.ERR_METADATARATELIMIT, T)(const Nullable!User, T split, const MessageMetadata metadata) {
+		string prefixes;
+		foreach (k,v; server.iSupport.prefixes) {
+			prefixes ~= v;
+		}
+		//auto err = parseNumeric!(Numeric.ERR_METADATARATELIMIT)(split, prefixes, server.iSupport.channelTypes);
 		tryCall!"onError"(IRCError(ErrorType.waitAndRetry), metadata);
 	}
 	private void rec(string cmd : Numeric.ERR_METADATATOOMANYSUBS, T)(const Nullable!User, T split, const MessageMetadata metadata) {
@@ -2988,32 +2996,73 @@ version(unittest) {
 		client.put(":irc.example.com METADATA user1 account * :user1");
 		assert(client.userMetadata[User("user1")]["account"] == "user1");
 
-		client.put(":irc.example.com 771 modernclient #bigchan 4");
+		client.put(":irc.example.com 774 modernclient #bigchan 4");
+		assert(errors.length == 6);
 		assert(errors[5].type == ErrorType.waitAndRetry);
 
 		client.subscribeMetadata("avatar", "website", "foo", "bar");
 		assert(client.output.data.lineSplitter().array[$-1] == "METADATA * SUB avatar website foo bar");
-		client.put(":irc.example.com 775 modernclient :avatar website foo bar");
+		client.put(":irc.example.com 770 modernclient :avatar website foo bar");
 		client.put(":irc.example.com 762 modernclient :end of metadata");
 
 		client.unsubscribeMetadata("foo", "bar");
-		client.put(":irc.example.com 776 modernclient :bar foo");
+		assert(client.output.data.lineSplitter().array[$-1] == "METADATA * UNSUB foo bar");
+		client.put(":irc.example.com 771 modernclient :bar foo");
+		client.put(":irc.example.com 762 modernclient :end of metadata");
+
+
+		client.subscribeMetadata("avatar", "website", "foo", "bar", "baz");
+		client.put(":irc.example.com 770 modernclient :avatar website");
+		client.put(":irc.example.com 770 modernclient :foo");
+		client.put(":irc.example.com 770 modernclient :bar baz");
 		client.put(":irc.example.com 762 modernclient :end of metadata");
 
 		client.subscribeMetadata("foo", "$url", "bar");
-		client.put(":irc.example.com 775 modernclient :foo bar");
+		client.put(":irc.example.com 770 modernclient :foo bar");
 		client.put(":irc.example.com 767 modernclient $url :invalid metadata key");
 		client.put(":irc.example.com 762 modernclient :end of metadata");
 		assert(errors[6].type == ErrorType.badUserInput);
 
 		client.subscribeMetadata("email", "city");
-		client.put(":irc.example.com 778 modernclient email");
+		client.put(":irc.example.com 773 modernclient email");
 		client.put(":irc.example.com 762 modernclient :end of metadata");
+		assert(errors.length == 8);
 		assert(errors[7].type == ErrorType.tooManySubs);
 
-		client.listSubscribedMetadata();
-		client.put(":irc.example.com 777 modernclient :website avatar foo bar baz");
+		client.subscribeMetadata("website", "avatar", "foo");
+		client.put(":irc.example.com 770 modernclient :website avatar foo");
 		client.put(":irc.example.com 762 modernclient :end of metadata");
-		assert(subs == ["website", "avatar", "foo", "bar", "baz"]);
+
+		client.subscribeMetadata("email", "city", "country", "bar", "baz");
+		client.put(":irc.example.com 773 modernclient country");
+		client.put(":irc.example.com 770 modernclient :email city");
+		client.put(":irc.example.com 762 modernclient :end of metadata");
+		assert(errors[8].type == ErrorType.tooManySubs);
+		assert(errors.length == 9);
+
+		client.listSubscribedMetadata();
+		client.put(":irc.example.com 772 modernclient :website avatar city foo email");
+		client.put(":irc.example.com 762 modernclient :end of metadata");
+		assert(subs == ["website", "avatar", "city", "foo", "email"]);
+
+		subs = [];
+		client.listSubscribedMetadata();
+		client.put(":irc.example.com 772 modernclient :avatar");
+		client.put(":irc.example.com 772 modernclient :bar baz");
+		client.put(":irc.example.com 772 modernclient :foo website");
+		client.put(":irc.example.com 762 modernclient :end of metadata");
+		assert(subs == ["avatar", "bar", "baz", "foo", "website"]);
+
+		subs = [];
+		client.listSubscribedMetadata();
+		client.put(":irc.example.com 762 modernclient :end of metadata");
+		assert(subs == []);
+
+		client.subscribeMetadata("avatar", "secretkey", "website");
+		client.put(":irc.example.com 769 modernclient modernclient secretkey :permission denied");
+		client.put(":irc.example.com 770 modernclient :secretkey website");
+		client.put(":irc.example.com 762 modernclient :end of metadata");
+		assert(errors.length == 10);
+		assert(errors[9].type == ErrorType.noPrivs);
 	}
 }
