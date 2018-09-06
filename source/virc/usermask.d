@@ -38,16 +38,26 @@ struct UserMask {
 		}
 	}
 	void toString(T)(T sink) const if (isOutputRange!(T, const(char))) {
-    		put(sink, nickname);
-    		if (!ident.isNull) {
-    			put(sink, '!');
-    			put(sink, ident);
-    			assert(!host.isNull);
-    		}
-    		if (!host.isNull) {
-    			put(sink, '@');
-    			put(sink, host);
-    		}
+		put(sink, nickname);
+		if (!ident.isNull) {
+			put(sink, '!');
+			put(sink, ident);
+			assert(!host.isNull);
+		}
+		if (!host.isNull) {
+			put(sink, '@');
+			put(sink, host);
+		}
+	}
+	auto toHash() const {
+		auto hash = nickname.hashOf();
+		if (!ident.isNull) {
+			hash = ident.get.hashOf(hash);
+		}
+		if (!host.isNull) {
+			hash = host.get.hashOf(hash);
+		}
+		return hash;
 	}
 }
 
