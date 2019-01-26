@@ -309,7 +309,6 @@ alias ClientNoOpCommands = AliasSeq!(
 	RFC1459Commands.oper,
 	RFC1459Commands.squit,
 	RFC1459Commands.summon,
-	RFC1459Commands.topic, //UNIMPLEMENTED
 	RFC1459Commands.pong, //UNIMPLEMENTED
 	RFC1459Commands.error, //UNIMPLEMENTED
 	RFC1459Commands.userhost,
@@ -493,8 +492,6 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		///
 		void delegate(const User, const string, const MessageMetadata) @safe onQuit;
 		///
-		void delegate(const User, const Channel, const string, const MessageMetadata) @safe onTopic;
-		///
 		void delegate(const User, const Target, const ModeChange, const MessageMetadata) @safe onMode;
 		///
 		void delegate(const User, const Target, const Message, const MessageMetadata) @safe onMessage;
@@ -518,6 +515,8 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		void delegate(const NamesReply, const MessageMetadata) @safe onNamesReply;
 		///
 		void delegate(const TopicReply, const MessageMetadata) @safe onTopicReply;
+		///
+		void delegate(const User, const Channel, const string, const MessageMetadata) @safe onTopicChange;
 		///
 		void delegate(const User, const MessageMetadata) @safe onUnAwayReply;
 		///
@@ -758,6 +757,9 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	public void notice(const Target target, const Message message) {
 		notice(target.targetText, message.text);
+	}
+	public void changeTopic(const Target target, const string topic) {
+		write!"TOPIC %s :%s"(target, topic);
 	}
 	public void oper(const string name, const string pass) {
 		assert(!name.canFind(" ") && !pass.canFind(" "));
@@ -1237,6 +1239,20 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		if (!reply.isNull) {
 			tryCall!"onTopicReply"(reply, metadata);
 		}
+	}
+	private void rec(string cmd : RFC1459Commands.topic, T)(const User user, T split, const MessageMetadata metadata) {
+		if (split.empty) {
+			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
+			return;
+		}
+		auto target = Channel(split.front);
+		split.popFront();
+		if (split.empty) {
+			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
+			return;
+		}
+		auto message = split.front;
+		tryCall!"onTopicChange"(user, target, message, metadata);
 	}
 	private void rec(string cmd : RFC1459Commands.nick, T)(const User old, T split, const MessageMetadata metadata) {
 		if (!split.empty) {
@@ -2819,5 +2835,33 @@ version(unittest) {
 		assert(lineByLine.array[$-3] == "PRIVMSG test :\x01ping\x01");
 		assert(lineByLine.array[$-2] == "PRIVMSG test :\x01action does the thing.\x01");
 		assert(lineByLine.array[$-1] == "NOTICE test :\x01ping 1000000000\x01");
+	}
+	{ //TOPIC tests
+		auto client = spawnNoBufferClient();
+		Tuple!(const User, "user", const Channel, "channel", string, "message")[] topics;
+		IRCError[] errors;
+		client.onTopicChange = (const User user, const Channel channel, const string msg, const MessageMetadata) {
+			topics ~= tuple!("user", "channel", "message")(user, channel, msg);
+		};
+		client.onError = (const IRCError error, const MessageMetadata) {
+			errors ~= error;
+		};
+
+		setupFakeConnection(client);
+		client.changeTopic(Target(Channel("#test")), "This is a new topic");
+		client.put(":"~testUser.text~" TOPIC #test :This is a new topic");
+		client.put(":"~testUser.text~" TOPIC #test"); //Malformed
+		client.put(":"~testUser.text~" TOPIC"); //Malformed
+
+		auto lineByLine = client.output.data.lineSplitter();
+		assert(lineByLine.array[$-1] == "TOPIC #test :This is a new topic");
+		assert(topics.length == 1);
+		with(topics[0]) {
+			assert(channel == Channel("#test"));
+			assert(message == "This is a new topic");
+		}
+		assert(errors.length == 2);
+		assert(errors[0].type == ErrorType.malformed);
+		assert(errors[1].type == ErrorType.malformed);
 	}
 }
