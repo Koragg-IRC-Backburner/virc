@@ -111,6 +111,7 @@ struct Target {
 		assert(target == Channel("#hello"));
 		assert(target != User("test"));
 		assert(target == "#hello");
+		assert(target.isChannel && !target.isUser);
 	}
 	{
 		Target target;
@@ -118,6 +119,7 @@ struct Target {
 		assert(target != Channel("#hello"));
 		assert(target == User("test"));
 		assert(target == "test");
+		assert(!target.isChannel && target.isUser);
 	}
 	{
 		Target target;
