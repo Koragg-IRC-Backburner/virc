@@ -112,7 +112,7 @@ struct User {
 		return mask.ident;
 	}
 	///
-	auto host() const  {
+	auto host() const {
 		return mask.host;
 	}
 	void toString(T)(T sink) const if (isOutputRange!(T, const(char))) {
