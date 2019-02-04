@@ -808,7 +808,7 @@ struct WhoisChannelReplyChannel {
 auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISCHANNELS, T)(T input, string prefixes, string channelTypes) {
 	import std.algorithm.iteration : splitter;
 	import std.typecons : Nullable;
-	import virc.client : Target;
+	import virc.target : Target;
 	import virc.numerics.magicparser : autoParse;
 	struct Reduced {
 		import virc.common : User;
