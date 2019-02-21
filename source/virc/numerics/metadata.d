@@ -5,7 +5,7 @@ module virc.numerics.metadata;
 import virc.numerics.definitions;
 
 struct RPL_WhoisKeyValue {
-	import virc.client : Target;
+	import virc.target : Target;
 	Target target;
 	string key;
 	string visibility;
@@ -17,7 +17,7 @@ struct RPL_WhoisKeyValue {
 +/
 auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISKEYVALUE, T)(T input, string prefixes, string channelTypes) {
 	import std.typecons : Nullable;
-	import virc.client : Target;
+	import virc.target : Target;
 	import virc.numerics.magicparser : autoParse;
 	struct Reduced {
 		string target;
@@ -63,7 +63,7 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISKEYVALUE, T)(T input, strin
 }
 
 struct RPL_KeyValue {
-	import virc.client : Target;
+	import virc.target : Target;
 	import virc.numerics.magicparser : Optional;
 	import std.typecons : Nullable;
 	Target target;
@@ -77,7 +77,7 @@ struct RPL_KeyValue {
 +/
 auto parseNumeric(Numeric numeric : Numeric.RPL_KEYVALUE, T)(T input, string prefixes, string channelTypes) {
 	import std.typecons : Nullable;
-	import virc.client : Target;
+	import virc.target : Target;
 	import virc.numerics.magicparser : autoParse, Optional;
 	struct Reduced {
 		string target;
@@ -118,7 +118,7 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_KEYVALUE, T)(T input, string pre
 
 
 struct ERR_MetadataLimit {
-	import virc.client : Target;
+	import virc.target : Target;
 	Target target;
 	string humanReadable;
 }
@@ -128,7 +128,7 @@ struct ERR_MetadataLimit {
 +/
 auto parseNumeric(Numeric numeric : Numeric.ERR_METADATALIMIT, T)(T input, string prefixes, string channelTypes) {
 	import std.typecons : Nullable;
-	import virc.client : Target;
+	import virc.target : Target;
 	import virc.numerics.magicparser : autoParse;
 	struct Reduced {
 		string target;
@@ -142,7 +142,7 @@ auto parseNumeric(Numeric numeric : Numeric.ERR_METADATALIMIT, T)(T input, strin
 	return output;
 }
 struct ERR_NoMatchingKey {
-	import virc.client : Target;
+	import virc.target : Target;
 	Target target;
 	string key;
 	string humanReadable;
@@ -153,7 +153,7 @@ struct ERR_NoMatchingKey {
 +/
 auto parseNumeric(Numeric numeric : Numeric.ERR_NOMATCHINGKEY, T)(T input, string prefixes, string channelTypes) {
 	import std.typecons : Nullable;
-	import virc.client : Target;
+	import virc.target : Target;
 	import virc.numerics.magicparser : autoParse;
 	struct Reduced {
 		string target;
@@ -180,7 +180,7 @@ auto parseNumeric(Numeric numeric : Numeric.ERR_KEYINVALID, T)(T input, string p
 	return autoParse!ERR_KeyInvalid(input);
 }
 struct ERR_KeyNoPermission {
-	import virc.client : Target;
+	import virc.target : Target;
 	Target target;
 	string key;
 	string humanReadable;
@@ -191,7 +191,7 @@ struct ERR_KeyNoPermission {
 +/
 auto parseNumeric(Numeric numeric : Numeric.ERR_KEYNOPERMISSION, T)(T input, string prefixes, string channelTypes) {
 	import std.typecons : Nullable;
-	import virc.client : Target;
+	import virc.target : Target;
 	import virc.numerics.magicparser : autoParse;
 	struct Reduced {
 		string target;
@@ -208,7 +208,7 @@ auto parseNumeric(Numeric numeric : Numeric.ERR_KEYNOPERMISSION, T)(T input, str
 struct ERR_MetadataSyncLater {
 	import core.time : Duration;
 	import std.typecons : Nullable;
-	import virc.client : Target;
+	import virc.target : Target;
 	Target target;
 	Nullable!Duration time;
 }
@@ -219,7 +219,7 @@ struct ERR_MetadataSyncLater {
 auto parseNumeric(Numeric numeric : Numeric.ERR_METADATASYNCLATER, T)(T input, string prefixes, string channelTypes) {
 	import core.time : Duration;
 	import std.typecons : Nullable;
-	import virc.client : Target;
+	import virc.target : Target;
 	import virc.numerics.magicparser : autoParse, Optional;
 	struct Reduced {
 		string target;
@@ -241,7 +241,7 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_METADATASUBS, T)(T input) {
 	import std.algorithm.iteration : splitter;
 	import core.time : Duration;
 	import std.typecons : Nullable, Tuple, tuple;
-	import virc.client : Target;
+	import virc.target : Target;
 	import virc.numerics.magicparser : autoParse, Optional;
 	import virc.common : User;
 	struct Reduced {
