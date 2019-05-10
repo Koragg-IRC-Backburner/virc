@@ -89,9 +89,9 @@ struct ColouredText(string fmt, T) {
 		if (fg == ulong.max) {
 			sink.formattedWrite!fmt(thing);
 		} else if (hasBG) {
-			sink.formattedWrite!(ControlCharacters.color~"%s,%s"~fmt~ControlCharacters.color)(fg, bg, thing);
+			sink.formattedWrite!(ControlCharacters.color~"%02d,%02d"~fmt~ControlCharacters.color)(fg, bg, thing);
 		} else {
-			sink.formattedWrite!(ControlCharacters.color~"%s"~fmt~ControlCharacters.color)(fg, thing);
+			sink.formattedWrite!(ControlCharacters.color~"%02d"~fmt~ControlCharacters.color)(fg, thing);
 		}
 	}
 	this(ulong f, ulong b, T str) @safe pure nothrow @nogc {
@@ -110,8 +110,8 @@ struct ColouredText(string fmt, T) {
 	import std.conv : text;
 	import std.outbuffer;
 	ColouredText!("%s", ulong)().toString(new OutBuffer);
-	assert(colouredText!"Test %s"(1,2,3).text == "\x031,2Test 3\x03");
-	assert(colouredText!"Test %s"(1,3).text == "\x031Test 3\x03");
+	assert(colouredText!"Test %s"(1,2,3).text == "\x0301,02Test 3\x03");
+	assert(colouredText!"Test %s"(1,3).text == "\x0301Test 3\x03");
 }
 
 private struct StyledText(string fmt, char controlCode, T) {
