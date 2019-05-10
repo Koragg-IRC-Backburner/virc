@@ -162,6 +162,22 @@ auto parseTime(string[string] tags) {
 	enforce("time" in tags);
 	return SysTime.fromISOExtString(tags["time"], UTC());
 }
+
+auto parseTagString(string input) {
+	IRCTags output;
+	auto splitTags = input.splitter(";").filter!(a => !a.empty);
+	foreach (tag; splitTags) {
+		auto splitKV = tag.findSplit("=");
+		auto key = splitKV[0];
+		if (!splitKV[1].empty) {
+			output[key] = splitKV[2].replaceEscape!(string, only(`\\`, `\`), only(`\:`, `;`), only(`\r`, "\r"), only(`\n`, "\n"), only(`\s`, " "));
+		} else {
+			output[key] = "";
+		}
+	}
+	return output;
+}
+
 /++
 +
 +/
@@ -169,16 +185,7 @@ auto splitTag(string input) {
 	ParsedMessage output;
 	if (input.startsWith("@")) {
 		auto splitMsg = input.dropOne.findSplit(" ");
-		auto splitTags = splitMsg[0].splitter(";").filter!(a => !a.empty);
-		foreach (tag; splitTags) {
-			auto splitKV = tag.findSplit("=");
-			auto key = splitKV[0];
-			if (!splitKV[1].empty) {
-				output.tags[key] = splitKV[2].replaceEscape!(string, only(`\\`, `\`), only(`\:`, `;`), only(`\r`, "\r"), only(`\n`, "\n"), only(`\s`, " "));
-			} else {
-				output.tags[key] = "";
-			}
-		}
+		output.tags = parseTagString(splitMsg[0]);
 		output.msg = splitMsg[2];
 	} else {
 		output.msg = input;
