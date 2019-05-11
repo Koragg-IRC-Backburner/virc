@@ -82,6 +82,12 @@ struct BatchProcessor {
 	}
 }
 private struct BatchCommand {
+	string server;
+	string referenceTag;
+	string type;
+	string[] parameters;
+	bool isNew;
+	bool isValid = false;
 	this(IRCMessage msg) @safe pure nothrow {
 		import std.array : array;
 		if (msg.verb != "BATCH") {
@@ -101,13 +107,7 @@ private struct BatchCommand {
 			}
 		}
 	}
-	string server;
-	string referenceTag;
-	string type;
-	string[] parameters;
-	bool isNew;
 	auto isClosed() { return !isNew; }
-	bool isValid = false;
 }
 /++
 +
