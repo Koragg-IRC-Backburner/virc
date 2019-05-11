@@ -1,5 +1,6 @@
 module virc.ircmessage;
 
+import virc.ircv3.batch;
 
 struct IRCMessage {
 	string raw;
@@ -8,6 +9,7 @@ struct IRCMessage {
 	string source;
 	string verb;
 	private string argString;
+	BatchInformation batch;
 
 	invariant() {
 		import std.algorithm.searching : canFind;
@@ -15,7 +17,7 @@ struct IRCMessage {
 		assert(!verb.canFind(" "), "Verb cannot contain spaces");
 	}
 
-	this(string msg) @safe {
+	this(string msg) @safe pure {
 		import std.algorithm.iteration : splitter;
 		import std.algorithm.searching : findSplit;
 		import std.string : join;
@@ -71,7 +73,7 @@ struct IRCMessage {
 		import virc.ircv3.tags : parseTagString;
 		return parseTagString(tagString);
 	}
-	string toString() @safe {
+	string toString() const @safe {
 		string result;
 		result.reserve(tagString.length + 2 + source.length + 2 + verb.length + 1 + argString.length + 1);
 		if (tagString != "") {
@@ -90,6 +92,9 @@ struct IRCMessage {
 			result ~= argString;
 		}
 		return result;
+	}
+	bool opEquals(const IRCMessage other) const @safe pure {
+		return ((this.tagString == other.tagString) && (this.source == other.source) && (this.verb == other.verb) && (this.argString == other.argString));
 	}
 }
 

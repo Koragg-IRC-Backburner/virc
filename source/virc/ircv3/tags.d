@@ -19,29 +19,6 @@ import virc.ircv3.batch;
 /++
 +
 +/
-struct ParsedMessage {
-	///
-	string msg;
-	///
-	IRCTags tags;
-	///
-	BatchInformation batch;
-	///
-	this(string text) pure @safe nothrow @nogc {
-		msg = text;
-	}
-	///
-	this(string text, string[string] inTags) pure @safe nothrow @nogc {
-		msg = text;
-		tags = IRCTags(inTags);
-	}
-	auto opEquals(const ParsedMessage b) const {
-		return(this.msg == b.msg);
-	}
-}
-/++
-+
-+/
 struct IRCTags {
 	///
 	string[string] tags;
@@ -63,10 +40,10 @@ Nullable!bool booleanTag(string tag)(IRCTags tags) {
 }
 ///
 @safe pure nothrow unittest {
-	assert(ParsedMessage("").tags.booleanTag!"test".isNull);
-	assert(ParsedMessage("", ["test": "aaaaa"]).tags.booleanTag!"test".isNull);
-	assert(!ParsedMessage("", ["test": "0"]).tags.booleanTag!"test");
-	assert(ParsedMessage("", ["test": "1"]).tags.booleanTag!"test");
+	assert(IRCTags(null).booleanTag!"test".isNull);
+	assert(IRCTags(["test": "aaaaa"]).booleanTag!"test".isNull);
+	assert(!IRCTags(["test": "0"]).booleanTag!"test");
+	assert(IRCTags(["test": "1"]).booleanTag!"test");
 }
 /++
 +
@@ -89,19 +66,19 @@ Nullable!Type typeTag(string tag, Type)(IRCTags tags) {
 }
 ///
 @safe pure nothrow unittest {
-	assert(ParsedMessage("").tags.typeTag!("test", uint).isNull);
-	assert(ParsedMessage("", ["test": "a"]).tags.typeTag!("test", uint).isNull);
-	assert(ParsedMessage("", ["test": "0"]).tags.typeTag!("test", uint) == 0);
-	assert(ParsedMessage("", ["test": "10"]).tags.typeTag!("test", uint) == 10);
-	assert(ParsedMessage("", ["test": "words"]).tags.typeTag!("test", string) == "words");
-	assert(ParsedMessage("", ["test": "words"]).tags.stringTag!"test" == "words");
+	assert(IRCTags(null).typeTag!("test", uint).isNull);
+	assert(IRCTags(["test": "a"]).typeTag!("test", uint).isNull);
+	assert(IRCTags(["test": "0"]).typeTag!("test", uint) == 0);
+	assert(IRCTags(["test": "10"]).typeTag!("test", uint) == 10);
+	assert(IRCTags(["test": "words"]).typeTag!("test", string) == "words");
+	assert(IRCTags(["test": "words"]).stringTag!"test" == "words");
 	static struct Something {
 		char val;
 		this(string str) @safe pure nothrow {
 			val = str[0];
 		}
 	}
-	assert(ParsedMessage("", ["test": "words"]).tags.typeTag!("test", Something).val == 'w');
+	assert(IRCTags(["test": "words"]).typeTag!("test", Something).val == 'w');
 }
 /++
 +
@@ -127,13 +104,13 @@ auto arrayTag(string tag, string delimiter = ",", Type = string[])(IRCTags tags)
 }
 ///
 @safe pure nothrow unittest {
-	assert(ParsedMessage("").tags.arrayTag!("test").isNull);
-	assert(ParsedMessage("", ["test":""]).tags.arrayTag!("test").empty);
-	assert(ParsedMessage("", ["test":"a"]).tags.arrayTag!("test").front == "a");
-	assert(ParsedMessage("", ["test":"a,b"]).tags.arrayTag!("test") == ["a", "b"]);
-	assert(ParsedMessage("", ["test":"a:b"]).tags.arrayTag!("test", ":") == ["a", "b"]);
-	assert(ParsedMessage("", ["test":"9,1"]).tags.arrayTag!("test", ",", uint[]) == [9, 1]);
-	assert(ParsedMessage("", ["test":"9,a"]).tags.arrayTag!("test", ",", uint[]).isNull);
+	assert(IRCTags(null).arrayTag!("test").isNull);
+	assert(IRCTags(["test":""]).arrayTag!("test").empty);
+	assert(IRCTags(["test":"a"]).arrayTag!("test").front == "a");
+	assert(IRCTags(["test":"a,b"]).arrayTag!("test") == ["a", "b"]);
+	assert(IRCTags(["test":"a:b"]).arrayTag!("test", ":") == ["a", "b"]);
+	assert(IRCTags(["test":"9,1"]).arrayTag!("test", ",", uint[]) == [9, 1]);
+	assert(IRCTags(["test":"9,a"]).arrayTag!("test", ",", uint[]).isNull);
 }
 /++
 +
@@ -151,9 +128,9 @@ Nullable!Duration secondDurationTag(string tag)(IRCTags tags) {
 ///
 @safe pure nothrow unittest {
 	import core.time : hours;
-	assert(ParsedMessage("").tags.secondDurationTag!("test").isNull);
-	assert(ParsedMessage("", ["test": "a"]).tags.secondDurationTag!("test").isNull);
-	assert(ParsedMessage("", ["test": "3600"]).tags.secondDurationTag!("test") == 1.hours);
+	assert(IRCTags(null).secondDurationTag!("test").isNull);
+	assert(IRCTags(["test": "a"]).secondDurationTag!("test").isNull);
+	assert(IRCTags(["test": "3600"]).secondDurationTag!("test") == 1.hours);
 }
 /++
 +
@@ -178,65 +155,46 @@ auto parseTagString(string input) {
 	return output;
 }
 
-/++
-+
-+/
-auto splitTag(string input) {
-	ParsedMessage output;
-	if (input.startsWith("@")) {
-		auto splitMsg = input.dropOne.findSplit(" ");
-		output.tags = parseTagString(splitMsg[0]);
-		output.msg = splitMsg[2];
-	} else {
-		output.msg = input;
-	}
-	return output;
-}
 ///
 @safe pure /+nothrow @nogc+/ unittest {
 	//Example from http://ircv3.net/specs/core/message-tags-3.2.html
 	{
-		immutable splitStr = ":nick!ident@host.com PRIVMSG me :Hello".splitTag;
-		assert(splitStr.msg == ":nick!ident@host.com PRIVMSG me :Hello");
-		assert(splitStr.tags.length == 0);
+		immutable tags = parseTagString("");
+		assert(tags.length == 0);
 	}
 	//ditto
 	{
-		auto splitStr = "@aaa=bbb;ccc;example.com/ddd=eee :nick!ident@host.com PRIVMSG me :Hello".splitTag;
-		assert(splitStr.msg == ":nick!ident@host.com PRIVMSG me :Hello");
-		assert(splitStr.tags.length == 3);
-		assert(splitStr.tags["aaa"] == "bbb");
-		assert(splitStr.tags["ccc"] == "");
-		assert(splitStr.tags["example.com/ddd"] == "eee");
+		immutable tags = parseTagString("aaa=bbb;ccc;example.com/ddd=eee");
+		assert(tags.length == 3);
+		assert(tags["aaa"] == "bbb");
+		assert(tags["ccc"] == "");
+		assert(tags["example.com/ddd"] == "eee");
 	}
 	//escape test
 	{
-		auto splitStr = `@whatevs=\\s :Angel!angel@example.org PRIVMSG Wiz :Hello`.splitTag;
-		assert(splitStr.msg == ":Angel!angel@example.org PRIVMSG Wiz :Hello");
-		assert(splitStr.tags.length == 1);
-		assert("whatevs" in splitStr.tags);
-		assert(splitStr.tags["whatevs"] == `\s`);
+		immutable tags = parseTagString(`whatevs=\\s`);
+		assert(tags.length == 1);
+		assert("whatevs" in tags);
+		assert(tags["whatevs"] == `\s`);
 	}
 	//Example from http://ircv3.net/specs/extensions/batch-3.2.html
 	{
-		auto splitStr = `@batch=yXNAbvnRHTRBv :aji!a@a QUIT :irc.hub other.host`.splitTag;
-		assert(splitStr.msg == ":aji!a@a QUIT :irc.hub other.host");
-		assert(splitStr.tags.length == 1);
-		assert("batch" in splitStr.tags);
-		assert(splitStr.tags["batch"] == "yXNAbvnRHTRBv");
+		immutable tags = parseTagString(`batch=yXNAbvnRHTRBv`);
+		assert(tags.length == 1);
+		assert("batch" in tags);
+		assert(tags["batch"] == "yXNAbvnRHTRBv");
 	}
 	//Example from http://ircv3.net/specs/extensions/account-tag-3.2.html
 	{
-		auto splitStr = `@account=hax0r :user PRIVMSG #atheme :Now I'm logged in.`.splitTag;
-		assert(splitStr.msg == ":user PRIVMSG #atheme :Now I'm logged in.");
-		assert(splitStr.tags.length == 1);
-		assert("account" in splitStr.tags);
-		assert(splitStr.tags["account"] == "hax0r");
+		immutable tags = parseTagString(`account=hax0r`);
+		assert(tags.length == 1);
+		assert("account" in tags);
+		assert(tags["account"] == "hax0r");
 	}
 	{
-		auto splitStr = `@testk=test\ :user QUIT :bye`.splitTag;
-		assert("testk" in splitStr.tags);
-		assert(splitStr.tags["testk"] == "test");
+		immutable tags = parseTagString(`testk=test\`);
+		assert("testk" in tags);
+		assert(tags["testk"] == "test");
 	}
 }
 ///
@@ -244,21 +202,19 @@ auto splitTag(string input) {
 	import std.datetime : DateTime, msecs, SysTime, UTC;
 	//Example from http://ircv3.net/specs/extensions/server-time-3.2.html
 	{
-		auto splitStr = "@time=2011-10-19T16:40:51.620Z :Angel!angel@example.org PRIVMSG Wiz :Hello".splitTag;
-		assert(splitStr.msg == ":Angel!angel@example.org PRIVMSG Wiz :Hello");
-		assert(splitStr.tags.length == 1);
-		assert("time" in splitStr.tags);
-		assert(splitStr.tags["time"] == "2011-10-19T16:40:51.620Z");
+		auto tags = parseTagString("time=2011-10-19T16:40:51.620Z");
+		assert(tags.length == 1);
+		assert("time" in tags);
+		assert(tags["time"] == "2011-10-19T16:40:51.620Z");
 		immutable testTime = SysTime(DateTime(2011,10,19,16,40,51), 620.msecs, UTC());
-		assert(parseTime(splitStr.tags) == testTime);
+		assert(parseTime(tags) == testTime);
 	}
 	//ditto
 	{
-		auto splitStr = "@time=2012-06-30T23:59:60.419Z :John!~john@1.2.3.4 JOIN #chan".splitTag;
-		assert(splitStr.msg == ":John!~john@1.2.3.4 JOIN #chan");
-		assert(splitStr.tags.length == 1);
-		assert("time" in splitStr.tags);
-		assert(splitStr.tags["time"] == "2012-06-30T23:59:60.419Z");
+		immutable tags = parseTagString("time=2012-06-30T23:59:60.419Z");
+		assert(tags.length == 1);
+		assert("time" in tags);
+		assert(tags["time"] == "2012-06-30T23:59:60.419Z");
 		//leap seconds not currently representable
 		//assert(parseTime(splitStr.tags) == SysTime(DateTime(2012,06,30,23,59,60), 419.msecs, UTC()));
 	}

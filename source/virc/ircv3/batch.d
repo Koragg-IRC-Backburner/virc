@@ -3,12 +3,13 @@
 +/
 module virc.ircv3.batch;
 import virc.ircv3.tags;
+import virc.ircmessage;
 /++
 +
 +/
 struct BatchProcessor {
 	///
-	ParsedMessage[] batchless;
+	IRCMessage[] batchless;
 	private Batch[string] batchCache;
 	///
 	Batch[] batches;
@@ -16,18 +17,18 @@ struct BatchProcessor {
 	bool[] consumeBatch;
 	///
 	void put(string line) @safe pure {
-		put(line.splitTag());
+		put(IRCMessage(line));
 	}
 	///
-	void put(ParsedMessage splitMsg) @safe pure {
-		auto processed = BatchCommand(splitMsg.msg);
+	void put(IRCMessage msg) @safe pure {
+		auto processed = BatchCommand(msg);
 		Batch newBatch;
 		if (processed.isValid && processed.isNew) {
 			newBatch.info.referenceTag = processed.referenceTag;
 			newBatch.info.type = processed.type;
 			newBatch.info.parameters = processed.parameters;
 		}
-		if ("batch" !in splitMsg.tags) {
+		if ("batch" !in msg.tags) {
 			if (processed.isValid) {
 				if (processed.isNew) {
 					batchCache[newBatch.info.referenceTag] = newBatch;
@@ -37,7 +38,7 @@ struct BatchProcessor {
 					batchCache.remove(processed.referenceTag);
 				}
 			} else {
-				batchless ~= splitMsg;
+				batchless ~= msg;
 				consumeBatch ~= false;
 			}
 		} else {
@@ -48,7 +49,7 @@ struct BatchProcessor {
 							if (processed.isNew)
 								batch.nestedBatches[newBatch.info.referenceTag] = newBatch;
 						} else {
-							batch.put(splitMsg);
+							batch.put(msg);
 						}
 						return;
 					}
@@ -56,7 +57,7 @@ struct BatchProcessor {
 						findBatch(batch.nestedBatches, identifier);
 				}
 			}
-			findBatch(batchCache, splitMsg.tags["batch"]);
+			findBatch(batchCache, msg.tags["batch"]);
 		}
 	}
 	///
@@ -81,20 +82,23 @@ struct BatchProcessor {
 	}
 }
 private struct BatchCommand {
-	this(string msg) @safe pure nothrow {
-		import std.string : split;
-		import std.uni : sicmp;
-		auto splitMsg = msg.split(" ");
-		if ((splitMsg.length <= 2) || (sicmp(splitMsg[1],"BATCH")))
+	this(IRCMessage msg) @safe pure nothrow {
+		import std.array : array;
+		if (msg.verb != "BATCH") {
 			return;
+		}
 		isValid = true;
-		server = splitMsg[0];
-		referenceTag = splitMsg[2][1..$];
-		isNew = splitMsg[2][0] == '+';
+		server = msg.source;
+		auto args = msg.args;
+		referenceTag = args.front[1..$];
+		isNew = (args.front[0] == '+');
 		if (isNew) {
-			type = splitMsg[3];
-			if (splitMsg.length >= 4)
-				parameters = splitMsg[4..$];
+			args.popFront();
+			type = args.front;
+			args.popFront();
+			if (!args.empty) {
+				parameters = args.array;
+			}
 		}
 	}
 	string server;
@@ -112,11 +116,11 @@ struct Batch {
 	///Metadata attached to this batch
 	BatchInformation info;
 	///Lines captured minus the batch tag and starting/ending commands.
-	ParsedMessage[] lines;
+	IRCMessage[] lines;
 	///Any batches nested inside this one.
 	Batch[string] nestedBatches;
 	///
-	void put(ParsedMessage line) @safe pure {
+	void put(IRCMessage line) @safe pure {
 		line.batch = info;
 		lines ~= line;
 	}
@@ -151,7 +155,9 @@ struct BatchInformation {
 		copy(lines, batchProcessor);
 		{
 			const batch = takeOne(batchProcessor).front;
-			assert(batch.lines == [ParsedMessage(":nick!user@host PRIVMSG #channel :This is not in batch, so processed immediately")]);
+			assert(batch.lines == [
+				IRCMessage(":nick!user@host PRIVMSG #channel :This is not in batch, so processed immediately")
+			]);
 		}
 		batchProcessor.popFront();
 		{
@@ -159,7 +165,11 @@ struct BatchInformation {
 			assert(batch.info.referenceTag == `yXNAbvnRHTRBv`);
 			assert(batch.info.type == `netsplit`);
 			assert(batch.info.parameters == [`irc.hub`, `other.host`]);
-			assert(batch.lines == [ParsedMessage(`:aji!a@a QUIT :irc.hub other.host`, ["batch": "yXNAbvnRHTRBv"]), ParsedMessage(`:nenolod!a@a QUIT :irc.hub other.host`, ["batch": "yXNAbvnRHTRBv"]), ParsedMessage(`:jilles!a@a QUIT :irc.hub other.host`, ["batch": "yXNAbvnRHTRBv"])]);
+			assert(batch.lines == [
+				IRCMessage(`@batch=yXNAbvnRHTRBv :aji!a@a QUIT :irc.hub other.host`),
+				IRCMessage(`@batch=yXNAbvnRHTRBv :nenolod!a@a QUIT :irc.hub other.host`),
+				IRCMessage(`@batch=yXNAbvnRHTRBv :jilles!a@a QUIT :irc.hub other.host`)
+			]);
 		}
 		batchProcessor.popFront();
 		assert(batchProcessor.empty);
@@ -181,14 +191,21 @@ struct BatchInformation {
 			const batch = takeOne(batchProcessor).front;
 			assert(batch.info.type == "example.com/foo");
 			assert(batch.info.referenceTag == "1");
-			assert(batch.lines == [ParsedMessage(":nick!user@host PRIVMSG #channel :Message 1", ["batch": "1"]), ParsedMessage(":nick!user@host PRIVMSG #channel :Message 2", ["batch": "1"]), ParsedMessage(":nick!user@host PRIVMSG #channel :Message 3", ["batch": "1"])]);
+			assert(batch.lines == [
+				IRCMessage("@batch=1 :nick!user@host PRIVMSG #channel :Message 1"),
+				IRCMessage("@batch=1 :nick!user@host PRIVMSG #channel :Message 2"),
+				IRCMessage("@batch=1 :nick!user@host PRIVMSG #channel :Message 3")
+			]);
 		}
 		batchProcessor.popFront();
 		{
 			const batch = takeOne(batchProcessor).front;
 			assert(batch.info.type == "example.com/foo");
 			assert(batch.info.referenceTag == "2");
-			assert(batch.lines == [ParsedMessage(":nick!user@host PRIVMSG #channel :Message 4", ["batch": "2"]), ParsedMessage(":nick!user@host PRIVMSG #channel :Message 5", ["batch": "2"])]);
+			assert(batch.lines == [
+				IRCMessage("@batch=2 :nick!user@host PRIVMSG #channel :Message 4"),
+				IRCMessage("@batch=2 :nick!user@host PRIVMSG #channel :Message 5")
+			]);
 		}
 		batchProcessor.popFront();
 		assert(batchProcessor.empty);
@@ -212,7 +229,9 @@ struct BatchInformation {
 			assert(batch.nestedBatches["inner"].info.type == "example.com/bar");
 			assert(batch.nestedBatches["inner"].info.referenceTag == "inner");
 			assert(batch.nestedBatches["inner"].info.parameters == []);
-			assert(batch.nestedBatches["inner"].lines == [ParsedMessage(":nick!user@host PRIVMSG #channel :Hi", ["batch": "inner"])]);
+			assert(batch.nestedBatches["inner"].lines == [
+				IRCMessage("@batch=inner :nick!user@host PRIVMSG #channel :Hi")
+			]);
 		}
 		batchProcessor.popFront();
 		assert(batchProcessor.empty);
@@ -231,7 +250,11 @@ struct BatchInformation {
 			assert(batch.info.type == "netsplit");
 			assert(batch.info.referenceTag == "yXNAbvnRHTRBv");
 			assert(batch.info.parameters == ["irc.hub", "other.host"]);
-			assert(batch.lines == [ParsedMessage(":aji!a@a QUIT :irc.hub other.host", ["batch": "yXNAbvnRHTRBv"]), ParsedMessage(":nenolod!a@a QUIT :irc.hub other.host", ["batch": "yXNAbvnRHTRBv"]), ParsedMessage(`:jilles!a@a QUIT :irc.hub other.host`, ["batch": "yXNAbvnRHTRBv"])]);
+			assert(batch.lines == [
+				IRCMessage("@batch=yXNAbvnRHTRBv :aji!a@a QUIT :irc.hub other.host"),
+				IRCMessage("@batch=yXNAbvnRHTRBv :nenolod!a@a QUIT :irc.hub other.host"),
+				IRCMessage(`@batch=yXNAbvnRHTRBv :jilles!a@a QUIT :irc.hub other.host`)
+			]);
 		}
 		batchProcessor.popFront();
 		assert(batchProcessor.empty);
@@ -253,7 +276,14 @@ struct BatchInformation {
 			assert(batch.info.type == "netjoin");
 			assert(batch.info.referenceTag == "4lMeQwsaOMs6s");
 			assert(batch.info.parameters == ["irc.hub", "other.host"]);
-			assert(batch.lines == [ParsedMessage(":aji!a@a JOIN #atheme", ["batch": "4lMeQwsaOMs6s"]), ParsedMessage(":nenolod!a@a JOIN #atheme", ["batch": "4lMeQwsaOMs6s"]), ParsedMessage(`:jilles!a@a JOIN #atheme`, ["batch": "4lMeQwsaOMs6s"]), ParsedMessage(`:nenolod!a@a JOIN #ircv3`, ["batch": "4lMeQwsaOMs6s"]), ParsedMessage(`:jilles!a@a JOIN #ircv3`, ["batch": "4lMeQwsaOMs6s"]), ParsedMessage(`:Elizacat!a@a JOIN #ircv3`, ["batch": "4lMeQwsaOMs6s"])]);
+			assert(batch.lines == [
+				IRCMessage("@batch=4lMeQwsaOMs6s :aji!a@a JOIN #atheme"),
+				IRCMessage("@batch=4lMeQwsaOMs6s :nenolod!a@a JOIN #atheme"),
+				IRCMessage(`@batch=4lMeQwsaOMs6s :jilles!a@a JOIN #atheme`),
+				IRCMessage(`@batch=4lMeQwsaOMs6s :nenolod!a@a JOIN #ircv3`),
+				IRCMessage(`@batch=4lMeQwsaOMs6s :jilles!a@a JOIN #ircv3`),
+				IRCMessage(`@batch=4lMeQwsaOMs6s :Elizacat!a@a JOIN #ircv3`)
+			]);
 		}
 		batchProcessor.popFront();
 		assert(batchProcessor.empty);
@@ -272,7 +302,11 @@ struct BatchInformation {
 			assert(batch.info.type == "chathistory");
 			assert(batch.info.referenceTag == "sxtUfAeXBgNoD");
 			assert(batch.info.parameters == ["#channel"]);
-			assert(batch.lines == [ParsedMessage(":foo!foo@example.com PRIVMSG #channel :I like turtles.", ["time":"2015-06-26T19:40:31.230Z", "batch": "sxtUfAeXBgNoD"]), ParsedMessage(":bar!bar@example.com NOTICE #channel :Tortoises are better.", ["time":"2015-06-26T19:43:53.410Z", "batch": "sxtUfAeXBgNoD"]), ParsedMessage(`:irc.host PRIVMSG #channel :Squishy animals are inferior to computers.`, ["time":"2015-06-26T19:48:18.140Z", "batch": "sxtUfAeXBgNoD"])]);
+			assert(batch.lines == [
+				IRCMessage("@batch=sxtUfAeXBgNoD;time=2015-06-26T19:40:31.230Z :foo!foo@example.com PRIVMSG #channel :I like turtles."),
+				IRCMessage("@batch=sxtUfAeXBgNoD;time=2015-06-26T19:43:53.410Z :bar!bar@example.com NOTICE #channel :Tortoises are better."),
+				IRCMessage(`@batch=sxtUfAeXBgNoD;time=2015-06-26T19:48:18.140Z :irc.host PRIVMSG #channel :Squishy animals are inferior to computers.`)
+			]);
 		}
 		batchProcessor.popFront();
 		assert(batchProcessor.empty);
@@ -290,7 +324,10 @@ struct BatchInformation {
 			assert(batch.info.type == "chathistory");
 			assert(batch.info.referenceTag == "sxtUfAeXBgNoD");
 			assert(batch.info.parameters == ["remote"]);
-			assert(batch.lines == [ParsedMessage(":remote!foo@example.com PRIVMSG local :I like turtles.", ["time":"2015-06-26T19:40:31.230Z", "batch":"sxtUfAeXBgNoD"]), ParsedMessage(":local!bar@example.com PRIVMSG remote :Tortoises are better.", ["time":"2015-06-26T19:43:53.410Z", "batch": "sxtUfAeXBgNoD"])]);
+			assert(batch.lines == [
+				IRCMessage("@batch=sxtUfAeXBgNoD;time=2015-06-26T19:40:31.230Z :remote!foo@example.com PRIVMSG local :I like turtles."),
+				IRCMessage("@batch=sxtUfAeXBgNoD;time=2015-06-26T19:43:53.410Z :local!bar@example.com PRIVMSG remote :Tortoises are better.")
+			]);
 		}
 		batchProcessor.popFront();
 		assert(batchProcessor.empty);
@@ -301,7 +338,7 @@ struct BatchInformation {
 		copy(lines, batchProcessor);
 		{
 			const batch = takeOne(batchProcessor).front;
-			assert(batch.lines == [ParsedMessage(":remote!foo@example.com PRIVMSG local :I like turtles.", ["time":"2015-06-26T19:40:31.230Z"])]);
+			assert(batch.lines == [IRCMessage("@time=2015-06-26T19:40:31.230Z :remote!foo@example.com PRIVMSG local :I like turtles.")]);
 		}
 		batchProcessor.popFront();
 		assert(batchProcessor.empty);
@@ -311,13 +348,13 @@ struct BatchInformation {
 		batchProcessor.put(`@time=2015-06-26T19:40:31.230Z :remote!foo@example.com PRIVMSG local :I like turtles.`);
 		{
 			const batch = takeOne(batchProcessor).front;
-			assert(batch.lines == [ParsedMessage(":remote!foo@example.com PRIVMSG local :I like turtles.", ["time":"2015-06-26T19:40:31.230Z"])]);
+			assert(batch.lines == [IRCMessage("@time=2015-06-26T19:40:31.230Z :remote!foo@example.com PRIVMSG local :I like turtles.")]);
 		}
 		batchProcessor.popFront();
 		batchProcessor.put(`@time=2015-06-26T19:40:31.230Z :remote!foo@example.com PRIVMSG local :I like turtles.`);
 		{
 			const batch = takeOne(batchProcessor).front;
-			assert(batch.lines == [ParsedMessage(":remote!foo@example.com PRIVMSG local :I like turtles.", ["time":"2015-06-26T19:40:31.230Z"])]);
+			assert(batch.lines == [IRCMessage("@time=2015-06-26T19:40:31.230Z :remote!foo@example.com PRIVMSG local :I like turtles.")]);
 		}
 		batchProcessor.popFront();
 		assert(batchProcessor.empty);
