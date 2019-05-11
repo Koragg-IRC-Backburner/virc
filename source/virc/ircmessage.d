@@ -9,6 +9,12 @@ struct IRCMessage {
 	string verb;
 	private string argString;
 
+	invariant() {
+		import std.algorithm.searching : canFind;
+		assert(!source.canFind(" "), "Source cannot contain spaces");
+		assert(!verb.canFind(" "), "Verb cannot contain spaces");
+	}
+
 	this(string msg) @safe {
 		import std.algorithm.iteration : splitter;
 		import std.algorithm.searching : findSplit;
@@ -42,12 +48,48 @@ struct IRCMessage {
 		import virc.ircsplitter : IRCSplitter;
 		return IRCSplitter(argString);
 	}
+
+	void args(string input) @safe {
+		argString = ":"~input;
+	}
+
+	void args(string[] input) @safe {
+		import std.algorithm.searching : canFind;
+		import std.format : format;
+
+		if (input.length == 0) {
+			argString = "";
+			return;
+		}
+
+		foreach (earlyArg; input[0..$-1]) {
+			assert(!earlyArg.canFind(" "));
+		}
+		argString = format!"%-(%s %|%):%s"(input[0..$-1], input[$-1]);
+	}
 	auto tags() @safe {
 		import virc.ircv3.tags : parseTagString;
 		return parseTagString(tagString);
 	}
 	string toString() @safe {
-		return raw;
+		string result;
+		result.reserve(tagString.length + 2 + source.length + 2 + verb.length + 1 + argString.length + 1);
+		if (tagString != "") {
+			result ~= "@";
+			result ~= tagString;
+			result ~= " ";
+		}
+		if (source != "") {
+			result ~= ":";
+			result ~= source;
+			result ~= " ";
+		}
+		result ~= verb;
+		if (argString != "") {
+			result ~= " ";
+			result ~= argString;
+		}
+		return result;
 	}
 }
 
@@ -58,6 +100,7 @@ struct IRCMessage {
 		assert(verb == "PRIVMSG");
 		assert(args.equal(["local", "I like turtles."]));
 		assert(tags.length == 0);
+		assert(toString() == ":remote!foo@example.com PRIVMSG local :I like turtles.");
 	}
 	with(IRCMessage("@aaa=bbb;ccc;example.com/ddd=eee :nick!ident@host.com PRIVMSG me :Hello")) {
 		assert(source == "nick!ident@host.com");
@@ -66,5 +109,34 @@ struct IRCMessage {
 		assert(tags["aaa"] == "bbb");
 		assert(tags["ccc"] == "");
 		assert(tags["example.com/ddd"] == "eee");
+		assert(toString() == "@aaa=bbb;ccc;example.com/ddd=eee :nick!ident@host.com PRIVMSG me :Hello");
+	}
+	{
+		auto msg = IRCMessage();
+		msg.source = "server";
+		msg.verb = "HELLO";
+		msg.args = "WORLD";
+		assert(msg.toString() == ":server HELLO :WORLD");
+	}
+	{
+		auto msg = IRCMessage();
+		msg.source = "server";
+		msg.verb = "HELLO";
+		msg.args = string[].init;
+		assert(msg.toString() == ":server HELLO");
+	}
+	{
+		auto msg = IRCMessage();
+		msg.source = "server";
+		msg.verb = "HELLO";
+		msg.args = ["WORLD"];
+		assert(msg.toString() == ":server HELLO :WORLD");
+	}
+	{
+		auto msg = IRCMessage();
+		msg.source = "server";
+		msg.verb = "HELLO";
+		msg.args = ["WORLD", "!!!"];
+		assert(msg.toString() == ":server HELLO WORLD :!!!");
 	}
 }
