@@ -453,27 +453,23 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		batchProcessor.put(line);
 		foreach (batch; batchProcessor) {
 			batchProcessor.popFront();
-			foreach (tagSplit; batch.lines) {
-				auto batchLine = tagSplit.msg;
+			foreach (parsed; batch.lines) {
 				Nullable!User source;
-				if (batchLine.front == ':') {
-					auto found = batchLine.findSplit(" ");
+				if (parsed.source != "") {
 					source = User();
-					source.mask = UserMask(found[0][1..$]);
-					batchLine = found[2];
+					source.mask = UserMask(parsed.source);
 				}
-				auto split = IRCSplitter(batchLine);
 				auto metadata = MessageMetadata();
-				metadata.batch = tagSplit.batch;
-				metadata.tags = tagSplit.tags;
-				if("time" in tagSplit.tags) {
-					metadata.time = parseTime(tagSplit.tags);
+				metadata.batch = parsed.batch;
+				metadata.tags = parsed.tags;
+				if("time" in parsed.tags) {
+					metadata.time = parseTime(parsed.tags);
 				} else {
 					metadata.time = Clock.currTime(UTC());
 				}
-				if ("account" in tagSplit.tags) {
+				if ("account" in parsed.tags) {
 					if (!source.isNull) {
-						source.account = tagSplit.tags["account"];
+						source.account = parsed.tags["account"];
 					}
 				}
 				if (!source.isNull) {
@@ -483,15 +479,13 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 					}
 				}
 
-				if (split.front.filter!(x => !isDigit(x)).empty) {
-					metadata.messageNumeric = cast(Numeric)split.front;
+				if (parsed.verb.filter!(x => !isDigit(x)).empty) {
+					metadata.messageNumeric = cast(Numeric)parsed.verb;
 				}
-				metadata.original = batchLine;
+				metadata.original = parsed.raw;
 				tryCall!"onRaw"(metadata);
 
-				auto firstToken = split.front;
-				split.popFront();
-				switchy: switch (firstToken) {
+				switchy: switch (parsed.verb) {
 					//TOO MANY TEMPLATE INSTANTIATIONS! uncomment when compiler fixes this!
 					//alias Numerics = NoDuplicates!(EnumMembers!Numeric);
 					alias Numerics = AliasSeq!(Numeric.RPL_WELCOME, Numeric.RPL_ISUPPORT, Numeric.RPL_LIST, Numeric.RPL_YOURHOST, Numeric.RPL_CREATED, Numeric.RPL_LISTSTART, Numeric.RPL_LISTEND, Numeric.RPL_ENDOFMONLIST, Numeric.RPL_ENDOFNAMES, Numeric.RPL_YOURID, Numeric.RPL_LOCALUSERS, Numeric.RPL_GLOBALUSERS, Numeric.RPL_HOSTHIDDEN, Numeric.RPL_TEXT, Numeric.RPL_MYINFO, Numeric.RPL_LOGON, Numeric.RPL_MONONLINE, Numeric.RPL_MONOFFLINE, Numeric.RPL_MONLIST, Numeric.RPL_LUSERCLIENT, Numeric.RPL_LUSEROP, Numeric.RPL_LUSERCHANNELS, Numeric.RPL_LUSERME, Numeric.RPL_TOPIC, Numeric.RPL_NAMREPLY, Numeric.RPL_TOPICWHOTIME, Numeric.RPL_SASLSUCCESS, Numeric.RPL_LOGGEDIN, Numeric.RPL_VERSION, Numeric.ERR_MONLISTFULL, Numeric.ERR_NOMOTD, Numeric.ERR_NICKLOCKED, Numeric.ERR_SASLFAIL, Numeric.ERR_SASLTOOLONG, Numeric.ERR_SASLABORTED, Numeric.RPL_REHASHING, Numeric.ERR_NOPRIVS, Numeric.RPL_YOUREOPER, Numeric.ERR_NOSUCHSERVER, Numeric.ERR_NOPRIVILEGES, Numeric.RPL_AWAY, Numeric.RPL_UNAWAY, Numeric.RPL_NOWAWAY, Numeric.RPL_ENDOFWHOIS, Numeric.RPL_WHOISUSER, Numeric.RPL_WHOISSECURE, Numeric.RPL_WHOISOPERATOR, Numeric.RPL_WHOISREGNICK, Numeric.RPL_WHOISIDLE, Numeric.RPL_WHOISSERVER, Numeric.RPL_WHOISACCOUNT, Numeric.RPL_ADMINEMAIL, Numeric.RPL_ADMINLOC1, Numeric.RPL_ADMINLOC2, Numeric.RPL_ADMINME, Numeric.RPL_WHOISHOST, Numeric.RPL_WHOISMODE, Numeric.RPL_WHOISCERTFP, Numeric.RPL_WHOISCHANNELS, Numeric.RPL_ISON);
@@ -499,11 +493,11 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 					static foreach (cmd; AliasSeq!(NoDuplicates!(EnumMembers!IRCV3Commands), NoDuplicates!(EnumMembers!RFC1459Commands), NoDuplicates!(EnumMembers!RFC2812Commands), Numerics)) {
 						case cmd:
 							static if (!cmd.asOriginalType.among(ClientNoOpCommands)) {
-								rec!cmd(source, split, metadata);
+								rec!cmd(source, parsed.args, metadata);
 							}
 							break switchy;
 					}
-					default: recUnknownCommand(firstToken, metadata); break;
+					default: recUnknownCommand(parsed.verb, metadata); break;
 				}
 			}
 		}
