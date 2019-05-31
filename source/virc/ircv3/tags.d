@@ -176,13 +176,25 @@ auto parseTime(string[string] tags) {
 }
 
 auto parseTagString(string input) {
+	import std.algorithm.comparison : among;
 	IRCTags output;
 	auto splitTags = input.splitter(";").filter!(a => !a.empty);
 	foreach (tag; splitTags) {
 		auto splitKV = tag.findSplit("=");
 		auto key = splitKV[0];
 		if (!splitKV[1].empty) {
-			output[key] = splitKV[2].replaceEscape!(string, only(`\\`, `\`), only(`\:`, `;`), only(`\r`, "\r"), only(`\n`, "\n"), only(`\s`, " "));
+			auto value = splitKV[2];
+			if ((value.length > 0) && (value[$-1] == '\\')) {
+				value = value[0..$-1];
+			}
+			if (value.length > 0) {
+				for (int i = 0; i < value.length-1; i++) {
+					if ((value[i] == '\\') && !value[i+1].among('\\', ':', 'r', 'n', 's')) {
+						value = value[0 .. i] ~ value[i +1 .. $];
+					}
+				}
+			}
+			output[key] = value.replaceEscape!(string, only(`\\`, `\`), only(`\:`, `;`), only(`\r`, "\r"), only(`\n`, "\n"), only(`\s`, " "));
 		} else {
 			output[key] = "";
 		}
@@ -263,20 +275,17 @@ T replaceEscape(T, replacements...)(T input) {
 	} else {
 		T output;
 		enum findStrs = aliasSeqOf!([replacements].map!((x) => x[0].byCodeUnit));
-		if ((input.length > 0) && (input[$-1] == '\\')) {
-			input = input[0..$-1];
-		}
 		for (size_t position = 0; position < input.length; position++) {
-			final switch(input[position..$].byCodeUnit.startsWith(findStrs)) {
+			sw: final switch(input[position..$].byCodeUnit.startsWith(findStrs)) {
 				case 0:
 					output ~= input[position];
 					break;
-				foreach (index, replacement; replacements) {
+				static foreach (index, replacement; replacements) {
 					static assert(replacements[index][0].length >= 1);
 					case index+1:
 						output ~= replacements[index][1];
 						position += replacements[index][0].length-1;
-						break;
+						break sw;
 				}
 			}
 		}
