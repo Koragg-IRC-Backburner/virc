@@ -2190,10 +2190,6 @@ version(unittest) {
 	}
 	{ //account-notify - http://ircv3.net/specs/extensions/account-notify-3.1.html
 		auto client = spawnNoBufferClient();
-		//User[] privmsgUsers;
-		//client.onMessage = (const User user, const Target, const Message, const MessageMetadata) {
-		//	privmsgUsers ~= user;
-		//};
 		setupFakeConnection(client);
 		client.put(":nick!user@host ACCOUNT accountname");
 		assert(client.internalAddressList["nick"].account == "accountname");
