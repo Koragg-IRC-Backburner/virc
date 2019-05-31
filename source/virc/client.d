@@ -1625,7 +1625,7 @@ version(unittest) {
 			import virc.common : User;
 			assert(channel == "#test");
 			assert(setter == User("someoneElse"));
-			assert(timestamp == SysTime(DateTime(2017, 06, 07, 07, 53, 03), UTC()));
+			assert(timestamp == SysTime(DateTime(2017, 6, 7, 7, 53, 3), UTC()));
 		}
 		//TODO: Add 366, 324, 329 tests
 		auto lineByLine = client.output.data.lineSplitter();
@@ -1675,7 +1675,7 @@ version(unittest) {
 		client.onJoin = (const User user, const Channel chan, const MessageMetadata metadata) {
 			users ~= user;
 			channels ~= chan;
-			assert(metadata.time == SysTime(DateTime(2012,06,30,23,59,59), 419.msecs, UTC()));
+			assert(metadata.time == SysTime(DateTime(2012, 6, 30, 23, 59, 59), 419.msecs, UTC()));
 		};
 		setupFakeConnection(client);
 		client.put("@time=2012-06-30T23:59:59.419Z :John!~john@1.2.3.4 JOIN #chan");
@@ -2654,7 +2654,7 @@ version(unittest) {
 			assert(username == "someUsername");
 			assert(hostname == "someHostname");
 			assert(realname == "Some Real Name");
-			assert(connectedTime == SysTime(DateTime(2017, 07, 14, 02, 40, 00), UTC()));
+			assert(connectedTime == SysTime(DateTime(2017, 7, 14, 2, 40, 0), UTC()));
 			assert(idleTime == 1000.seconds);
 			assert(connectedTo == "example.net");
 			assert(account == "someoneElseAccount");
