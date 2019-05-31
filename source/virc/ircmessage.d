@@ -53,7 +53,7 @@ struct IRCMessage {
 		return IRCMessage(str);
 	}
 
-	auto args() @safe {
+	auto args() const @safe {
 		import virc.ircsplitter : IRCSplitter;
 		return IRCSplitter(argString);
 	}
