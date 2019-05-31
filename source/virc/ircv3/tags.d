@@ -23,7 +23,42 @@ struct IRCTags {
 	///
 	string[string] tags;
 	alias tags this;
+	this(string tagString) @safe pure {
+		tags = parseTagString(tagString).tags;
+	}
+	this(string[string] inTags) @safe pure nothrow {
+		tags = inTags;
+	}
+	string toString() const @safe pure {
+		alias escape = replaceEscape!(string, only(`\`, `\\`), only(`;`, `\:`), only("\r", `\r`), only("\n", `\n`), only(" ", `\s`));
+		import std.string : join;
+		string[] pieces;
+		foreach (key, value; tags) {
+			pieces ~= escape(key)~"="~escape(value);
+		}
+		return pieces.join(";");
+	}
 }
+
+///
+@safe unittest {
+	{
+		const tags = IRCTags("a=b;x=");
+		assert(tags["a"] == "b");
+		assert(tags["x"] == "");
+	}
+	{
+		const tags = IRCTags(["a": "b", "x": ""]);
+		assert(tags["a"] == "b");
+		assert(tags["x"] == "");
+	}
+	{
+		const tags = IRCTags(["a": "\\"]);
+		assert(tags["a"] == "\\");
+		//assert(tags.toString() == "a=\\\\");
+	}
+}
+
 /++
 +
 +/
@@ -40,7 +75,7 @@ Nullable!bool booleanTag(string tag)(IRCTags tags) {
 }
 ///
 @safe pure nothrow unittest {
-	assert(IRCTags(null).booleanTag!"test".isNull);
+	assert(IRCTags(string[string].init).booleanTag!"test".isNull);
 	assert(IRCTags(["test": "aaaaa"]).booleanTag!"test".isNull);
 	assert(!IRCTags(["test": "0"]).booleanTag!"test");
 	assert(IRCTags(["test": "1"]).booleanTag!"test");
@@ -66,7 +101,7 @@ Nullable!Type typeTag(string tag, Type)(IRCTags tags) {
 }
 ///
 @safe pure nothrow unittest {
-	assert(IRCTags(null).typeTag!("test", uint).isNull);
+	assert(IRCTags(string[string].init).typeTag!("test", uint).isNull);
 	assert(IRCTags(["test": "a"]).typeTag!("test", uint).isNull);
 	assert(IRCTags(["test": "0"]).typeTag!("test", uint) == 0);
 	assert(IRCTags(["test": "10"]).typeTag!("test", uint) == 10);
@@ -104,7 +139,7 @@ auto arrayTag(string tag, string delimiter = ",", Type = string[])(IRCTags tags)
 }
 ///
 @safe pure nothrow unittest {
-	assert(IRCTags(null).arrayTag!("test").isNull);
+	assert(IRCTags(string[string].init).arrayTag!("test").isNull);
 	assert(IRCTags(["test":""]).arrayTag!("test").empty);
 	assert(IRCTags(["test":"a"]).arrayTag!("test").front == "a");
 	assert(IRCTags(["test":"a,b"]).arrayTag!("test") == ["a", "b"]);
@@ -128,7 +163,7 @@ Nullable!Duration secondDurationTag(string tag)(IRCTags tags) {
 ///
 @safe pure nothrow unittest {
 	import core.time : hours;
-	assert(IRCTags(null).secondDurationTag!("test").isNull);
+	assert(IRCTags(string[string].init).secondDurationTag!("test").isNull);
 	assert(IRCTags(["test": "a"]).secondDurationTag!("test").isNull);
 	assert(IRCTags(["test": "3600"]).secondDurationTag!("test") == 1.hours);
 }

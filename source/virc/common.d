@@ -115,6 +115,12 @@ struct User {
 	auto host() const {
 		return mask.host;
 	}
+	///
+	auto server() const {
+		assert(mask.ident.isNull);
+		assert(mask.host.isNull);
+		return mask.nickname;
+	}
 	void toString(T)(T sink) const if (isOutputRange!(T, const(char))) {
 		mask.toString(sink);
 		if (!account.isNull) {

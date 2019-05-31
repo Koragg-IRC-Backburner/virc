@@ -12,10 +12,10 @@ alias IRCSplitter = IRCSplitter_!(RFC2812Compliance.no);
 struct IRCSplitter_(RFC2812Compliance RFC2812) {
 	private string str;
 	private size_t upper;
-	private bool blankColon = false;
+	private bool colon;
 	static if (RFC2812) {
 		size_t position;
-		size_t endOffset = 16;
+		size_t endOffset = 15;
 	}
 	///
 	this(string input) @nogc @safe pure nothrow {
@@ -24,26 +24,33 @@ struct IRCSplitter_(RFC2812Compliance RFC2812) {
 	}
 	///
 	void popFront() @nogc @safe pure nothrow {
-		if (blankColon) {
-			blankColon = false;
-		} else {
-			if ((str.length > upper) && (str[upper] == ' ')) {
-				upper++;
+		if (colon) {
+			colon = false;
+			return;
+		}
+		str = str[upper .. $];
+		upper = 0;
+		while ((str.length > 0) && str[0] == ' ') {
+			str = str[1 .. $];
+		}
+		if (str.length == 0) {
+			return;
+		}
+		if (str[0] == ':') {
+			str = str[1 .. $];
+			upper = str.length;
+			if (upper == 0) {
+				colon = true;
 			}
-			str = str[upper..$];
-			upper = 0;
-			if ((str.length > 0) && (str[0] == ':')) {
-				str = str[1..$];
+		} else {
+			foreach (i, char c; str) {
+				if (c == ' ') {
+					upper = i;
+					break;
+				}
+			}
+			if (upper == 0) {
 				upper = str.length;
-				if (str.length == 0) {
-					blankColon = true;
-				}
-			} else {
-				foreach (index, chr; str) {
-					if (chr == ' ')
-						break;
-					upper = index+1;
-				}
 			}
 		}
 		static if (RFC2812) {
@@ -54,18 +61,18 @@ struct IRCSplitter_(RFC2812Compliance RFC2812) {
 		}
 	}
 	///
-	auto empty() {
+	auto empty() const {
 		static if (RFC2812) {
 			if (position > endOffset) {
 				return true;
 			}
 		}
-		return str.length == 0 && !blankColon;
+		return !colon && str.length == 0;
 	}
 	///
-	auto front() in {
-		assert(!empty);
-	} body {
+	auto front() const @nogc nothrow
+		in(!empty)
+	{
 		return str[0..upper];
 	}
 	///
@@ -78,10 +85,13 @@ struct IRCSplitter_(RFC2812Compliance RFC2812) {
 	import std.algorithm : equal;
 	import std.range : only;
 	assert(IRCSplitter("").empty);
+	assert(IRCSplitter(" ").empty);
 	assert(IRCSplitter("test").equal(only("test")));
 	assert(IRCSplitter("test word2").equal(only("test", "word2")));
+	assert(IRCSplitter("test  word2").equal(only("test", "word2")));
+	assert(IRCSplitter("test  :word2").equal(only("test", "word2")));
 	assert(IRCSplitter("test :word2 word3").equal(only("test", "word2 word3")));
 	assert(IRCSplitter("test :word2 :word3").equal(only("test", "word2 :word3")));
 	assert(IRCSplitter(":").equal(only("")));
-	assert(IRCSplitter_!(RFC2812Compliance.yes)("COMMAND word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12 word13 word14 word15 word16 word17").equal(only("COMMAND", "word1", "word2", "word3", "word4", "word5", "word6", "word7", "word8", "word9", "word10", "word11", "word12", "word13", "word14", "word15 word16 word17")));
+	assert(IRCSplitter_!(RFC2812Compliance.yes)("word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12 word13 word14 word15 word16 word17").equal(only("word1", "word2", "word3", "word4", "word5", "word6", "word7", "word8", "word9", "word10", "word11", "word12", "word13", "word14", "word15 word16 word17")));
 }
