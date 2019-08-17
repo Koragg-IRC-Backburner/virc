@@ -59,7 +59,7 @@ struct InternalAddressList {
 		return users[name];
 	}
 	///
-	auto opIn_r(string name) const {
+	auto opBinaryRight(string op : "in")(string name) const {
 		return name in users;
 	}
 	auto list() const {
