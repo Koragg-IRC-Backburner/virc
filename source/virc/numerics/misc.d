@@ -39,12 +39,12 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_TOPICWHOTIME, T)(T input) {
 	import std.range : only, takeNone;
 	{
 		immutable result = parseNumeric!(Numeric.RPL_TOPICWHOTIME)(only("Someone", "#test", "Another!id@hostmask", "1496101944"));
-		assert(result.channel == "#test");
-		assert(result.setter.nickname == "Another");
-		assert(result.setter.ident == "id");
-		assert(result.setter.host == "hostmask");
+		assert(result.get.channel == "#test");
+		assert(result.get.setter.nickname == "Another");
+		assert(result.get.setter.ident == "id");
+		assert(result.get.setter.host == "hostmask");
 		static immutable time = SysTime(DateTime(2017, 05, 29, 23, 52, 24), UTC());
-		assert(result.timestamp == time);
+		assert(result.get.timestamp == time);
 	}
 	{
 		immutable badResult = parseNumeric!(Numeric.RPL_TOPICWHOTIME)(takeNone(only("")));
@@ -90,8 +90,8 @@ auto parseNumeric(Numeric numeric : Numeric.ERR_NOPRIVS, T)(T input) {
 	import std.range : only, takeNone;
 	{
 		immutable result = parseNumeric!(Numeric.ERR_NOPRIVS)(only("Someone", "rehash", "Insufficient oper privileges."));
-		assert(result.priv == "rehash");
-		assert(result.message == "Insufficient oper privileges.");
+		assert(result.get.priv == "rehash");
+		assert(result.get.message == "Insufficient oper privileges.");
 	}
 	{
 		immutable badResult = parseNumeric!(Numeric.ERR_NOPRIVS)(takeNone(only("")));
@@ -118,7 +118,7 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISSECURE, T)(T input) {
 	import std.range : only, takeNone;
 	{
 		auto reply = parseNumeric!(Numeric.RPL_WHOISSECURE)(only("someone", "whoisuser", "is using a secure connection"));
-		assert(reply.user == User("whoisuser"));
+		assert(reply.get.user == User("whoisuser"));
 	}
 	{
 		immutable reply = parseNumeric!(Numeric.RPL_WHOISSECURE)(only("someone", "whoisuser"));
@@ -149,7 +149,7 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISREGNICK, T)(T input) {
 	import std.range : only, takeNone;
 	{
 		auto reply = parseNumeric!(Numeric.RPL_WHOISREGNICK)(only("someone", "whoisuser", "is a registered nick"));
-		assert(reply.user == User("whoisuser"));
+		assert(reply.get.user == User("whoisuser"));
 	}
 	{
 		immutable reply = parseNumeric!(Numeric.RPL_WHOISREGNICK)(only("someone", "whoisuser"));
@@ -189,8 +189,8 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISACCOUNT, T)(T input) {
 	import std.range : only, takeNone;
 	{
 		auto reply = parseNumeric!(Numeric.RPL_WHOISACCOUNT)(only("someone", "whoisuser", "accountname", "is logged in as"));
-		assert(reply.user == User("whoisuser"));
-		assert(reply.account == "accountname");
+		assert(reply.get.user == User("whoisuser"));
+		assert(reply.get.account == "accountname");
 	}
 	{
 		immutable reply = parseNumeric!(Numeric.RPL_WHOISACCOUNT)(only("someone", "whoisuser", "accountname"));

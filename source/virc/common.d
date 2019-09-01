@@ -125,7 +125,7 @@ struct User {
 		mask.toString(sink);
 		if (!account.isNull) {
 			put(sink, " (");
-			put(sink, account);
+			put(sink, account.get);
 			put(sink, ")");
 		}
 	}

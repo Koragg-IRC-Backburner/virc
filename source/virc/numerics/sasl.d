@@ -29,7 +29,7 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LOGGEDIN, T)(T input) {
 	if (input.empty) {
 		return user.init;
 	}
-	user.account = input.front;
+	user.get.account = input.front;
 	return user;
 }
 ///
@@ -37,10 +37,10 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LOGGEDIN, T)(T input) {
 	import std.range : only, takeNone;
 	{
 		immutable logon = parseNumeric!(Numeric.RPL_LOGGEDIN)(only("test", "someone!someIdent@example.net", "some_account", "Well hello there"));
-		assert(logon.mask.nickname == "someone");
-		assert(logon.mask.ident == "someIdent");
-		assert(logon.mask.host == "example.net");
-		assert(logon.account == "some_account");
+		assert(logon.get.mask.nickname == "someone");
+		assert(logon.get.mask.ident == "someIdent");
+		assert(logon.get.mask.host == "example.net");
+		assert(logon.get.account == "some_account");
 	}
 	{
 		immutable logon = parseNumeric!(Numeric.RPL_LOGGEDIN)(takeNone(only("")));
@@ -79,10 +79,10 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_LOGGEDOUT, T)(T input) {
 	import std.range : only, takeNone;
 	{
 		immutable logon = parseNumeric!(Numeric.RPL_LOGGEDOUT)(only("test", "someone!someIdent@example.net", "Well hello there"));
-		assert(logon.mask.nickname == "someone");
-		assert(logon.mask.ident == "someIdent");
-		assert(logon.mask.host == "example.net");
-		assert(logon.account.isNull);
+		assert(logon.get.mask.nickname == "someone");
+		assert(logon.get.mask.ident == "someIdent");
+		assert(logon.get.mask.host == "example.net");
+		assert(logon.get.account.isNull);
 	}
 	{
 		immutable logon = parseNumeric!(Numeric.RPL_LOGGEDOUT)(takeNone(only("")));

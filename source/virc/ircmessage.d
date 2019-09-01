@@ -80,7 +80,7 @@ struct IRCMessage {
 		import std.conv : text;
 		string result;
 		auto tagString = tags.toString();
-		auto source = sourceUser.text;
+		auto source = sourceUser.get.text;
 		result.reserve(tagString.length + 2 + source.length + 2 + verb.length + 1 + argString.length + 1);
 		if (tagString != "") {
 			result ~= "@";
@@ -118,19 +118,19 @@ struct IRCMessage {
 	}
 	with(IRCMessage(":src AWAY")) {
 		assert(verb == "AWAY");
-		assert(sourceUser == User("src"));
+		assert(sourceUser.get == User("src"));
 		assert(args.empty);
 	}
 	with(IRCMessage(":src AWAY :")) {
 		assert(verb == "AWAY");
-		assert(sourceUser == User("src"));
+		assert(sourceUser.get == User("src"));
 		assert(args.equal(only("")));
 	}
 	{
 		auto msg1 = IRCMessage(":coolguy foo bar baz asdf");
 		assert(msg1 == IRCMessage(":coolguy foo bar baz :asdf"));
 		with(msg1) {
-			assert(sourceUser == User("coolguy"));
+			assert(sourceUser.get == User("coolguy"));
 			assert(verb == "foo");
 			assert(args.equal(only("bar", "baz", "asdf")));
 		}
@@ -148,27 +148,27 @@ struct IRCMessage {
 		assert(args.equal(only("bar", "baz", ":asdf")));
 	}
 	with(IRCMessage(":coolguy foo bar baz :asdf quux")) {
-		assert(sourceUser == User("coolguy"));
+		assert(sourceUser.get == User("coolguy"));
 		assert(verb == "foo");
 		assert(args.equal(only("bar", "baz", "asdf quux")));
 	}
 	with(IRCMessage(":coolguy foo bar baz :  asdf quux ")) {
-		assert(sourceUser == User("coolguy"));
+		assert(sourceUser.get == User("coolguy"));
 		assert(verb == "foo");
 		assert(args.equal(only("bar", "baz", "  asdf quux ")));
 	}
 	with(IRCMessage(":coolguy PRIVMSG bar :lol :) ")) {
-		assert(sourceUser == User("coolguy"));
+		assert(sourceUser.get == User("coolguy"));
 		assert(verb == "PRIVMSG");
 		assert(args.equal(only("bar", "lol :) ")));
 	}
 	with(IRCMessage(":coolguy foo bar baz :")) {
-		assert(sourceUser == User("coolguy"));
+		assert(sourceUser.get == User("coolguy"));
 		assert(verb == "foo");
 		assert(args.equal(only("bar", "baz", "")));
 	}
 	with(IRCMessage(":coolguy foo bar baz :  ")) {
-		assert(sourceUser == User("coolguy"));
+		assert(sourceUser.get == User("coolguy"));
 		assert(verb == "foo");
 		assert(args.equal(only("bar", "baz", "  ")));
 	}
@@ -176,13 +176,13 @@ struct IRCMessage {
 		auto msg1 = IRCMessage(":coolguy foo b\tar baz");
 		assert(msg1 == IRCMessage(":coolguy foo b\tar :baz"));
 		with(msg1) {
-			assert(sourceUser == User("coolguy"));
+			assert(sourceUser.get == User("coolguy"));
 			assert(verb == "foo");
 			assert(args.equal(only("b\tar", "baz")));
 		}
 	}
 	with(IRCMessage("@asd :coolguy foo bar baz :  ")) {
-		assert(sourceUser == User("coolguy"));
+		assert(sourceUser.get == User("coolguy"));
 		assert(verb == "foo");
 		assert(args.equal(["bar", "baz", "  "]));
 		assert(tags == ["asd": ""]);
@@ -209,7 +209,7 @@ struct IRCMessage {
 		}
 	}
 	with(IRCMessage("@c;h=;a=b :quux ab cd")) {
-		assert(sourceUser == User("quux"));
+		assert(sourceUser.get == User("quux"));
 		assert(verb == "ab");
 		assert(args.equal(["cd"]));
 		assert(tags["c"] == "");
@@ -217,42 +217,42 @@ struct IRCMessage {
 		assert(tags["a"] == "b");
 	}
 	with(IRCMessage(":src JOIN #chan")) {
-		assert(sourceUser == User("src"));
+		assert(sourceUser.get == User("src"));
 		assert(verb == "JOIN");
 		assert(args.equal(["#chan"]));
 	}
 	with(IRCMessage(":src JOIN :#chan")) {
-		assert(sourceUser == User("src"));
+		assert(sourceUser.get == User("src"));
 		assert(verb == "JOIN");
 		assert(args.equal(["#chan"]));
 	}
 	with(IRCMessage(":src AWAY")) {
-		assert(sourceUser == User("src"));
+		assert(sourceUser.get == User("src"));
 		assert(verb == "AWAY");
 		assert(args.empty);
 	}
 	with(IRCMessage(":src AWAY ")) {
-		assert(sourceUser == User("src"));
+		assert(sourceUser.get == User("src"));
 		assert(verb == "AWAY");
 		assert(args.empty);
 	}
 	with(IRCMessage(":cool\tguy foo bar baz")) {
-		assert(sourceUser == User("cool\tguy"));
+		assert(sourceUser.get == User("cool\tguy"));
 		assert(verb == "foo");
 		assert(args.equal(only("bar", "baz")));
 	}
 	with(IRCMessage(":coolguy!ag@net\x035w\x03ork.admin PRIVMSG foo :bar baz")) {
-		assert(sourceUser == User("coolguy!ag@net\x035w\x03ork.admin"));
+		assert(sourceUser.get == User("coolguy!ag@net\x035w\x03ork.admin"));
 		assert(verb == "PRIVMSG");
 		assert(args.equal(only("foo", "bar baz")));
 	}
 	with(IRCMessage(":coolguy!~ag@n\x02et\x0305w\x0fork.admin PRIVMSG foo :bar baz")) {
-		assert(sourceUser == User("coolguy!~ag@n\x02et\x0305w\x0fork.admin"));
+		assert(sourceUser.get == User("coolguy!~ag@n\x02et\x0305w\x0fork.admin"));
 		assert(verb == "PRIVMSG");
 		assert(args.equal(only("foo", "bar baz")));
 	}
 	with(IRCMessage("@tag1=value1;tag2;vendor1/tag3=value2;vendor2/tag4 :irc.example.com COMMAND param1 param2 :param3 param3")) {
-		assert(sourceUser == User("irc.example.com"));
+		assert(sourceUser.get == User("irc.example.com"));
 		assert(verb == "COMMAND");
 		assert(args.equal(only("param1", "param2", "param3 param3")));
 		assert(tags["tag1"] == "value1");
@@ -261,7 +261,7 @@ struct IRCMessage {
 		assert(tags["vendor2/tag4"] == "");
 	}
 	with(IRCMessage(":irc.example.com COMMAND param1 param2 :param3 param3")) {
-		assert(sourceUser == User("irc.example.com"));
+		assert(sourceUser.get == User("irc.example.com"));
 		assert(verb == "COMMAND");
 		assert(args.equal(only("param1", "param2", "param3 param3")));
 	}
@@ -279,17 +279,17 @@ struct IRCMessage {
 		assert(tags["foo"] == "\\\\;\\s \r\n");
 	}
 	with(IRCMessage(":gravel.mozilla.org 432  #momo :Erroneous Nickname: Illegal characters")) {
-		assert(sourceUser == User("gravel.mozilla.org"));
+		assert(sourceUser.get == User("gravel.mozilla.org"));
 		assert(verb == "432");
 		assert(args.equal(only("#momo", "Erroneous Nickname: Illegal characters")));
 	}
 	with(IRCMessage(":gravel.mozilla.org MODE #tckk +n ")) {
-		assert(sourceUser == User("gravel.mozilla.org"));
+		assert(sourceUser.get == User("gravel.mozilla.org"));
 		assert(verb == "MODE");
 		assert(args.equal(only("#tckk", "+n")));
 	}
 	with(IRCMessage(":services.esper.net MODE #foo-bar +o foobar  ")) {
-		assert(sourceUser == User("services.esper.net"));
+		assert(sourceUser.get == User("services.esper.net"));
 		assert(verb == "MODE");
 		assert(args.equal(only("#foo-bar", "+o", "foobar")));
 	}
@@ -314,14 +314,14 @@ struct IRCMessage {
 		assert(tags["tag1"] == "value1\\");
 	}
 	with(IRCMessage(":remote!foo@example.com PRIVMSG local :I like turtles.")) {
-		assert(sourceUser == User("remote!foo@example.com"));
+		assert(sourceUser.get == User("remote!foo@example.com"));
 		assert(verb == "PRIVMSG");
 		assert(args.equal(["local", "I like turtles."]));
 		assert(tags.length == 0);
 	}
 	assert(IRCMessage(IRCMessage(":remote!foo@example.com PRIVMSG local :I like turtles.").toString()) == IRCMessage(":remote!foo@example.com PRIVMSG local :I like turtles."));
 	with(IRCMessage("@aaa=bbb;ccc;example.com/ddd=eee :nick!ident@host.com PRIVMSG me :Hello")) {
-		assert(sourceUser == User("nick!ident@host.com"));
+		assert(sourceUser.get == User("nick!ident@host.com"));
 		assert(verb == "PRIVMSG");
 		assert(args.equal(["me", "Hello"]));
 		assert(tags["aaa"] == "bbb");
@@ -337,7 +337,7 @@ struct IRCMessage {
 		assert(msg.toString() == ":server HELLO :WORLD");
 	}
 	with(IRCMessage(":example.com                   PRIVMSG              local           :I like turtles.")) {
-		assert(sourceUser == User("example.com"));
+		assert(sourceUser.get == User("example.com"));
 		assert(verb == "PRIVMSG");
 		assert(args.equal(["local", "I like turtles."]));
 		assert(tags.length == 0);

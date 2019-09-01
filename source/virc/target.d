@@ -81,7 +81,7 @@ struct Target {
 			if (prefixes.isNull) {
 				prefixes = "";
 			}
-			prefixes ~= tmpStr.byDchar.front;
+			prefixes.get ~= tmpStr.byDchar.front;
 			tmpStr.popFront();
 		}
 		if (!tmpStr.empty && channelPrefixes.byDchar.canFind(tmpStr.byDchar.front)) {
@@ -95,9 +95,9 @@ struct Target {
 	+/
 	auto targetText() const {
 		if (!channel.isNull) {
-			return channel.name;
+			return channel.get.name;
 		} else if (!user.isNull) {
-			return user.nickname;
+			return user.get.nickname;
 		}
 		assert(0, "No target specified");
 	}

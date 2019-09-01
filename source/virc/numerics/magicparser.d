@@ -20,7 +20,7 @@ template autoParse(T...) {
 		static foreach (Type; T) {{
 			auto attempt = tryParse!Type(input);
 			if (!attempt.isNull) {
-				output = MostCommon!T(attempt);
+				output = MostCommon!T(attempt.get);
 				return output;
 			}
 		}}
@@ -46,7 +46,7 @@ Nullable!T tryParse(T, Range)(Range input) if (isInputRange!Range && is(ElementT
 		}
 		static if (is(MemberType == SysTime)) {
 			try {
-				__traits(getMember, output, member) = SysTime.fromUnixTime(input.front.to!ulong, utc);
+				__traits(getMember, output.get, member) = SysTime.fromUnixTime(input.front.to!ulong, utc);
 			} catch (Exception) {
 				static if (isOptional!(T, member)) {
 					continue;
@@ -56,7 +56,7 @@ Nullable!T tryParse(T, Range)(Range input) if (isInputRange!Range && is(ElementT
 			}
 		} else static if (is(MemberType == Duration)) {
 			try {
-				__traits(getMember, output, member) = input.front.to!ulong.seconds;
+				__traits(getMember, output.get, member) = input.front.to!ulong.seconds;
 			} catch (Exception) {
 				static if (isOptional!(T, member)) {
 					continue;
@@ -65,7 +65,7 @@ Nullable!T tryParse(T, Range)(Range input) if (isInputRange!Range && is(ElementT
 				}
 			}
 		} else {
-			__traits(getMember, output, member) = input.front.to!MemberType;
+			__traits(getMember, output.get, member) = input.front.to!MemberType;
 		}
 		input.popFront();
 	}

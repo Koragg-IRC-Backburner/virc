@@ -77,8 +77,8 @@ Nullable!bool booleanTag(string tag)(IRCTags tags) {
 @safe pure nothrow unittest {
 	assert(IRCTags(string[string].init).booleanTag!"test".isNull);
 	assert(IRCTags(["test": "aaaaa"]).booleanTag!"test".isNull);
-	assert(!IRCTags(["test": "0"]).booleanTag!"test");
-	assert(IRCTags(["test": "1"]).booleanTag!"test");
+	assert(!IRCTags(["test": "0"]).booleanTag!"test".get);
+	assert(IRCTags(["test": "1"]).booleanTag!"test".get);
 }
 /++
 +
@@ -113,7 +113,7 @@ Nullable!Type typeTag(string tag, Type)(IRCTags tags) {
 			val = str[0];
 		}
 	}
-	assert(IRCTags(["test": "words"]).typeTag!("test", Something).val == 'w');
+	assert(IRCTags(["test": "words"]).typeTag!("test", Something).get.val == 'w');
 }
 /++
 +
@@ -128,7 +128,7 @@ auto arrayTag(string tag, string delimiter = ",", Type = string[])(IRCTags tags)
 		output = [];
 		foreach (element; split) {
 			try {
-				output ~= element.to!(ElementType!Type);
+				output.get ~= element.to!(ElementType!Type);
 			} catch (Exception) { //Malformed, reset everything
 				output = output.init;
 				break;
@@ -141,7 +141,7 @@ auto arrayTag(string tag, string delimiter = ",", Type = string[])(IRCTags tags)
 @safe pure nothrow unittest {
 	assert(IRCTags(string[string].init).arrayTag!("test").isNull);
 	assert(IRCTags(["test":""]).arrayTag!("test").empty);
-	assert(IRCTags(["test":"a"]).arrayTag!("test").front == "a");
+	assert(IRCTags(["test":"a"]).arrayTag!("test").get.front == "a");
 	assert(IRCTags(["test":"a,b"]).arrayTag!("test") == ["a", "b"]);
 	assert(IRCTags(["test":"a:b"]).arrayTag!("test", ":") == ["a", "b"]);
 	assert(IRCTags(["test":"9,1"]).arrayTag!("test", ",", uint[]) == [9, 1]);

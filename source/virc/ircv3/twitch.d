@@ -89,7 +89,7 @@ struct TwitchEmote {
 		assert(parsed.tags.displayName == "TWITCH_UserNaME");
 		//assert(parsed.tags.badges.equal(only("global_mod", "turbo")));
 		assert(parsed.tags.color == "#0D4200");
-		assert(parsed.tags.emotes.equal(only(TwitchEmote(25, 0, 4), TwitchEmote(25, 12, 16), TwitchEmote(1902, 6, 10))));
+		assert(parsed.tags.emotes.get.equal(only(TwitchEmote(25, 0, 4), TwitchEmote(25, 12, 16), TwitchEmote(1902, 6, 10))));
 		assert(parsed.tags.subscriber == false);
 		assert(parsed.tags.turbo == true);
 		assert(parsed.tags.roomID == "1337");
@@ -130,7 +130,7 @@ struct TwitchEmote {
 	}
 	{
 		auto parsed = IRCMessage("@badges=staff/1,broadcaster/1,turbo/1;color=#008000;display-name=TWITCH_UserName;emotes=;mod=0;msg-id=resub;msg-param-months=6;room-id=1337;subscriber=1;system-msg=TWITCH_UserName\\shas\\ssubscribed\\sfor\\s6\\smonths!;login=twitch_username;turbo=1;user-id=1337;user-type=staff :tmi.twitch.tv USERNOTICE #channel :Great stream -- keep it up!");
-		assert(parsed.tags.emotes.empty);
+		assert(parsed.tags.emotes.get.empty);
 		assert(parsed.tags.color == "#008000");
 		assert(parsed.tags.displayName == "TWITCH_UserName");
 		assert(parsed.tags.systemMsg == "TWITCH_UserName has subscribed for 6 months!");
@@ -144,7 +144,7 @@ struct TwitchEmote {
 	}
 	{
 		auto parsed = IRCMessage("@badges=staff/1,broadcaster/1,turbo/1;color=#008000;display-name=TWITCH_UserName;emotes=;mod=0;msg-id=resub;msg-param-months=6;room-id=1337;subscriber=1;system-msg=TWITCH_UserName\\shas\\ssubscribed\\sfor\\s6\\smonths!;login=twitch_username;turbo=1;user-id=1337;user-type=staff :tmi.twitch.tv USERNOTICE #channel");
-		assert(parsed.tags.emotes.empty);
+		assert(parsed.tags.emotes.get.empty);
 		assert(parsed.tags.color == "#008000");
 		assert(parsed.tags.displayName == "TWITCH_UserName");
 		assert(parsed.tags.systemMsg == "TWITCH_UserName has subscribed for 6 months!");

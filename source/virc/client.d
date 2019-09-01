@@ -465,13 +465,13 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 				}
 				if ("account" in parsed.tags) {
 					if (!parsed.sourceUser.isNull) {
-						parsed.sourceUser.account = parsed.tags["account"];
+						parsed.sourceUser.get.account = parsed.tags["account"];
 					}
 				}
 				if (!parsed.sourceUser.isNull) {
-					internalAddressList.update(parsed.sourceUser);
-					if (parsed.sourceUser.nickname in internalAddressList) {
-						parsed.sourceUser = internalAddressList[parsed.sourceUser.nickname];
+					internalAddressList.update(parsed.sourceUser.get);
+					if (parsed.sourceUser.get.nickname in internalAddressList) {
+						parsed.sourceUser = internalAddressList[parsed.sourceUser.get.nickname];
 					}
 				}
 
@@ -668,7 +668,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void register() {
 		assert(!isRegistered);
 		if (!password.isNull) {
-			pass(password);
+			pass(password.get);
 		}
 		changeNickname(nickname);
 		user(username, realname);
@@ -848,7 +848,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	private void rec(string cmd : RFC1459Commands.kick)(IRCMessage message, const MessageMetadata metadata) {
 		auto split = message.args;
-		auto source = message.sourceUser;
+		auto source = message.sourceUser.get;
 		if (split.empty) {
 			return;
 		}
@@ -868,11 +868,11 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		tryCall!"onKick"(source, channel, victim, msg, metadata);
 	}
 	private void rec(string cmd : RFC1459Commands.wallops)(IRCMessage message, const MessageMetadata metadata) {
-		tryCall!"onWallops"(message.sourceUser, message.args.front, metadata);
+		tryCall!"onWallops"(message.sourceUser.get, message.args.front, metadata);
 	}
 	private void rec(string cmd : RFC1459Commands.mode)(IRCMessage message, const MessageMetadata metadata) {
 		auto split = message.args;
-		auto source = message.sourceUser;
+		auto source = message.sourceUser.get;
 		auto target = Target(split.front, server.iSupport.statusMessage, server.iSupport.channelTypes);
 		split.popFront();
 		ModeType[char] modeTypes;
@@ -889,7 +889,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void rec(string cmd : RFC1459Commands.join)(IRCMessage message, const MessageMetadata metadata) {
 		auto split = message.args;
 		auto channel = Channel(split.front);
-		auto source = message.sourceUser;
+		auto source = message.sourceUser.get;
 		split.popFront();
 		if (isEnabled(Capability("extended-join"))) {
 			if (split.front != "*") {
@@ -912,7 +912,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		import std.algorithm.mutation : remove;
 		import std.algorithm.searching : countUntil;
 		auto split = message.args;
-		auto user = message.sourceUser;
+		auto user = message.sourceUser.get;
 		auto channel = Channel(split.front);
 		split.popFront();
 		string msg;
@@ -929,7 +929,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	private void rec(string cmd : RFC1459Commands.notice)(IRCMessage message, const MessageMetadata metadata) {
 		auto split = message.args;
-		auto user = message.sourceUser;
+		auto user = message.sourceUser.get;
 		auto target = Target(split.front, server.iSupport.statusMessage, server.iSupport.channelTypes);
 		split.popFront();
 		auto msg = Message(split.front, MessageType.notice);
@@ -937,7 +937,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	private void rec(string cmd : RFC1459Commands.privmsg)(IRCMessage message, const MessageMetadata metadata) {
 		auto split = message.args;
-		auto user = message.sourceUser;
+		auto user = message.sourceUser.get;
 		auto target = Target(split.front, server.iSupport.statusMessage, server.iSupport.channelTypes);
 		split.popFront();
 		auto msg = Message(split.front, MessageType.privmsg);
@@ -979,8 +979,8 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		import virc.numerics.sasl : parseNumeric;
 		if (isAuthenticating || isAuthenticated) {
 			auto parsed = parseNumeric!(Numeric.RPL_LOGGEDIN)(message.args);
-			auto user = User(parsed.mask);
-			user.account = parsed.account;
+			auto user = User(parsed.get.mask);
+			user.account = parsed.get.account;
 			internalAddressList.update(user);
 		}
 	}
@@ -1024,7 +1024,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void rec(string cmd : Numeric.RPL_ISON)(IRCMessage message, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.RPL_ISON)(message.args);
 		if (!reply.isNull) {
-			foreach (online; reply.online) {
+			foreach (online; reply.get.online) {
 				internalAddressList.update(User(online));
 				tryCall!"onIsOn"(internalAddressList[online], metadata);
 			}
@@ -1056,7 +1056,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	private void rec(string cmd : Numeric.RPL_VERSION)(IRCMessage message, const MessageMetadata metadata) {
 		auto versionReply = parseNumeric!(Numeric.RPL_VERSION)(message.args);
-		tryCall!"onVersionReply"(versionReply, metadata);
+		tryCall!"onVersionReply"(versionReply.get, metadata);
 	}
 	private void rec(string cmd : Numeric.RPL_LOGON)(IRCMessage message, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.RPL_LOGON)(message.args);
@@ -1065,7 +1065,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void rec(string cmd : IRCV3Commands.chghost)(IRCMessage message, const MessageMetadata metadata) {
 		User target;
 		auto split = message.args;
-		auto user = message.sourceUser;
+		auto user = message.sourceUser.get;
 		target.mask.nickname = user.nickname;
 		target.mask.ident = split.front;
 		split.popFront();
@@ -1076,32 +1076,32 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void rec(string cmd : Numeric.RPL_TOPICWHOTIME)(IRCMessage message, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.RPL_TOPICWHOTIME)(message.args);
 		if (!reply.isNull) {
-			tryCall!"onTopicWhoTimeReply"(reply, metadata);
+			tryCall!"onTopicWhoTimeReply"(reply.get, metadata);
 		}
 	}
 	private void rec(string cmd : Numeric.RPL_AWAY)(IRCMessage message, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.RPL_AWAY)(message.args);
 		if (!reply.isNull) {
-			tryCall!"onOtherUserAwayReply"(reply.user, reply.message, metadata);
+			tryCall!"onOtherUserAwayReply"(reply.get.user, reply.get.message, metadata);
 		}
 	}
 	private void rec(string cmd : Numeric.RPL_UNAWAY)(IRCMessage message, const MessageMetadata metadata) {
-		tryCall!"onUnAwayReply"(message.sourceUser, metadata);
+		tryCall!"onUnAwayReply"(message.sourceUser.get, metadata);
 		_isAway = false;
 	}
 	private void rec(string cmd : Numeric.RPL_NOWAWAY)(IRCMessage message, const MessageMetadata metadata) {
-		tryCall!"onAwayReply"(message.sourceUser, metadata);
+		tryCall!"onAwayReply"(message.sourceUser.get, metadata);
 		_isAway = true;
 	}
 	private void rec(string cmd : Numeric.RPL_TOPIC)(IRCMessage message, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.RPL_TOPIC)(message.args);
 		if (!reply.isNull) {
-			tryCall!"onTopicReply"(reply, metadata);
+			tryCall!"onTopicReply"(reply.get, metadata);
 		}
 	}
 	private void rec(string cmd : RFC1459Commands.topic)(IRCMessage message, const MessageMetadata metadata) {
 		auto split = message.args;
-		auto user = message.sourceUser;
+		auto user = message.sourceUser.get;
 		if (split.empty) {
 			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
 			return;
@@ -1118,7 +1118,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void rec(string cmd : RFC1459Commands.nick)(IRCMessage message, const MessageMetadata metadata) {
 		auto split = message.args;
 		if (!split.empty) {
-			auto old = message.sourceUser;
+			auto old = message.sourceUser.get;
 			auto newNick = split.front;
 			internalAddressList.renameTo(old, newNick);
 			foreach (ref channel; channels) {
@@ -1135,7 +1135,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	private void rec(string cmd : RFC1459Commands.invite)(IRCMessage message, const MessageMetadata metadata) {
 		auto split = message.args;
-		auto inviter = message.sourceUser;
+		auto inviter = message.sourceUser.get;
 		if (!split.empty) {
 			User invited;
 			if (split.front in internalAddressList) {
@@ -1152,7 +1152,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	private void rec(string cmd : RFC1459Commands.quit)(IRCMessage message, const MessageMetadata metadata) {
 		auto split = message.args;
-		auto user = message.sourceUser;
+		auto user = message.sourceUser.get;
 		string msg;
 		if (!split.empty) {
 			msg = split.front;
@@ -1170,25 +1170,25 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	}
 	private void rec(string cmd : Numeric.RPL_NAMREPLY)(IRCMessage message, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.RPL_NAMREPLY)(message.args);
-		if (reply.channel in channels) {
-			foreach (user; reply.users) {
-				channels[reply.channel].users.update(User(user));
+		if (reply.get.channel in channels) {
+			foreach (user; reply.get.users) {
+				channels[reply.get.channel].users.update(User(user));
 			}
 		}
 		if (!reply.isNull) {
-			tryCall!"onNamesReply"(reply, metadata);
+			tryCall!"onNamesReply"(reply.get, metadata);
 		}
 	}
 	private void rec(string cmd : Numeric.RPL_REHASHING)(IRCMessage message, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.RPL_REHASHING)(message.args);
 		if (!reply.isNull) {
-			tryCall!"onServerRehashing"(reply, metadata);
+			tryCall!"onServerRehashing"(reply.get, metadata);
 		}
 	}
 	private void rec(string cmd : Numeric.ERR_NOPRIVS)(IRCMessage message, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.ERR_NOPRIVS)(message.args);
 		if (!reply.isNull) {
-			tryCall!"onError"(IRCError(ErrorType.noPrivs, reply.priv), metadata);
+			tryCall!"onError"(IRCError(ErrorType.noPrivs, reply.get.priv), metadata);
 		} else {
 			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
 		}
@@ -1199,7 +1199,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void rec(string cmd : Numeric.ERR_NOSUCHSERVER)(IRCMessage message, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.ERR_NOSUCHSERVER)(message.args);
 		if (!reply.isNull) {
-			tryCall!"onError"(IRCError(ErrorType.noSuchServer, reply.serverMask), metadata);
+			tryCall!"onError"(IRCError(ErrorType.noSuchServer, reply.get.serverMask), metadata);
 		} else {
 			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
 		}
@@ -1207,9 +1207,9 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void rec(string cmd : Numeric.RPL_ENDOFWHOIS)(IRCMessage message, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.RPL_ENDOFWHOIS)(message.args);
 		if (!reply.isNull) {
-			if (reply.user.nickname in whoisCache) {
-				tryCall!"onWhois"(reply.user, whoisCache[reply.user.nickname]);
-				whoisCache.remove(reply.user.nickname);
+			if (reply.get.user.nickname in whoisCache) {
+				tryCall!"onWhois"(reply.get.user, whoisCache[reply.get.user.nickname]);
+				whoisCache.remove(reply.get.user.nickname);
 			} else {
 				tryCall!"onError"(IRCError(ErrorType.unexpected, "empty WHOIS data returned"), metadata);
 			}
@@ -1220,12 +1220,12 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void rec(string cmd : Numeric.RPL_WHOISUSER)(IRCMessage message, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.RPL_WHOISUSER)(message.args);
 		if (!reply.isNull) {
-			if (reply.user.nickname !in whoisCache) {
-				whoisCache[reply.user.nickname] = WhoisResponse();
+			if (reply.get.user.nickname !in whoisCache) {
+				whoisCache[reply.get.user.nickname] = WhoisResponse();
 			}
-			whoisCache[reply.user.nickname].username = reply.username;
-			whoisCache[reply.user.nickname].hostname = reply.hostname;
-			whoisCache[reply.user.nickname].realname = reply.realname;
+			whoisCache[reply.get.user.nickname].username = reply.get.username;
+			whoisCache[reply.get.user.nickname].hostname = reply.get.hostname;
+			whoisCache[reply.get.user.nickname].realname = reply.get.realname;
 		} else {
 			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
 		}
@@ -1233,10 +1233,10 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void rec(string cmd : Numeric.RPL_WHOISSECURE)(IRCMessage message, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.RPL_WHOISSECURE)(message.args);
 		if (!reply.isNull) {
-			if (reply.user.nickname !in whoisCache) {
-				whoisCache[reply.user.nickname] = WhoisResponse();
+			if (reply.get.user.nickname !in whoisCache) {
+				whoisCache[reply.get.user.nickname] = WhoisResponse();
 			}
-			whoisCache[reply.user.nickname].isSecure = true;
+			whoisCache[reply.get.user.nickname].isSecure = true;
 		} else {
 			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
 		}
@@ -1244,10 +1244,10 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void rec(string cmd : Numeric.RPL_WHOISOPERATOR)(IRCMessage message, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.RPL_WHOISOPERATOR)(message.args);
 		if (!reply.isNull) {
-			if (reply.user.nickname !in whoisCache) {
-				whoisCache[reply.user.nickname] = WhoisResponse();
+			if (reply.get.user.nickname !in whoisCache) {
+				whoisCache[reply.get.user.nickname] = WhoisResponse();
 			}
-			whoisCache[reply.user.nickname].isOper = true;
+			whoisCache[reply.get.user.nickname].isOper = true;
 		} else {
 			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
 		}
@@ -1255,10 +1255,10 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void rec(string cmd : Numeric.RPL_WHOISREGNICK)(IRCMessage message, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.RPL_WHOISREGNICK)(message.args);
 		if (!reply.isNull) {
-			if (reply.user.nickname !in whoisCache) {
-				whoisCache[reply.user.nickname] = WhoisResponse();
+			if (reply.get.user.nickname !in whoisCache) {
+				whoisCache[reply.get.user.nickname] = WhoisResponse();
 			}
-			whoisCache[reply.user.nickname].isRegistered = true;
+			whoisCache[reply.get.user.nickname].isRegistered = true;
 		} else {
 			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
 		}
@@ -1266,11 +1266,11 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void rec(string cmd : Numeric.RPL_WHOISIDLE)(IRCMessage message, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.RPL_WHOISIDLE)(message.args);
 		if (!reply.isNull) {
-			if (reply.user.nickname !in whoisCache) {
-				whoisCache[reply.user.nickname] = WhoisResponse();
+			if (reply.user.get.nickname !in whoisCache) {
+				whoisCache[reply.user.get.nickname] = WhoisResponse();
 			}
-			whoisCache[reply.user.nickname].idleTime = reply.idleTime;
-			whoisCache[reply.user.nickname].connectedTime = reply.connectedTime;
+			whoisCache[reply.user.get.nickname].idleTime = reply.idleTime;
+			whoisCache[reply.user.get.nickname].connectedTime = reply.connectedTime;
 		} else {
 			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
 		}
@@ -1278,10 +1278,10 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void rec(string cmd : Numeric.RPL_WHOISSERVER)(IRCMessage message, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.RPL_WHOISSERVER)(message.args);
 		if (!reply.isNull) {
-			if (reply.user.nickname !in whoisCache) {
-				whoisCache[reply.user.nickname] = WhoisResponse();
+			if (reply.get.user.nickname !in whoisCache) {
+				whoisCache[reply.get.user.nickname] = WhoisResponse();
 			}
-			whoisCache[reply.user.nickname].connectedTo = reply.server;
+			whoisCache[reply.get.user.nickname].connectedTo = reply.get.server;
 		} else {
 			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
 		}
@@ -1289,10 +1289,10 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void rec(string cmd : Numeric.RPL_WHOISACCOUNT)(IRCMessage message, const MessageMetadata metadata) {
 		auto reply = parseNumeric!(Numeric.RPL_WHOISACCOUNT)(message.args);
 		if (!reply.isNull) {
-			if (reply.user.nickname !in whoisCache) {
-				whoisCache[reply.user.nickname] = WhoisResponse();
+			if (reply.get.user.nickname !in whoisCache) {
+				whoisCache[reply.get.user.nickname] = WhoisResponse();
 			}
-			whoisCache[reply.user.nickname].account = reply.account;
+			whoisCache[reply.get.user.nickname].account = reply.get.account;
 		} else {
 			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
 		}
@@ -1304,16 +1304,16 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		}
 		auto reply = parseNumeric!(Numeric.RPL_WHOISCHANNELS)(message.args, prefixes, server.iSupport.channelTypes);
 		if (!reply.isNull) {
-			if (reply.user.nickname !in whoisCache) {
-				whoisCache[reply.user.nickname] = WhoisResponse();
+			if (reply.get.user.nickname !in whoisCache) {
+				whoisCache[reply.get.user.nickname] = WhoisResponse();
 			}
-			foreach (channel; reply.channels) {
+			foreach (channel; reply.get.channels) {
 				auto whoisChannel = WhoisChannel();
 				whoisChannel.name = channel.channel;
 				if (!channel.prefix.isNull) {
-					whoisChannel.prefix = channel.prefix;
+					whoisChannel.prefix = channel.prefix.get;
 				}
-				whoisCache[reply.user.nickname].channels[channel.channel.name] = whoisChannel;
+				whoisCache[reply.get.user.nickname].channels[channel.channel.name] = whoisChannel;
 			}
 		} else {
 			tryCall!"onError"(IRCError(ErrorType.malformed), metadata);
@@ -1327,7 +1327,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 	private void rec(string cmd : IRCV3Commands.account)(IRCMessage message, const MessageMetadata metadata) {
 		auto split = message.args;
 		if (!split.empty) {
-			auto user = message.sourceUser;
+			auto user = message.sourceUser.get;
 			auto newAccount = split.front;
 			internalAddressList.update(user);
 			auto newUser = internalAddressList[user.nickname];
@@ -2181,10 +2181,10 @@ version(unittest) {
 			assert(account.isNull);
 		}
 		with(privmsgUsers[1]) {
-			assert(account == "hax0r");
+			assert(account.get == "hax0r");
 		}
 		with(privmsgUsers[2]) {
-			assert(account == "bob");
+			assert(account.get == "bob");
 		}
 		assert(client.internalAddressList["user"].account == "bob");
 	}
@@ -2192,7 +2192,7 @@ version(unittest) {
 		auto client = spawnNoBufferClient();
 		setupFakeConnection(client);
 		client.put(":nick!user@host ACCOUNT accountname");
-		assert(client.internalAddressList["nick"].account == "accountname");
+		assert(client.internalAddressList["nick"].account.get == "accountname");
 		client.put(":nick!user@host ACCOUNT *");
 		assert(client.internalAddressList["nick"].account.isNull);
 	}
@@ -2651,9 +2651,9 @@ version(unittest) {
 			assert(isSecure);
 			assert(isOper);
 			assert(isRegistered);
-			assert(username == "someUsername");
-			assert(hostname == "someHostname");
-			assert(realname == "Some Real Name");
+			assert(username.get == "someUsername");
+			assert(hostname.get == "someHostname");
+			assert(realname.get == "Some Real Name");
 			assert(connectedTime == SysTime(DateTime(2017, 7, 14, 2, 40, 0), UTC()));
 			assert(idleTime == 1000.seconds);
 			assert(connectedTo == "example.net");
