@@ -100,7 +100,7 @@ template MostCommon(Types...) {
 				Nullable!FinalType output;
 				static foreach(SubType; HasMemberTypes) {
 					if (!__traits(getMember, this, SubType.stringof.toLower()).isNull) {
-						output = __traits(getMember, __traits(getMember, this, SubType.stringof.toLower()), member);
+						output = __traits(getMember, __traits(getMember, this, SubType.stringof.toLower()).get, member);
 					}
 				}
 				return output;

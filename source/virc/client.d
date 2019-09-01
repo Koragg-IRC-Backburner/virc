@@ -988,7 +988,7 @@ struct IRCClient(alias mix, T) if (isOutputRange!(T, char)) {
 		endAuthentication();
 	}
 	private void rec(string cmd : Numeric.RPL_MYINFO)(IRCMessage message, const MessageMetadata metadata) {
-		server.myInfo = parseNumeric!(Numeric.RPL_MYINFO)(message.args);
+		server.myInfo = parseNumeric!(Numeric.RPL_MYINFO)(message.args).get;
 	}
 	private void rec(string cmd : Numeric.RPL_LUSERCLIENT)(IRCMessage message, const MessageMetadata metadata) {
 		tryCall!"onLUserClient"(parseNumeric!(Numeric.RPL_LUSERCLIENT)(message.args), metadata);
@@ -1731,7 +1731,7 @@ version(unittest) {
 
 		client.put(":localhost 734 someone 5 Earl :Monitor list is full.");
 		assert(metadata.length == 1);
-		assert(metadata[0].messageNumeric == Numeric.ERR_MONLISTFULL);
+		assert(metadata[0].messageNumeric.get == Numeric.ERR_MONLISTFULL);
 	}
 	{ //extended-join http://ircv3.net/specs/extensions/extended-join-3.1.html
 		auto client = spawnNoBufferClient();
@@ -2377,7 +2377,7 @@ version(unittest) {
 
 		assert(client.output.data.canFind("AUTHENTICATE amlsbGVzAGppbGxlcwBzZXNhbWU="));
 		assert(client.isAuthenticated == true);
-		assert(client.me.account == testUser.nickname);
+		assert(client.me.account.get == testUser.nickname);
 	}
 	{ //SASL 3.2 test
 		auto client = spawnNoBufferClient();
@@ -2390,7 +2390,7 @@ version(unittest) {
 
 		assert(client.output.data.canFind("AUTHENTICATE amlsbGVzAGppbGxlcwBzZXNhbWU="));
 		assert(client.isAuthenticated == true);
-		assert(client.me.account == testUser.nickname);
+		assert(client.me.account.get == testUser.nickname);
 	}
 	{ //SASL 3.2 test
 		auto client = spawnNoBufferClient();
@@ -2403,7 +2403,7 @@ version(unittest) {
 
 		assert(client.output.data.canFind("AUTHENTICATE +"));
 		assert(client.isAuthenticated == true);
-		assert(client.me.account == testUser.nickname);
+		assert(client.me.account.get == testUser.nickname);
 	}
 	{ //SASL 3.2 test (bogus)
 		auto client = spawnNoBufferClient();
@@ -2416,7 +2416,7 @@ version(unittest) {
 
 		assert(!client.output.data.canFind("AUTHENTICATE amlsbGVzAGppbGxlcwBzZXNhbWU="));
 		assert(client.isAuthenticated == false);
-		//assert(client.me.account.isNull);
+		//assert(client.me.account.get.isNull);
 	}
 	{ //SASL post-registration test
 		auto client = spawnNoBufferClient();
@@ -2654,10 +2654,10 @@ version(unittest) {
 			assert(username.get == "someUsername");
 			assert(hostname.get == "someHostname");
 			assert(realname.get == "Some Real Name");
-			assert(connectedTime == SysTime(DateTime(2017, 7, 14, 2, 40, 0), UTC()));
-			assert(idleTime == 1000.seconds);
-			assert(connectedTo == "example.net");
-			assert(account == "someoneElseAccount");
+			assert(connectedTime.get == SysTime(DateTime(2017, 7, 14, 2, 40, 0), UTC()));
+			assert(idleTime.get == 1000.seconds);
+			assert(connectedTo.get == "example.net");
+			assert(account.get == "someoneElseAccount");
 			assert(channels.length == 2);
 			assert("#test" in channels);
 			assert(channels["#test"].prefix == "+");

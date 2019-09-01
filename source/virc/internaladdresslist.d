@@ -14,10 +14,10 @@ struct InternalAddressList {
 			users[user.nickname] = user;
 		} else {
 			if (!user.account.isNull) {
-				users[user.nickname].account = user.account;
+				users[user.nickname].account = user.account.get;
 			}
 			if (!user.realName.isNull) {
-				users[user.nickname].realName = user.realName;
+				users[user.nickname].realName = user.realName.get;
 			}
 			if (!user.mask.ident.isNull) {
 				users[user.nickname].mask.ident = user.mask.ident;
@@ -78,8 +78,8 @@ struct InternalAddressList {
 	testUser.realName = "Von Testington";
 	test.update(testUser);
 	assert(test["Test"] == User("Test!testo2@testy2"));
-	assert(test["Test"].account == "Testly");
-	assert(test["Test"].realName == "Von Testington");
+	assert(test["Test"].account.get == "Testly");
+	assert(test["Test"].realName.get == "Von Testington");
 	test.update(User("Test"));
 	assert(test["Test"] == User("Test!testo2@testy2"));
 

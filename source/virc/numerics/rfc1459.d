@@ -828,7 +828,7 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISCHANNELS, T)(T input, strin
 			if (parsedChannel.isChannel) {
 				auto channel = WhoisChannelReplyChannel();
 				channel.prefix = parsedChannel.prefixes;
-				channel.channel = parsedChannel.channel;
+				channel.channel = parsedChannel.channel.get;
 				output.get.channels ~= channel;
 			}
 		}

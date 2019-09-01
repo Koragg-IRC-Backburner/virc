@@ -150,8 +150,8 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_SASLMECHS, T)(T input) {
 	import std.range : only, takeNone;
 	{
 		auto logon = parseNumeric!(Numeric.RPL_SASLMECHS)(only("test", "EXTERNAL,PLAIN", "Well hello there"));
-		assert(logon.canFind("EXTERNAL"));
-		assert(logon.canFind("PLAIN"));
+		assert(logon.get.canFind("EXTERNAL"));
+		assert(logon.get.canFind("PLAIN"));
 	}
 	{
 		immutable logon = parseNumeric!(Numeric.RPL_SASLMECHS)(takeNone(only("")));

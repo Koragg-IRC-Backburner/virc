@@ -140,7 +140,7 @@ auto arrayTag(string tag, string delimiter = ",", Type = string[])(IRCTags tags)
 ///
 @safe pure nothrow unittest {
 	assert(IRCTags(string[string].init).arrayTag!("test").isNull);
-	assert(IRCTags(["test":""]).arrayTag!("test").empty);
+	assert(IRCTags(["test":""]).arrayTag!("test").get.empty);
 	assert(IRCTags(["test":"a"]).arrayTag!("test").get.front == "a");
 	assert(IRCTags(["test":"a,b"]).arrayTag!("test") == ["a", "b"]);
 	assert(IRCTags(["test":"a:b"]).arrayTag!("test", ":") == ["a", "b"]);

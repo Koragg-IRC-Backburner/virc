@@ -41,12 +41,12 @@ struct UserMask {
 		put(sink, nickname);
 		if (!ident.isNull) {
 			put(sink, '!');
-			put(sink, ident);
+			put(sink, ident.get);
 			assert(!host.isNull);
 		}
 		if (!host.isNull) {
 			put(sink, '@');
-			put(sink, host);
+			put(sink, host.get);
 		}
 	}
 	auto toHash() const {
@@ -69,33 +69,33 @@ struct UserMask {
 	}
 	with (UserMask("user!id@example.net")) {
 		assert(nickname == "user");
-		assert(ident == "id");
-		assert(host == "example.net");
+		assert(ident.get == "id");
+		assert(host.get == "example.net");
 	}
 	with (UserMask("user!id@example!!!.net")) {
 		assert(nickname == "user");
-		assert(ident == "id");
-		assert(host == "example!!!.net");
+		assert(ident.get == "id");
+		assert(host.get == "example!!!.net");
 	}
 	with (UserMask("user!id@ex@mple!!!.net")) {
 		assert(nickname == "user");
-		assert(ident == "id");
-		assert(host == "ex@mple!!!.net");
+		assert(ident.get == "id");
+		assert(host.get == "ex@mple!!!.net");
 	}
 	with (UserMask("user!id!@ex@mple!!!.net")) {
 		assert(nickname == "user");
-		assert(ident == "id!");
-		assert(host == "ex@mple!!!.net");
+		assert(ident.get == "id!");
+		assert(host.get == "ex@mple!!!.net");
 	}
 	with (UserMask("user!id")) {
 		assert(nickname == "user");
-		assert(ident == "id");
+		assert(ident.get == "id");
 		assert(host.isNull);
 	}
 	with (UserMask("user@example.net")) {
 		assert(nickname == "user");
 		assert(ident.isNull);
-		assert(host == "example.net");
+		assert(host.get == "example.net");
 	}
 }
 @safe pure unittest {
