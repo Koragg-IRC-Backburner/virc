@@ -144,7 +144,7 @@ private void setToken(T : ulong)(ref T opt, Nullable!string value, T defaultIfNo
 		opt = negateValue;
 	} else {
 		try {
-			opt = parse!T(value);
+			opt = parse!T(value.get);
 		} catch (Exception) {
 			opt = defaultIfNotPresent;
 		}
@@ -159,7 +159,7 @@ private void setToken(T : ulong)(ref Nullable!T opt, Nullable!string value, T de
 			opt = defaultIfNotPresent;
 		} else {
 			try {
-				opt = parse!T(value);
+				opt = parse!T(value.get);
 			} catch (Exception) {
 				opt.nullify();
 			}
@@ -171,10 +171,10 @@ private void setToken(T: char)(ref Nullable!T opt, Nullable!string value, T defa
 	if (value.isNull) {
 		opt.nullify();
 	} else {
-		if (value == "") {
+		if (value.get == "") {
 			opt = defaultIfNotPresent;
 		} else {
-			opt = value.byCodeUnit.front;
+			opt = value.get.byCodeUnit.front;
 		}
 	}
 }
@@ -198,7 +198,7 @@ private void setToken(T : string)(ref Nullable!T opt, Nullable!string val) {
 private void setToken(T)(ref Nullable!T opt, Nullable!string val) {
 	if (!val.isNull) {
 		try {
-			opt = val.to!T;
+			opt = val.get.to!T;
 		} catch (Exception) {
 			opt.nullify();
 		}
@@ -374,7 +374,7 @@ struct ISupport {
 				break;
 			case ISupportToken.prefix:
 				if (!val.isNull) {
-					if (val == "") {
+					if (val.get == "") {
 						prefixes = prefixes.init;
 					} else {
 						auto split = val.get.findSplit(")");
@@ -410,9 +410,9 @@ struct ISupport {
 					auto split = val.get.findSplit(",");
 					if (split[1] == ",") {
 						if (!split[0].empty) {
-							banExtensions.prefix = split[0].byCodeUnit.front;
+							banExtensions.get.prefix = split[0].byCodeUnit.front;
 						}
-						banExtensions.banTypes = split[2];
+						banExtensions.get.banTypes = split[2];
 					} else {
 						banExtensions.nullify();
 					}
@@ -718,9 +718,9 @@ struct ISupport {
 	{
 		assert(isupport.callerID.isNull);
 		isupport.insertToken(keyValuePair("CALLERID=h"));
-		assert(isupport.callerID == 'h');
+		assert(isupport.callerID.get == 'h');
 		isupport.insertToken(keyValuePair("CALLERID"));
-		assert(isupport.callerID == 'g');
+		assert(isupport.callerID.get == 'g');
 		isupport.insertToken(keyValuePair("-CALLERID"));
 		assert(isupport.callerID.isNull);
 	}
@@ -821,9 +821,9 @@ struct ISupport {
 	{
 		assert(isupport.deaf.isNull);
 		isupport.insertToken(keyValuePair("DEAF=D"));
-		assert(isupport.deaf == 'D');
+		assert(isupport.deaf.get == 'D');
 		isupport.insertToken(keyValuePair("DEAF"));
-		assert(isupport.deaf == 'd');
+		assert(isupport.deaf.get == 'd');
 		isupport.insertToken(keyValuePair("-DEAF"));
 		assert(isupport.deaf.isNull);
 	}
@@ -848,14 +848,14 @@ struct ISupport {
 	{
 		assert(isupport.banExtensions.isNull);
 		isupport.insertToken(keyValuePair("EXTBAN=~,cqnr"));
-		assert(isupport.banExtensions.prefix == '~');
-		assert(isupport.banExtensions.banTypes == "cqnr");
+		assert(isupport.banExtensions.get.prefix == '~');
+		assert(isupport.banExtensions.get.banTypes == "cqnr");
 		isupport.insertToken(keyValuePair("EXTBAN=,ABCNOQRSTUcjmprsz"));
-		assert(isupport.banExtensions.prefix.isNull);
-		assert(isupport.banExtensions.banTypes == "ABCNOQRSTUcjmprsz");
+		assert(isupport.banExtensions.get.prefix.isNull);
+		assert(isupport.banExtensions.get.banTypes == "ABCNOQRSTUcjmprsz");
 		isupport.insertToken(keyValuePair("EXTBAN=~,qjncrRa"));
-		assert(isupport.banExtensions.prefix == '~');
-		assert(isupport.banExtensions.banTypes == "qjncrRa");
+		assert(isupport.banExtensions.get.prefix == '~');
+		assert(isupport.banExtensions.get.banTypes == "qjncrRa");
 		isupport.insertToken(keyValuePair("-EXTBAN"));
 		assert(isupport.banExtensions.isNull);
 		isupport.insertToken(keyValuePair("EXTBAN=8"));
@@ -878,11 +878,11 @@ struct ISupport {
 	{
 		assert(isupport.inviteExceptions.isNull);
 		isupport.insertToken(keyValuePair("INVEX"));
-		assert(isupport.inviteExceptions == 'I');
+		assert(isupport.inviteExceptions.get == 'I');
 		isupport.insertToken(keyValuePair("INVEX=q"));
-		assert(isupport.inviteExceptions == 'q');
+		assert(isupport.inviteExceptions.get == 'q');
 		isupport.insertToken(keyValuePair("INVEX=I"));
-		assert(isupport.inviteExceptions == 'I');
+		assert(isupport.inviteExceptions.get == 'I');
 		isupport.insertToken(keyValuePair("-INVEX"));
 		assert(isupport.inviteExceptions.isNull);
 	}

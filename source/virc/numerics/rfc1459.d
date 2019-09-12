@@ -256,13 +256,13 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_TOPIC, T)(T input) {
 		output.nullify;
 		return output;
 	}
-	output.channel = input.front;
+	output.get.channel = input.front;
 	input.popFront();
 	if (input.empty) {
 		output.nullify;
 		return output;
 	}
-	output.topic = input.front;
+	output.get.topic = input.front;
 	return output;
 }
 ///
@@ -270,8 +270,8 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_TOPIC, T)(T input) {
 	import std.range : only, takeNone;
 	{
 		immutable topic = parseNumeric!(Numeric.RPL_TOPIC)(only("someone", "#channel", "This is the topic!"));
-		assert(topic.channel == "#channel");
-		assert(topic.topic == "This is the topic!");
+		assert(topic.get.channel == "#channel");
+		assert(topic.get.topic == "This is the topic!");
 	}
 	{
 		immutable topic = parseNumeric!(Numeric.RPL_TOPIC)(takeNone(only("")));
@@ -323,9 +323,9 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_VERSION, T)(T input) {
 	import virc.ircsplitter : IRCSplitter;
 	{
 		auto versionReply = parseNumeric!(Numeric.RPL_VERSION)(only("Someone", "ircd-seven-1.1.4(20170104-717fbca8dbac,charybdis-3.4-dev)", "localhost", "eHIKMpSZ6 TS6ow 7IZ"));
-		assert(versionReply.version_ == "ircd-seven-1.1.4(20170104-717fbca8dbac,charybdis-3.4-dev)");
-		assert(versionReply.server == "localhost");
-		assert(versionReply.comments == "eHIKMpSZ6 TS6ow 7IZ");
+		assert(versionReply.get.version_ == "ircd-seven-1.1.4(20170104-717fbca8dbac,charybdis-3.4-dev)");
+		assert(versionReply.get.server == "localhost");
+		assert(versionReply.get.comments == "eHIKMpSZ6 TS6ow 7IZ");
 	}
 	{
 		immutable versionReply = parseNumeric!(Numeric.RPL_VERSION)(takeNone(only("")));
@@ -363,19 +363,19 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_NAMREPLY, T)(T input) {
 		output.nullify();
 		return output;
 	}
-	output.chanFlag = cast(NamReplyFlag)input.front;
+	output.get.chanFlag = cast(NamReplyFlag)input.front;
 	input.popFront();
 	if (input.empty) {
 		output.nullify();
 		return output;
 	}
-	output.channel = input.front;
+	output.get.channel = input.front;
 	input.popFront();
 	if (input.empty) {
 		output.nullify();
 		return output;
 	}
-	output.users = input.front.splitter(" ");
+	output.get.users = input.front.splitter(" ");
 	return output;
 }
 ///
@@ -386,12 +386,12 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_NAMREPLY, T)(T input) {
 	import virc.ircsplitter : IRCSplitter;
 	{
 		auto namReply = parseNumeric!(Numeric.RPL_NAMREPLY)(IRCSplitter("someone = #channel :User1 User2 @User3 +User4"));
-		assert(namReply.chanFlag == NamReplyFlag.public_);
-		assert(namReply.channel == "#channel");
-		assert(namReply.users.array.canFind("User1"));
-		assert(namReply.users.array.canFind("User2"));
-		assert(namReply.users.array.canFind("@User3"));
-		assert(namReply.users.array.canFind("+User4"));
+		assert(namReply.get.chanFlag == NamReplyFlag.public_);
+		assert(namReply.get.channel == "#channel");
+		assert(namReply.get.users.array.canFind("User1"));
+		assert(namReply.get.users.array.canFind("User2"));
+		assert(namReply.get.users.array.canFind("@User3"));
+		assert(namReply.get.users.array.canFind("+User4"));
 	}
 	{
 		immutable namReply = parseNumeric!(Numeric.RPL_NAMREPLY)(IRCSplitter("someone = #channel"));
@@ -424,8 +424,8 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_REHASHING, T)(T input) {
 	import std.range : only, takeNone;
 	{
 		auto reply = parseNumeric!(Numeric.RPL_REHASHING)(only("someone", "ircd.conf", "Rehashing"));
-		assert(reply.configFile == "ircd.conf");
-		assert(reply.message == "Rehashing");
+		assert(reply.get.configFile == "ircd.conf");
+		assert(reply.get.message == "Rehashing");
 	}
 	{
 		immutable reply = parseNumeric!(Numeric.RPL_REHASHING)(only("someone", "ircd.conf"));
@@ -463,8 +463,8 @@ auto parseNumeric(Numeric numeric : Numeric.ERR_NOSUCHSERVER, T)(T input) {
 	import std.range : only, takeNone;
 	{
 		auto reply = parseNumeric!(Numeric.ERR_NOSUCHSERVER)(only("someone", "badserver.example.net", "No such server"));
-		assert(reply.serverMask == "badserver.example.net");
-		assert(reply.message == "No such server");
+		assert(reply.get.serverMask == "badserver.example.net");
+		assert(reply.get.message == "No such server");
 	}
 	{
 		immutable reply = parseNumeric!(Numeric.ERR_NOSUCHSERVER)(only("someone", "badserver.example.net"));
@@ -502,8 +502,8 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_AWAY, T)(T input) {
 	import std.range : only, takeNone;
 	{
 		auto reply = parseNumeric!(Numeric.RPL_AWAY)(only("someone", "awayuser", "On fire"));
-		assert(reply.user == User("awayuser"));
-		assert(reply.message == "On fire");
+		assert(reply.get.user == User("awayuser"));
+		assert(reply.get.message == "On fire");
 	}
 	{
 		immutable reply = parseNumeric!(Numeric.RPL_AWAY)(only("someone", "awayuser"));
@@ -544,7 +544,7 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_ENDOFWHOIS, T)(T input) {
 	import std.range : only, takeNone;
 	{
 		auto reply = parseNumeric!(Numeric.RPL_ENDOFWHOIS)(only("someone", "whoisuser", "End of /WHOIS list"));
-		assert(reply.user == User("whoisuser"));
+		assert(reply.get.user == User("whoisuser"));
 	}
 	{
 		immutable reply = parseNumeric!(Numeric.RPL_ENDOFWHOIS)(only("someone", "whoisuser"));
@@ -574,7 +574,7 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISOPERATOR, T)(T input) {
 	import std.range : only, takeNone;
 	{
 		auto reply = parseNumeric!(Numeric.RPL_WHOISOPERATOR)(only("someone", "whoisuser", "is an IRC operator"));
-		assert(reply.user == User("whoisuser"));
+		assert(reply.get.user == User("whoisuser"));
 	}
 	{
 		immutable reply = parseNumeric!(Numeric.RPL_WHOISOPERATOR)(only("someone", "whoisuser"));
@@ -621,10 +621,10 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISUSER, T)(T input) {
 	import std.range : only, takeNone;
 	{
 		immutable reply = parseNumeric!(Numeric.RPL_WHOISUSER)(only("someone", "whoisuser", "someUsername", "someHostname", "*", "a real name"));
-		assert(reply.user == User("whoisuser"));
-		assert(reply.username == "someUsername");
-		assert(reply.hostname == "someHostname");
-		assert(reply.realname == "a real name");
+		assert(reply.get.user == User("whoisuser"));
+		assert(reply.get.username == "someUsername");
+		assert(reply.get.hostname == "someHostname");
+		assert(reply.get.realname == "a real name");
 	}
 	{
 		immutable reply = parseNumeric!(Numeric.RPL_WHOISUSER)(only("someone", "whoisuser", "someUsername", "someHostname", "*"));
@@ -704,7 +704,7 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISIDLE, T)(T input) {
 		immutable reply = parseNumeric!(Numeric.RPL_WHOISIDLE)(only("someone", "whoisuser", "1500", "1500000000", "seconds idle, signon time"));
 		assert(reply.user == User("whoisuser"));
 		assert(reply.idleTime == 1500.seconds);
-		assert(reply.connectedTime == testTime);
+		assert(reply.connectedTime.get == testTime);
 	}
 	{
 		immutable reply = parseNumeric!(Numeric.RPL_WHOISIDLE)(only("someone", "whoisuser", "1500", "seconds idle"));
@@ -757,9 +757,9 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISSERVER, T)(T input) {
 	import virc.common : User;
 	{
 		immutable reply = parseNumeric!(Numeric.RPL_WHOISSERVER)(only("someone", "whoisuser", "example.net", "Mysterious example server"));
-		assert(reply.user == User("whoisuser"));
-		assert(reply.server == "example.net");
-		assert(reply.serverDescription == "Mysterious example server");
+		assert(reply.get.user == User("whoisuser"));
+		assert(reply.get.server == "example.net");
+		assert(reply.get.serverDescription == "Mysterious example server");
 	}
 	{
 		immutable reply = parseNumeric!(Numeric.RPL_WHOISSERVER)(only("someone", "whoisuser", "example.net"));
@@ -820,16 +820,16 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISCHANNELS, T)(T input, strin
 	auto parsed = autoParse!Reduced(input);
 	if (!parsed.isNull) {
 		output = WhoisChannelReply();
-		output.me = parsed.me;
-		output.user = parsed.user;
-		auto split = parsed.channels.splitter(" ");
+		output.get.me = parsed.get.me;
+		output.get.user = parsed.get.user;
+		auto split = parsed.get.channels.splitter(" ");
 		foreach (rawChan; split) {
 			auto parsedChannel = Target(rawChan, prefixes, channelTypes);
 			if (parsedChannel.isChannel) {
 				auto channel = WhoisChannelReplyChannel();
 				channel.prefix = parsedChannel.prefixes;
-				channel.channel = parsedChannel.channel;
-				output.channels ~= channel;
+				channel.channel = parsedChannel.channel.get;
+				output.get.channels ~= channel;
 			}
 		}
 	}
@@ -842,15 +842,15 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_WHOISCHANNELS, T)(T input, strin
 	import virc.numerics.isupport : defaultModePrefixes;
 	{
 		auto reply = parseNumeric!(Numeric.RPL_WHOISCHANNELS)(only("someone", "whoisuser", "#test3 +#test"), defaultModePrefixes, "#");
-		assert(reply.user == User("whoisuser"));
-		assert(reply.channels.length == 2);
-		with(reply.channels[0]) {
+		assert(reply.get.user == User("whoisuser"));
+		assert(reply.get.channels.length == 2);
+		with(reply.get.channels[0]) {
 			assert(channel == Channel("#test3"));
 			assert(prefix.isNull);
 		}
-		with(reply.channels[1]) {
+		with(reply.get.channels[1]) {
 			assert(channel == Channel("#test"));
-			assert(prefix == "+");
+			assert(prefix.get == "+");
 		}
 	}
 	{
@@ -875,12 +875,12 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_ISON, T)(T input) {
 	if (input.empty) {
 		return output.init;
 	}
-	output.user = User(input.front);
+	output.get.user = User(input.front);
 	input.popFront();
 	if (input.empty) {
 		return output.init;
 	}
-	output.online = input.front.splitter(" ");
+	output.get.online = input.front.splitter(" ");
 	return output;
 }
 unittest {
@@ -891,7 +891,7 @@ unittest {
 	assert(parseNumeric!(Numeric.RPL_ISON)(only("someone")).isNull);
 	{
 		auto reply = parseNumeric!(Numeric.RPL_ISON)(only("someone", "user1 user2 user3"));
-		assert(reply.user == User("someone"));
-		assert(reply.online.array == ["user1", "user2", "user3"]);
+		assert(reply.get.user == User("someone"));
+		assert(reply.get.online.array == ["user1", "user2", "user3"]);
 	}
 }

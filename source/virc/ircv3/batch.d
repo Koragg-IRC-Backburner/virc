@@ -94,7 +94,7 @@ private struct BatchCommand {
 			return;
 		}
 		isValid = true;
-		server = msg.source;
+		server = msg.sourceUser.get.server;
 		auto args = msg.args;
 		referenceTag = args.front[1..$];
 		isNew = (args.front[0] == '+');

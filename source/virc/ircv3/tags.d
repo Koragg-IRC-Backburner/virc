@@ -23,7 +23,42 @@ struct IRCTags {
 	///
 	string[string] tags;
 	alias tags this;
+	this(string tagString) @safe pure {
+		tags = parseTagString(tagString).tags;
+	}
+	this(string[string] inTags) @safe pure nothrow {
+		tags = inTags;
+	}
+	string toString() const @safe pure {
+		alias escape = replaceEscape!(string, only(`\`, `\\`), only(`;`, `\:`), only("\r", `\r`), only("\n", `\n`), only(" ", `\s`));
+		import std.string : join;
+		string[] pieces;
+		foreach (key, value; tags) {
+			pieces ~= escape(key)~"="~escape(value);
+		}
+		return pieces.join(";");
+	}
 }
+
+///
+@safe unittest {
+	{
+		const tags = IRCTags("a=b;x=");
+		assert(tags["a"] == "b");
+		assert(tags["x"] == "");
+	}
+	{
+		const tags = IRCTags(["a": "b", "x": ""]);
+		assert(tags["a"] == "b");
+		assert(tags["x"] == "");
+	}
+	{
+		const tags = IRCTags(["a": "\\"]);
+		assert(tags["a"] == "\\");
+		//assert(tags.toString() == "a=\\\\");
+	}
+}
+
 /++
 +
 +/
@@ -40,10 +75,10 @@ Nullable!bool booleanTag(string tag)(IRCTags tags) {
 }
 ///
 @safe pure nothrow unittest {
-	assert(IRCTags(null).booleanTag!"test".isNull);
+	assert(IRCTags(string[string].init).booleanTag!"test".isNull);
 	assert(IRCTags(["test": "aaaaa"]).booleanTag!"test".isNull);
-	assert(!IRCTags(["test": "0"]).booleanTag!"test");
-	assert(IRCTags(["test": "1"]).booleanTag!"test");
+	assert(!IRCTags(["test": "0"]).booleanTag!"test".get);
+	assert(IRCTags(["test": "1"]).booleanTag!"test".get);
 }
 /++
 +
@@ -66,7 +101,7 @@ Nullable!Type typeTag(string tag, Type)(IRCTags tags) {
 }
 ///
 @safe pure nothrow unittest {
-	assert(IRCTags(null).typeTag!("test", uint).isNull);
+	assert(IRCTags(string[string].init).typeTag!("test", uint).isNull);
 	assert(IRCTags(["test": "a"]).typeTag!("test", uint).isNull);
 	assert(IRCTags(["test": "0"]).typeTag!("test", uint) == 0);
 	assert(IRCTags(["test": "10"]).typeTag!("test", uint) == 10);
@@ -78,7 +113,7 @@ Nullable!Type typeTag(string tag, Type)(IRCTags tags) {
 			val = str[0];
 		}
 	}
-	assert(IRCTags(["test": "words"]).typeTag!("test", Something).val == 'w');
+	assert(IRCTags(["test": "words"]).typeTag!("test", Something).get.val == 'w');
 }
 /++
 +
@@ -93,7 +128,7 @@ auto arrayTag(string tag, string delimiter = ",", Type = string[])(IRCTags tags)
 		output = [];
 		foreach (element; split) {
 			try {
-				output ~= element.to!(ElementType!Type);
+				output.get ~= element.to!(ElementType!Type);
 			} catch (Exception) { //Malformed, reset everything
 				output = output.init;
 				break;
@@ -104,9 +139,9 @@ auto arrayTag(string tag, string delimiter = ",", Type = string[])(IRCTags tags)
 }
 ///
 @safe pure nothrow unittest {
-	assert(IRCTags(null).arrayTag!("test").isNull);
-	assert(IRCTags(["test":""]).arrayTag!("test").empty);
-	assert(IRCTags(["test":"a"]).arrayTag!("test").front == "a");
+	assert(IRCTags(string[string].init).arrayTag!("test").isNull);
+	assert(IRCTags(["test":""]).arrayTag!("test").get.empty);
+	assert(IRCTags(["test":"a"]).arrayTag!("test").get.front == "a");
 	assert(IRCTags(["test":"a,b"]).arrayTag!("test") == ["a", "b"]);
 	assert(IRCTags(["test":"a:b"]).arrayTag!("test", ":") == ["a", "b"]);
 	assert(IRCTags(["test":"9,1"]).arrayTag!("test", ",", uint[]) == [9, 1]);
@@ -128,7 +163,7 @@ Nullable!Duration secondDurationTag(string tag)(IRCTags tags) {
 ///
 @safe pure nothrow unittest {
 	import core.time : hours;
-	assert(IRCTags(null).secondDurationTag!("test").isNull);
+	assert(IRCTags(string[string].init).secondDurationTag!("test").isNull);
 	assert(IRCTags(["test": "a"]).secondDurationTag!("test").isNull);
 	assert(IRCTags(["test": "3600"]).secondDurationTag!("test") == 1.hours);
 }
@@ -141,13 +176,25 @@ auto parseTime(string[string] tags) {
 }
 
 auto parseTagString(string input) {
+	import std.algorithm.comparison : among;
 	IRCTags output;
 	auto splitTags = input.splitter(";").filter!(a => !a.empty);
 	foreach (tag; splitTags) {
 		auto splitKV = tag.findSplit("=");
 		auto key = splitKV[0];
 		if (!splitKV[1].empty) {
-			output[key] = splitKV[2].replaceEscape!(string, only(`\\`, `\`), only(`\:`, `;`), only(`\r`, "\r"), only(`\n`, "\n"), only(`\s`, " "));
+			auto value = splitKV[2];
+			if ((value.length > 0) && (value[$-1] == '\\')) {
+				value = value[0..$-1];
+			}
+			if (value.length > 0) {
+				for (int i = 0; i < value.length-1; i++) {
+					if ((value[i] == '\\') && !value[i+1].among('\\', ':', 'r', 'n', 's')) {
+						value = value[0 .. i] ~ value[i +1 .. $];
+					}
+				}
+			}
+			output[key] = value.replaceEscape!(string, only(`\\`, `\`), only(`\:`, `;`), only(`\r`, "\r"), only(`\n`, "\n"), only(`\s`, " "));
 		} else {
 			output[key] = "";
 		}
@@ -228,20 +275,17 @@ T replaceEscape(T, replacements...)(T input) {
 	} else {
 		T output;
 		enum findStrs = aliasSeqOf!([replacements].map!((x) => x[0].byCodeUnit));
-		if ((input.length > 0) && (input[$-1] == '\\')) {
-			input = input[0..$-1];
-		}
 		for (size_t position = 0; position < input.length; position++) {
-			final switch(input[position..$].byCodeUnit.startsWith(findStrs)) {
+			sw: final switch(input[position..$].byCodeUnit.startsWith(findStrs)) {
 				case 0:
 					output ~= input[position];
 					break;
-				foreach (index, replacement; replacements) {
+				static foreach (index, replacement; replacements) {
 					static assert(replacements[index][0].length >= 1);
 					case index+1:
 						output ~= replacements[index][1];
 						position += replacements[index][0].length-1;
-						break;
+						break sw;
 				}
 			}
 		}

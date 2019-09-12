@@ -52,25 +52,25 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_MYINFO, T)(T input) {
 	import std.range : only;
 	{
 		immutable info = parseNumeric!(Numeric.RPL_MYINFO)(only("someone", "localhost", "IRCd-2.0", "BGHIRSWcdgikorswx", "ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz", "FIJLYabefghjkloqv"));
-		assert(info.name == "localhost");
-		assert(info.version_ == "IRCd-2.0");
-		assert(info.userModes == "BGHIRSWcdgikorswx");
-		assert(info.userModesWithParams == "");
-		assert(info.channelModes == "ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz");
-		assert(info.channelModesWithParams == "FIJLYabefghjkloqv");
-		assert(info.serverModes == "");
-		assert(info.serverModesWithParams == "");
+		assert(info.get.name == "localhost");
+		assert(info.get.version_ == "IRCd-2.0");
+		assert(info.get.userModes == "BGHIRSWcdgikorswx");
+		assert(info.get.userModesWithParams == "");
+		assert(info.get.channelModes == "ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz");
+		assert(info.get.channelModesWithParams == "FIJLYabefghjkloqv");
+		assert(info.get.serverModes == "");
+		assert(info.get.serverModesWithParams == "");
 	}
 	{
 		immutable info = parseNumeric!(Numeric.RPL_MYINFO)(only("someone", "localhost", "IRCd-2.0", "BGHIRSWcdgikorswx", "ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz", "FIJLYabefghjkloqv", "q", "w", "x"));
-		assert(info.name == "localhost");
-		assert(info.version_ == "IRCd-2.0");
-		assert(info.userModes == "BGHIRSWcdgikorswx");
-		assert(info.userModesWithParams == "q");
-		assert(info.channelModes == "ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz");
-		assert(info.channelModesWithParams == "FIJLYabefghjkloqv");
-		assert(info.serverModes == "w");
-		assert(info.serverModesWithParams == "x");
+		assert(info.get.name == "localhost");
+		assert(info.get.version_ == "IRCd-2.0");
+		assert(info.get.userModes == "BGHIRSWcdgikorswx");
+		assert(info.get.userModesWithParams == "q");
+		assert(info.get.channelModes == "ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz");
+		assert(info.get.channelModesWithParams == "FIJLYabefghjkloqv");
+		assert(info.get.serverModes == "w");
+		assert(info.get.serverModesWithParams == "x");
 	}
 	{
 		immutable info = parseNumeric!(Numeric.RPL_MYINFO)(only("someone", "localhost", "IRCd-2.0", "BGHIRSWcdgikorswx ABCDFGIJKLMNOPQRSTYabcefghijklmnopqrstuvz FIJLYabefghjkloqv"));
@@ -101,10 +101,10 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_TRACESERVICE, T)(T input) if (is
 	//Need real world examples... No idea what these will really look like
 	{
 		immutable trace = parseNumeric!(Numeric.RPL_TRACESERVICE)(only("someone", "Service", "classy", "fred", "something", "no_idea"));
-		assert(trace.class_ == "classy");
-		assert(trace.name == "fred");
-		assert(trace.type == "something");
-		assert(trace.activeType == "no_idea");
+		assert(trace.get.class_ == "classy");
+		assert(trace.get.name == "fred");
+		assert(trace.get.type == "something");
+		assert(trace.get.activeType == "no_idea");
 	}
 	{
 		immutable badTrace = parseNumeric!(Numeric.RPL_TRACESERVICE)(takeNone!(string[]));
@@ -153,8 +153,8 @@ auto parseNumeric(Numeric numeric : Numeric.RPL_TRACECLASS, T)(T input) {
 	//Need real world examples... No idea what these will really look like
 	{
 		immutable trace = parseNumeric!(Numeric.RPL_TRACECLASS)(only("someone", "CLASS", "classy", "238525813"));
-		assert(trace.class_ == "classy");
-		assert(trace.count == "238525813");
+		assert(trace.get.class_ == "classy");
+		assert(trace.get.count == "238525813");
 	}
 	{
 		immutable badTrace = parseNumeric!(Numeric.RPL_TRACECLASS)(takeNone!(string[]));
