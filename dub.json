@@ -6,6 +6,7 @@
 	"authors": ["Herringway"],
 	"targetType": "library",
 	"subPackages": [
+		"client",
 		"testclient"
 	]
 }

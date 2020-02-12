@@ -1,7 +1,7 @@
 /++
 + Maintains user information for use where it may otherwise be missing.
 +/
-module virc.internaladdresslist;
+module virc.client.internaladdresslist;
 
 import virc.common;
 
