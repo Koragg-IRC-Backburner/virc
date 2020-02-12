@@ -17,6 +17,7 @@ install:
 script:
   - "dub build virc:testclient"
   - dub test -b unittest-cov
+  - dub test -b unittest-cov :client
   - dub fetch doveralls
   - dub run doveralls
 before_deploy:
