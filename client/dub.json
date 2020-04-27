@@ -1,0 +1,9 @@
+{
+	"name": "client",
+	"description": "IRC client subpackage.",
+	"copyright": "Copyright © 2020, Cameron",
+	"authors": ["Cameron"],
+	"dependencies": {
+		"virc": "*"
+	}
+}

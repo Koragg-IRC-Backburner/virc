@@ -2,7 +2,7 @@
 + Module containing IRC client guts. Parses and dispatches to appropriate
 + handlers/
 +/
-module virc.client;
+module virc.client.skeleton;
 import std.algorithm.comparison : among;
 import std.algorithm.iteration : chunkBy, cumulativeFold, filter, map, splitter;
 import std.algorithm.searching : canFind, endsWith, find, findSplit, findSplitAfter, findSplitBefore, skipOver, startsWith;
@@ -21,7 +21,7 @@ import std.utf : byCodeUnit;
 
 import virc.common;
 import virc.encoding;
-import virc.internaladdresslist;
+import virc.client.internaladdresslist;
 import virc.ircsplitter;
 import virc.ircv3.batch;
 import virc.ircv3.sasl;

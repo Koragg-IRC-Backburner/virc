@@ -4,7 +4,7 @@
 	"copyright": "Copyright © 2015, Cameron",
 	"authors": ["Cameron"],
 	"dependencies": {
-		"virc": "*",
+		"virc:client": "*",
 		"vibe-d:core": "~>0.8.0",
 		"vibe-d:stream": "~>0.8.0",
 		"vibe-d:tls": "~>0.8.0"

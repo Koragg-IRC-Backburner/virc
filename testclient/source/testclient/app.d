@@ -8,7 +8,7 @@ import vibe.stream.operations;
 import vibe.stream.stdio;
 import vibe.stream.tls;
 import vibe.stream.wrapper;
-import virc;
+import virc.client;
 
 mixin template Client() {
 	import std.stdio : writefln, writef;
